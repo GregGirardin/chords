@@ -94,9 +94,7 @@ def showWithSharps (key, spelling):
   if spelling in minorSpellings:
     key = relMajor (key)
 
-  if key in bKeys:
-    return False
-  return True
+  return key not in bKeys
 
 def calcNote (root, fret):
   rootNum = dispKeyList.index (root)
@@ -120,16 +118,14 @@ def fretInfoGen (root, fret, fretOffset, key, spelling):
 
   assert fret >= fretOffset, "Fret below fret offset."
 
-  fretInfo = {}
-  fretInfo ['root'] = root
-  fretInfo ['fret'] = fret
-  fretInfo ['note'] = calcNote (root, fret - fretOffset)
+  fretInfo = {
+    'root': root,
+    'fret': fret,
+    'note': calcNote (root, fret - fretOffset)
+  }
   interval = calcInterval (fretInfo ['note'], key)
   fretInfo ['interval'] = intervalList [interval]
-  if intervalList [interval] in spellingMap [spelling]:
-    fretInfo ['inSpelling'] = True
-  else:
-    fretInfo ['inSpelling'] = False
+  fretInfo ['inSpelling'] = intervalList [interval] in spellingMap [spelling]
 
   # convert note for display
   if showWithSharps (key, spelling):
@@ -148,7 +144,7 @@ def generateFretboard (instrument, key, spelling):
   There are also some other 'global' kinda things.. numStrings, instrument, etc.
 
   TBD: This should be removed. There is no reason to generate the fretboard in advance,
-  just generate frets on the fly why displaying.
+  just generate frets on the fly while displaying.
   '''
 
   fretBoard = {}
@@ -165,10 +161,12 @@ def generateFretboard (instrument, key, spelling):
 
     fretBoard [string] = stringList
 
-  fretBoard ['numStrings'] = len (strings)
-  fretBoard ['instrument'] = instrument
-  fretBoard ['spelling'] = spelling
-  fretBoard ['fretOffset'] = instrumentMap [instrument]['fretOffset']
+  fretBoard.update({
+    'numStrings': len (strings),
+    'instrument': instrument,
+    'spelling': spelling,
+    'fretOffset': instrumentMap [instrument]['fretOffset']
+  })
 
   return fretBoard
 
@@ -178,14 +176,14 @@ def displayFretboard (fretboard, interval = False):
   print ("\n  ", end = "")
   for fret in range (0, NUM_FRETS + 1):
     print ("%2s   " % fret, end = "")
-    if (fret == 9): # formatting hack
+    if fret == 9: # formatting hack
       print (" ", end="")
 
   print ()
   for stringNum in range (1, numStrings + 1):
     string = fretboard [stringNum]
 
-    if (stringNum == 7) and (fretboard ['instrument'] == 'Stick-4ths'):
+    if stringNum == 7 and fretboard ['instrument'] == 'Stick-4ths':
       print () # space between bass and treble strings
 
     print (string [0]['note'], " ", end = "", sep = "")
@@ -197,14 +195,14 @@ def displayFretboard (fretboard, interval = False):
       else:
         fretChar = "|"
 
-      if fret ['inSpelling'] == True:
-        if interval == True:
+      if fret ['inSpelling']:
+        if interval:
           value = fret ['interval']
         else:
           value = fret ['note']
 
-        if (len (value) == 1):
-          value = value + "-"
+        if len (value) == 1:
+          value += "-"
 
         print ("-%s-%s" % (value,fretChar), end = "", sep='')
       else:
@@ -264,38 +262,38 @@ def runCli ():
   instrumentIx = 0
   spellingIx = 0
 
-  while (True):
+  while True:
     displayInfo (instruments [instrumentIx], dispKeyList [keyIx], spellings [spellingIx])
 
     ch = getInput ()
-    if (ch == 'q'):
+    if ch == 'q':
       exit()
-    elif (ch == 'i'):
+    elif ch == 'i':
       instrumentIx += 1
       instrumentIx %= len (instruments)
-    elif (ch == ']'):
+    elif ch == ']':
       spellingIx += 1
       spellingIx %= len (spellings)
-    elif (ch == '['):
-      if (spellingIx > 0):
+    elif ch == '[':
+      if spellingIx > 0:
         spellingIx -= 1
       else:
         spellingIx = len (spellings) - 1
-    elif (ch == '='):
+    elif ch == '=':
       keyIx += 1
       keyIx %= len (dispKeyList)
-    elif (ch == '-'):
+    elif ch == '-':
       if (keyIx > 0):
         keyIx -= 1
       else:
         keyIx = len (dispKeyList) - 1
-    elif (ch == 'm'):
+    elif ch == 'm':
       spellingIx = spellings.index ('M-Key')
-    elif (ch == 'r'):
+    elif ch == 'r':
       spellingIx = spellings.index ('m-Key')
-    elif (ch == '7'):
+    elif ch == '7':
       spellingIx = spellings.index ('7')
-    elif (ch.upper() in dispKeyList):
+    elif ch.upper() in dispKeyList:
       keyIx = dispKeyList.index (ch.upper())
 
 class runGui ():
@@ -352,7 +350,7 @@ class runGui ():
       widget.destroy()
 
     for spelling in spellings:
-      if (spelling == self.spelling):
+      if spelling == self.spelling:
         disfont = ("TkFixedFont", 14, "bold italic")
       else:
         disfont = ("TkFixedFont", 10, "")
@@ -367,7 +365,7 @@ class runGui ():
       widget.destroy()
 
     for key in dispKeyList:
-      if (key == self.key):
+      if key == self.key:
         disfont = ("TkFixedFont", 14, "bold italic")
       else:
         disfont = ("TkFixedFont", 10, "")
@@ -390,7 +388,7 @@ class runGui ():
 
         dispLine += ("   " * fretboard ['fretOffset'][stringNum - 1])
 
-        if (stringNum == 7) and self.instrument == 'Stick-4ths':
+        if stringNum == 7 and self.instrument == 'Stick-4ths':
           s = Label (frame, text = '-', font = dFont)
           s.pack (side = TOP)
 
@@ -400,9 +398,9 @@ class runGui ():
           else:
             fretChar = "|"
 
-          if fret ['inSpelling'] == True:
+          if fret ['inSpelling']:
             value = fret [dispKey]
-            if (len (value) == 1):
+            if len (value) == 1:
               value += "-"
             dispLine += "%s%s" % (value, fretChar)
           else:
@@ -425,7 +423,7 @@ class runGui ():
     dispLine = " "
     for fret in range (0, NUM_FRETS + 1):
       dispLine += (" %2s" % fret)
-      if (fret == 0):
+      if fret == 0:
         dispLine += " "
 
     s = Label (frame, text = dispLine, font = "TkFixedFont")
