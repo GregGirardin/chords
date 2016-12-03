@@ -104,7 +104,7 @@ def calcNote (root, fret):
 def calcInterval (note, key):
   noteNum = dispKeyList.index (note) + 12 # C = 12, C# = 13, etc
   keyNum = dispKeyList.index (key)        # C =  0, C# =  1
-  intNum = (noteNum - keyNum) % 12    # (if C) C = 0, C# = 1
+  intNum = (noteNum - keyNum) % 12        # (if C) C = 0, C# = 1
   return intNum
 
 def fretInfoGen (root, fret, fretOffset, key, spelling):

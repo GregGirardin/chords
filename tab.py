@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import random
-
+import os
 '''
 A basic tablature editing utility.
 
@@ -36,7 +36,6 @@ m1b3 s5f2 s4f2
 m1b4 s3f0
 m2b1 # rest
 
-
 Keys
 arrow keys forward backward one beat, up/ down strings
 [] forward/back one measure
@@ -52,10 +51,10 @@ songExt = ".pytab"
 version = "v1.0"
 
 MAX_WIDTH = 120
-
-# wrapper around a list.
-# The api is 1 based, even though the lists are 0 based.
-# A song begins with measure 1, a measure with beat 1, note with string 1
+'''
+ Wrapper around a list.
+ The api is 1 based
+'''
 class pytabContainer (object):
 
   def __init__ (self):
@@ -112,7 +111,6 @@ class pytabContainer (object):
   def count (self):
     return len (self.objects)
 
-
 class pytabNote (object):
 
   def __init__ (self, string, fret):
@@ -150,6 +148,7 @@ class pytabSong (pytabContainer):
   '''
     This class handles UI, file IO
   '''
+
 def load (name):
   song = pytabSong (name)
   fileName = song.songName + songExt
@@ -174,18 +173,18 @@ def load (name):
 
     # create measure if necessary
     if song.get (measure) == None:
-      print "Adding measure", measure
+      # print "Adding measure", measure
       song.addMeasure (measure)
 
     songmeasure = song.get (measure)
     if songmeasure.get (beat) == None:
-      print "Adding beat", beat
+      # print "Adding beat", beat
       songmeasure.addBeat (beat)
 
     songbeat = songmeasure.get (beat)
     for note in beatline [1:]:
       sf = note[1:].split ('f')
-      print "Adding note", int (sf[0]), int (sf [1])
+      # print "Adding note", int (sf[0]), int (sf [1])
       songbeat.addNote (int (sf[0]), int (sf [1]))
 
   return song
@@ -236,8 +235,97 @@ def export (song):
 
   #
 
-def displayUI (self, song):
-  pass
+def displayUI (song, measure,
+               cursor_m, cursor_b, cursor_s):
+  ''' display starting from current measure
+      display MAX_WIDTH characters, so that's about MAX_WIDTH/3 beats
+      each beat takes 3 spaces, plus the measure delimiter
+  '''
+  assert cursor_m >= measure, "Cursor before current measure."
+
+  headerLines = ['Name:', # Song name
+                 '',
+                 '  ', # measures
+                 '  ' ] # beats
+
+  fretboardLines = [ 'E ', # string 1
+                     'B ',
+                     'G ',
+                     'D ',
+                     'A ',
+                     'E ' ]
+
+  instructions = [ '',
+                   'a/s Forward/Back a measure.',
+                   'z/x Forward/Back a beat.',
+                   '`1234567890-= Insert note at fret (0-10).',
+                   'o   Toggle octave of current note.',
+                   'd   Delete beat.',
+                   'f   Clear beat.',
+                   'n   Rename song.',
+                   'z   Save.',
+                   'l   Load.' ]
+
+  headerLines [0] += song.songName + " " + str (song.count()) + " Measures."
+
+  def endOfMeasure ():
+    for s in range (6):
+      fretboardLines [s] += '|'
+
+    headerLines [2] += ' ' # Measures
+    headerLines [3] += ' ' # Beats
+
+  # keep displaying measures
+  xposition = 3
+  while True:
+    if measure <= song.count ():
+      curMeasure = song.get (measure)
+      if curMeasure == None:
+        endOfMeasure ()
+      else:
+        # display measure
+        curBeatNum = 1
+        for curBeat in curMeasure.get():
+          for curString in range (1,7):
+            if curBeat is not None:
+              note = curBeat.get (curString)
+            else:
+              note = None
+            if measure == cursor_m and curBeatNum == cursor_b and curString == cursor_s:
+              fieldString = "+"
+            else:
+              fieldString = "-"
+
+            if note == None:
+              fieldString += "--"
+            else:
+              if note.fret > 9:
+                fieldString += "%2d" % (note.fret)
+              else:
+                fieldString += "-%d" % (note.fret)
+
+            fretboardLines [curString - 1] += fieldString
+          if curBeatNum == 1:
+            headerLines [2] += "%-3d" % (measure)
+          else:
+            headerLines [2] += '   '
+          headerLines [3] += '  .' # beat
+          curBeatNum += 1
+
+        endOfMeasure ()
+
+    else:
+      break
+    measure += 1
+
+
+  os.system ('clear')
+  for line in headerLines:
+    print line
+  for line in fretboardLines:
+    print line
+  for line in instructions:
+    print line
 
 def getInput ():
     """
@@ -266,20 +354,14 @@ def getInput ():
     return ret
 
 def pytabTest ():
-  # generate test song
-  # add some stuff
-  # save it
-  # load it and save that
-  # make sure they're the same.
+  # generate test song, add some stuff, do some sanity checks, save it
+  # load it and save that, make sure they're the same.
   songName1 = "testsong1"
   songName2 = "testsong2"
   testsong = pytabSong (songName1)
-  numMeasures = 16
-  numBeats = 16
-  testBeat = 5
+  numMeasures = 8
 
   # add beats to a test measure
-  testMeasure = numMeasures / 2
   for testMeasure in (1,3,5):
     tm = testsong.addMeasure (testMeasure)
     assert tm is not None, "Test measure was None."
@@ -293,11 +375,11 @@ def pytabTest ():
         tb.addNote (testNote, testNote + testMeasure)
 
   # verify addMeasure adds empty measures up to the measure you're creating.
-  testsong.addMeasure (numMeasures * 2)
+  testsong.addMeasure (numMeasures)
 
-  assert testsong.count() == numMeasures * 2, "Wrong number of measures."
-  assert testsong.get (numMeasures * 2) is not None, "Test measure was None."
-  assert testsong.get (numMeasures * 2 - 1) is None, "Fill measure was not None."
+  assert testsong.count() == numMeasures, "Wrong number of measures."
+  assert testsong.get (numMeasures) is not None, "Test measure was None."
+  assert testsong.get (numMeasures - 1) is None, "Fill measure was not None."
 
   # save
   save (testsong)
@@ -333,6 +415,19 @@ def pytabTest ():
 
   # can't validate export
 
+  # temporary, this doesn't belong here
+
+  displayUI (testsong, 1, 3, 4, 5)
+
+
 pytabTest()
 
 # main loop
+
+#currentSong = pytabSong ("default")
+
+#curentMeasure = 1
+#currentBeat = 1
+#displayUI (currentSong,
+#           curentMeasure,
+#           currentBeat)
