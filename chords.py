@@ -19,7 +19,6 @@ from  Tkinter import *
 from functools import partial
 import tkFont
 
-
 """
 dictionary keyed by instrument name, value is a dictionary of instrument attributes
 "tuning" is high to low
@@ -65,15 +64,15 @@ bKeys = ('F', 'Bb', 'Eb', 'Ab', 'Db') # (Major) keys to be displayed as having f
 # if you add an entry, also add it to spellings tuple below.
 spellingMap = \
   {
-  "M":        ('R',  '3',  '5'),
-  "m":        ('R', 'b3',  '5'),
-  "7":        ('R',  '3',  '5', 'b7'),
-  "m7":       ('R', 'b3',  '5', 'b7'),
-  "M7":       ('R', 'b3',  '5', '7'),
-  "2":        ('R',  '2',  '5'),
-  "4":        ('R',  '4',  '5'),
-  "dim":      ('R', 'b3',  'b5', '6'),
-  "M-Key":    ('R',  '2',  '3', '4', '5',  '6',  '7'),
+  "M":        ('R',  '3', '5'),
+  "m":        ('R', 'b3', '5'),
+  "7":        ('R',  '3', '5', 'b7'),
+  "m7":       ('R', 'b3', '5', 'b7'),
+  "M7":       ('R', 'b3', '5', '7'),
+  "2":        ('R',  '2', '5'),
+  "4":        ('R',  '4', '5'),
+  "dim":      ('R', 'b3', 'b5', '6'),
+  "M-Key":    ('R',  '2', '3',  '4', '5',  '6', '7'),
   "m-Key":    ('R',  '2', 'b3', '4', '5', 'b6', 'b7')
   }
 spellings = ('M', 'm', '7', 'm7', 'M7', '2', '4', 'dim', 'M-Key', 'm-Key')
@@ -210,26 +209,26 @@ def displayFretboard (fretboard, interval = False):
     print ()
 
 def displayInfo (instrument, key, spelling):
-    os.system ('clear')
+  os.system ('clear')
 
-    fretboard = generateFretboard (instrument, key, spelling)
+  fretboard = generateFretboard (instrument, key, spelling)
 
-    print (fretboard ['instrument'], key, fretboard ['spelling'])
-    displayFretboard (fretboard)
-    displayFretboard (fretboard, True)
-    print ()
+  print (fretboard ['instrument'], key, fretboard ['spelling'])
+  displayFretboard (fretboard)
+  displayFretboard (fretboard, True)
+  print ()
 
-    # help
-    print ("i : Instruments: ", end="")
-    for inst in instruments:
-      print (inst, "", end = "")
-    print ()
-    print ("mr7[] : Spellings: ", end = "")
-    for spel in spellings:
-      print (spel, "", end = "")
-    print ()
-    print ("a..g -= : Key")
-    print ("q : quit")
+  # help
+  print ("i : Instruments: ", end="")
+  for inst in instruments:
+    print (inst, "", end = "")
+  print ()
+  print ("mr7[] : Spellings: ", end = "")
+  for spel in spellings:
+    print (spel, "", end = "")
+  print ()
+  print ("a..g -= : Key")
+  print ("q : quit")
 
 def getInput ():
   """
@@ -241,9 +240,9 @@ def getInput ():
   attrs_save = termios.tcgetattr(fd)
   attrs = list(attrs_save)
   attrs[0] &= ~(termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
-                termios. IGNCR | termios.ICRNL | termios.IXON )
+                termios.IGNCR | termios.ICRNL | termios.IXON )
   attrs[1] &= ~termios.OPOST
-  attrs[2] &= ~(termios.CSIZE | termios. PARENB)
+  attrs[2] &= ~(termios.CSIZE | termios.PARENB)
   attrs[2] |= termios.CS8
   attrs[3] &= ~(termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN)
   termios.tcsetattr(fd, termios.TCSANOW, attrs)
@@ -462,4 +461,4 @@ class runGui ():
 if 'c' in sys.argv:
   runCli()
 else:
-  runGui ()
+  runGui()
