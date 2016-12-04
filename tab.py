@@ -36,20 +36,15 @@ m1b3 s5f2 s4f2
 m1b4 s3f0
 m2b1 # rest
 
-Keys
-arrow keys forward backward one beat, up/ down strings
-[] forward/back one measure
-space = insert rest
-d = delete beat
-0-9 = insert note
-e jump to end of song
-
 '''
 
 songExt = ".pytab"
 
 version = "v1.0"
 
+statusString = None
+insertMode = False # if true, move cursor after every note
+octaveFlag = False
 MAX_WIDTH = 120
 '''
  Wrapper around a list.
@@ -69,9 +64,11 @@ class pytabContainer (object):
 
     return True
 
-  def set (self, obj, index = None):
-    # if index is none then append.
-    # create the measure if necessary.
+  def set (self, obj, index = None, insert = False):
+    # if index is none then append. Create if necessary.
+
+    if index is None and insert == True:
+      assert 0, "Must provide index to insert"
 
     if index and index < 1:
       assert 0, "Bad index."
@@ -81,7 +78,11 @@ class pytabContainer (object):
       # add empty entries if necessary, ex: we're adding measure 10 to a new song.
       while index >= self.count ():
         self.objects.append (None)
-      self.objects [index] = obj
+
+      if insert:
+        self.objects.insert (index, obj)
+      else:
+        self.objects [index] = obj
     else:
       self.objects.append (obj)
 
@@ -95,7 +96,7 @@ class pytabContainer (object):
     return True
 
   def clr (self, index):
-    return (set (None, index))
+    return (self.set (None, index))
 
   def get (self, index = None):
     # get an object or entire list.
@@ -126,11 +127,11 @@ class pytabBeat (pytabContainer):
 
 class pytabMeasure (pytabContainer):
 
-  def addBeat (self, beat = None):
+  def addBeat (self, beat = None, insert = False):
     if beat:
       assert beat <= 64, "Max 64 beats per measure."
       assert beat > 0, "First beat is 1."
-    return self.set (pytabBeat (), beat)
+    return self.set (pytabBeat (), beat, insert)
 
 class pytabSong (pytabContainer):
 
@@ -138,11 +139,12 @@ class pytabSong (pytabContainer):
     self.songName = name
     pytabContainer.__init__(self)
 
-  def addMeasure (self, measure = None):
+  def addMeasure (self, measure = None, insert = False):
+
     if measure:
       assert measure <= 500, "Beyond max measure."
       assert measure > 0, "First measure is 1."
-    return self.set (pytabMeasure (), measure)
+    return self.set (pytabMeasure (), measure, insert)
 
 # class pytabUtil (object):
   '''
@@ -150,19 +152,20 @@ class pytabSong (pytabContainer):
   '''
 
 def load (name):
+  global statusString
   song = pytabSong (name)
   fileName = song.songName + songExt
   try:
     f = open (fileName, 'r')
   except:
-    print "Could not open", fileName
+    statusString = "Could not open" + fileName
     return None
 
   content = [line.rstrip('\n') for line in f.readlines()]
   f.close ()
 
   if content [0] != version:
-    print "Unsupported version", content [0]
+    statusString = "Unsupported version" + content [0]
     return None
 
   for line in content [1:]:
@@ -241,6 +244,7 @@ def displayUI (song, measure,
       display MAX_WIDTH characters, so that's about MAX_WIDTH/3 beats
       each beat takes 3 spaces, plus the measure delimiter
   '''
+  global statusString, octaveFlag, insertMode
   assert cursor_m >= measure, "Cursor before current measure."
 
   headerLines = ['Name:', # Song name
@@ -256,17 +260,30 @@ def displayUI (song, measure,
                      'E ' ]
 
   instructions = [ '',
-                   'a/s Forward/Back a measure.',
-                   'z/x Forward/Back a beat.',
-                   '`1234567890-= Insert note at fret (0-10).',
-                   'o   Toggle octave of current note.',
+                   'Use arrows to move cursor.',
+                   '`1234567890-= Insert note at fret (0-12).',
+                   'o   Toggle octave. Notes become 12-24.',
+                   'a   Add beat to measure.',
                    'd   Delete beat.',
-                   'f   Clear beat.',
+                   'f   Clear note.',
+                   'm   Add a measure.',
                    'n   Rename song.',
                    'z   Save.',
-                   'l   Load.' ]
+                   'l   Load.',
+                   'x   Export.',
+                   'q   Quit.']
 
   headerLines [0] += song.songName + " " + str (song.count()) + " Measures."
+  if statusString is not None:
+    headerLines [1] += statusString
+  else:
+    if octaveFlag:
+      headerLines [1] += "Octave "
+    if insertMode:
+      headerLines [1] += "Insert"
+
+
+  statusString = None
 
   def endOfMeasure ():
     for s in range (6):
@@ -278,7 +295,7 @@ def displayUI (song, measure,
   # keep displaying measures
   xposition = 3
   while True:
-    if measure <= song.count ():
+    if measure <= song.count () and len (headerLines [2]) < MAX_WIDTH:
       curMeasure = song.get (measure)
       if curMeasure == None:
         endOfMeasure ()
@@ -318,12 +335,11 @@ def displayUI (song, measure,
       break
     measure += 1
 
-
   os.system ('clear')
   for line in headerLines:
-    print line
+    print line [0:MAX_WIDTH]
   for line in fretboardLines:
-    print line
+    print line [0:MAX_WIDTH]
   for line in instructions:
     print line
 
@@ -371,7 +387,7 @@ def pytabTest ():
       assert tb is not None, "Test beat was None."
 
       # add notes to test beat
-      for testNote in range(1, 6):
+      for testNote in range (1, 6):
         tb.addNote (testNote, testNote + testMeasure)
 
   # verify addMeasure adds empty measures up to the measure you're creating.
@@ -415,19 +431,143 @@ def pytabTest ():
 
   # can't validate export
 
-  # temporary, this doesn't belong here
+  # if you want to test the UI
+  # displayUI (testsong, 1, 3, 4, 5)
 
-  displayUI (testsong, 1, 3, 4, 5)
+def findPrevBeat (song, curMeasure, curBeat):
 
+  if curBeat > 1:
+    curBeat -= 1
+  elif curMeasure > 1:
+    curMeasure -= 1
+    curBeat = song.get (curMeasure).count()
+
+  return curMeasure, curBeat
+
+def findNextBeat (song, curMeasure, curBeat):
+
+  if song.count() > 0:
+    if curBeat < song.get (curMeasure).count():
+      curBeat += 1
+    elif curMeasure < song.count():
+      curMeasure += 1
+      curBeat = 1
+
+  return curMeasure, curBeat
 
 pytabTest()
 
 # main loop
+songName = "default"
 
-#currentSong = pytabSong ("default")
+currentSong = pytabSong (songName)
+currentSong.addMeasure () # give ourself one measure
+currentSong.get (1).addBeat()
 
-#curentMeasure = 1
-#currentBeat = 1
-#displayUI (currentSong,
-#           curentMeasure,
-#           currentBeat)
+currentMeasure = 1
+cursorMeasure = 1
+cursorBeat = 1
+cursorString = 1
+
+def setNote (fret):
+  if octaveFlag:
+    fret += 12
+  m = currentSong.get (cursorMeasure)
+  b = m.get (cursorBeat)
+  b.addNote (cursorString, fret)
+
+while True:
+  displayUI (currentSong,
+             currentMeasure,
+             cursorMeasure,
+             cursorBeat,
+             cursorString)
+  ch = getInput()
+  # print "ch:", ch
+  if ch == 'q':
+    # TBD, check for unsaved changes.
+    print "Exiting."
+    exit()
+  # TBD: fix the arrow key escapes, (these work on my MAC)
+  elif ch == 'C':  # go to the next beat if one exists
+    cursorMeasure, cursorBeat = findNextBeat (currentSong, cursorMeasure, cursorBeat)
+  elif ch == 'D': # go to the previous beat if possible
+    cursorMeasure, cursorBeat = findPrevBeat (currentSong, cursorMeasure, cursorBeat)
+  elif ch == 'A':
+    if cursorString > 1:
+      cursorString -= 1
+  elif ch == 'B':
+    if cursorString < 6:
+      cursorString += 1
+
+  elif ch == 'a': # add beat
+    m = currentSong.get (cursorMeasure)
+    if m == None:
+      m = currentSong.addMeasure (cursorMeasure)
+    if cursorBeat == m.count():
+      m.addBeat ()
+    else:
+      m.addBeat (cursorBeat + 1, insert = True)
+
+  elif ch == 'd': # delete beat. Delete measure if empty
+    if cursorMeasure > 1 or cursorBeat > 1:
+      m = currentSong.get (cursorMeasure)
+      m.pop (cursorBeat)
+      if m.count () == 0: # delete measure
+        currentSong.pop (cursorMeasure)
+        if cursorMeasure > 1:
+          cursorMeasure -=1
+          cursorBeat = currentSong.get (cursorMeasure).count()
+      else:
+        if cursorBeat > 1:
+          cursorBeat -= 1
+
+  elif ch == 'f': # clear note at cursor
+    m = currentSong.get (cursorMeasure)
+    b = m.get (cursorBeat)
+    b.clr (cursorString)
+
+  elif ch == 'm': # add a measure after the current one
+    if cursorMeasure == currentSong.count():
+      m = currentSong.addMeasure ()
+    else:
+      m = currentSong.addMeasure (cursorMeasure + 1, insert = True)
+    # create as many beats as exist in the current measure
+    for _ in range (currentSong.get (cursorMeasure).count()):
+      m.addBeat ()
+  elif ch == 'n': # rename song
+    songName = raw_input ('Enter filename:')
+    currentSong.songName = songName
+
+  elif ch == '`':
+    setNote (0)
+  elif ch >= '1' and ch <= '9':
+    fret = int (ch)
+    setNote (fret)
+  elif ch == '0':
+    setNote (10)
+  elif ch == '-':
+    setNote (11)
+  elif ch == '=':
+    setNote (12)
+  elif ch == 'o':
+    if octaveFlag:
+      octaveFlag = False
+    else:
+      octaveFlag = True
+  elif ch == 'z': # save
+    save (currentSong)
+  elif ch == 'l': # load
+    # tbd, check for unsaved mod.
+    loadedSong = load (songName)
+    if loadedSong is not None:
+      currentSong = loadedSong
+  elif ch == 'x': # export
+    export (currentSong)
+
+  # calculate currentMeasure based on cursorMeasure and number of measures.
+  # ideally have a cursorMeasure a couple ahead of currentMeasure
+  if cursorMeasure > 3:
+    currentMeasure = cursorMeasure - 3
+  else:
+    currentMeasure = 1
