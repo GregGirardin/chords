@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import random
 import os
 '''
 A basic tablature editing utility.
@@ -37,13 +36,12 @@ m1b4 s3f0
 m2b1 # rest
 
 '''
-
 songExt = ".pytab"
 
 version = "v1.0"
 
 statusString = None
-insertMode = False # if true, move cursor after every note
+insertMode = False # TBD. If true, move cursor after every note
 octaveFlag = False
 MAX_WIDTH = 120
 '''
@@ -158,7 +156,7 @@ def load (name):
   try:
     f = open (fileName, 'r')
   except:
-    statusString = "Could not open" + fileName
+    statusString = "Could not open: " + fileName
     return None
 
   content = [line.rstrip('\n') for line in f.readlines()]
@@ -193,13 +191,13 @@ def load (name):
   return song
 
 def save (song):
-
+  global statusString
   fileName = song.songName + songExt
 
   try:
     f = open (fileName, 'w')
   except:
-    print "Could not open", fileName
+    statusString = "Could not open:" + fileName
     return
 
   # version
@@ -229,14 +227,91 @@ def save (song):
         f.write ("m%db%d XXX\n" % (curMeasure, m.count() + 1))
     curMeasure += 1
   f.close ()
+  statusString = "Saved."
 
 def export (song):
-  pass
+  global statusString
   # save in human readable format
+  fileName = song.songName + ".txt"
 
-  # open
+  try:
+    f = open (fileName, 'w')
+  except:
+    statusString = "Could not open" + fileName
+    return
 
-  #
+  f.write (song.songName + "\n\n")
+  measure = 1
+
+  while (measure <= song.count ()):
+
+    headerLines = ['  ', # measures
+                   '  ' ] # beats
+
+    fretboardLines = [ 'E ', # string 1
+                       'B ',
+                       'G ',
+                       'D ',
+                       'A ',
+                       'E ' ]
+
+    def endOfMeasure ():
+      for s in range (6):
+        fretboardLines [s] += '|'
+
+      headerLines [0] += ' ' # Measures
+      headerLines [1] += ' ' # Beats
+
+    # display a line of tab
+    while True:
+      if measure <= song.count () and len (fretboardLines [0]) < MAX_WIDTH:
+        curMeasure = song.get (measure)
+        if curMeasure == None:
+          endOfMeasure ()
+        else:
+          # display measure
+          curBeatNum = 1
+          for curBeat in curMeasure.get():
+            for curString in range (1,7):
+              if curBeat is not None:
+                note = curBeat.get (curString)
+              else:
+                note = None
+              fieldString = "-"
+
+              if note == None:
+                fieldString += "--"
+              else:
+                if note.fret > 9:
+                  fieldString += "%2d" % (note.fret)
+                else:
+                  fieldString += "-%d" % (note.fret)
+
+              fretboardLines [curString - 1] += fieldString
+            if curBeatNum == 1:
+              headerLines [0] += "%-3d" % (measure)
+            else:
+              headerLines [0] += '   '
+            headerLines [1] += '  .' # beat
+            curBeatNum += 1
+
+          endOfMeasure ()
+
+      else:
+        break
+      measure += 1
+
+    for line in headerLines:
+      f.write (line)
+      f.write ("\n")
+
+    for line in fretboardLines:
+      f.write (line)
+      f.write ("\n")
+    f.write("\n")
+
+  statusString = "Exported."
+  f.close()
 
 def displayUI (song, measure,
                cursor_m, cursor_b, cursor_s):
@@ -263,9 +338,9 @@ def displayUI (song, measure,
                    'Use arrows to move cursor.',
                    '`1234567890-= Insert note at fret (0-12).',
                    'o   Toggle octave. Notes become 12-24.',
-                   'a   Add beat to measure.',
+                   'a/i Add beat to measure.',
                    'd   Delete beat.',
-                   'f   Clear note.',
+                   'sp  Clear note.',
                    'm   Add a measure.',
                    'n   Rename song.',
                    'z   Save.',
@@ -282,7 +357,6 @@ def displayUI (song, measure,
     if insertMode:
       headerLines [1] += "Insert"
 
-
   statusString = None
 
   def endOfMeasure ():
@@ -293,7 +367,6 @@ def displayUI (song, measure,
     headerLines [3] += ' ' # Beats
 
   # keep displaying measures
-  xposition = 3
   while True:
     if measure <= song.count () and len (headerLines [2]) < MAX_WIDTH:
       curMeasure = song.get (measure)
@@ -330,7 +403,6 @@ def displayUI (song, measure,
           curBeatNum += 1
 
         endOfMeasure ()
-
     else:
       break
     measure += 1
@@ -455,19 +527,21 @@ def findNextBeat (song, curMeasure, curBeat):
 
   return curMeasure, curBeat
 
-pytabTest()
+# pytabTest()
 
 # main loop
 songName = "default"
 
 currentSong = pytabSong (songName)
-currentSong.addMeasure () # give ourself one measure
+currentSong.addMeasure ()
 currentSong.get (1).addBeat()
 
-currentMeasure = 1
-cursorMeasure = 1
+currentMeasure = 1 # Where the UI starts displaying from
+
+cursorMeasure = 1 # Our cursor position
 cursorBeat = 1
 cursorString = 1
+unsavedChange = False
 
 def setNote (fret):
   if octaveFlag:
@@ -475,6 +549,7 @@ def setNote (fret):
   m = currentSong.get (cursorMeasure)
   b = m.get (cursorBeat)
   b.addNote (cursorString, fret)
+  unsavedChange = True
 
 while True:
   displayUI (currentSong,
@@ -483,11 +558,13 @@ while True:
              cursorBeat,
              cursorString)
   ch = getInput()
-  # print "ch:", ch
   if ch == 'q':
-    # TBD, check for unsaved changes.
-    print "Exiting."
-    exit()
+    if unsavedChange:
+      verify = raw_input ('Unsaved changes, quit? (y/n)')
+      if verify == 'y':
+        exit()
+    else:
+      exit()
   # TBD: fix the arrow key escapes, (these work on my MAC)
   elif ch == 'C':  # go to the next beat if one exists
     cursorMeasure, cursorBeat = findNextBeat (currentSong, cursorMeasure, cursorBeat)
@@ -500,14 +577,19 @@ while True:
     if cursorString < 6:
       cursorString += 1
 
-  elif ch == 'a': # add beat
+  elif ch == 'a' or ch == 'i': # add/insert beat
+    if ch == 'a':
+      offset = 1
+    else:
+      offset = 0
     m = currentSong.get (cursorMeasure)
     if m == None:
       m = currentSong.addMeasure (cursorMeasure)
     if cursorBeat == m.count():
       m.addBeat ()
     else:
-      m.addBeat (cursorBeat + 1, insert = True)
+      m.addBeat (cursorBeat + offset, insert = True)
+    unsavedChange = True
 
   elif ch == 'd': # delete beat. Delete measure if empty
     if cursorMeasure > 1 or cursorBeat > 1:
@@ -521,12 +603,13 @@ while True:
       else:
         if cursorBeat > 1:
           cursorBeat -= 1
+      unsavedChange = True
 
-  elif ch == 'f': # clear note at cursor
+  elif ch == ' ': # clear note at cursor
     m = currentSong.get (cursorMeasure)
     b = m.get (cursorBeat)
     b.clr (cursorString)
-
+    unsavedChange = True
   elif ch == 'm': # add a measure after the current one
     if cursorMeasure == currentSong.count():
       m = currentSong.addMeasure ()
@@ -535,10 +618,11 @@ while True:
     # create as many beats as exist in the current measure
     for _ in range (currentSong.get (cursorMeasure).count()):
       m.addBeat ()
-  elif ch == 'n': # rename song
-    songName = raw_input ('Enter filename:')
+      unsavedChange = True
+  elif ch == 'n': # change name
+    songName = raw_input ('Enter song name:')
     currentSong.songName = songName
-
+    unsavedChange = True
   elif ch == '`':
     setNote (0)
   elif ch >= '1' and ch <= '9':
@@ -557,16 +641,23 @@ while True:
       octaveFlag = True
   elif ch == 'z': # save
     save (currentSong)
+    unsavedChange = False
   elif ch == 'l': # load
-    # tbd, check for unsaved mod.
+    if unsavedChange:
+      verify = raw_input ('Unsaved changes, Load? (y/n)')
+      if verify != 'y':
+        continue
     loadedSong = load (songName)
     if loadedSong is not None:
       currentSong = loadedSong
+      unsavedChange = False
   elif ch == 'x': # export
     export (currentSong)
 
-  # calculate currentMeasure based on cursorMeasure and number of measures.
-  # ideally have a cursorMeasure a couple ahead of currentMeasure
+  # Calculate currentMeasure based on cursorMeasure.
+  # May need to get a bit more intelligent about this computation in case of large measures.
+  # ideally have a cursorMeasure a couple ahead of currentMeasure so you can
+  # see measures on both sides of the cursor.
   if cursorMeasure > 3:
     currentMeasure = cursorMeasure - 3
   else:
