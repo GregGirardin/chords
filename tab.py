@@ -251,7 +251,7 @@ def annotate (o, h, ANN_IX, BEAT_IX):
   if o:
     if o.annotation:
       if len (h [ANN_IX]) < len (h [BEAT_IX]):
-        while len (h [ANN_IX]) < len (h [BEAT_IX]):
+        while len (h [ANN_IX] ) < len (h [BEAT_IX]):
           h [ANN_IX] += ' '
         h [ANN_IX] += o.annotation
 
@@ -278,12 +278,7 @@ def export (song):
                    '',   # annotations
                    '  '] # beats
 
-    fretboardLines = [ 'E ', # string 1
-                       'B ',
-                       'G ',
-                       'D ',
-                       'A ',
-                       'E ' ]
+    fretboardLines = [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ']
 
     def endOfMeasure ():
       for s in range (6):
@@ -365,12 +360,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                  '',      # Annotations
                  '  ' ]   # Beats
 
-  fretboardLines = [ 'E ', # string 1
-                     'B ',
-                     'G ',
-                     'D ',
-                     'A ',
-                     'E ' ]
+  fretboardLines = [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ']
 
   instructions = [ '',
                    'Use arrows to move cursor.',
@@ -422,12 +412,19 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
             else:
               note = None
             if measure == cursor_m and curBeatNum == cursor_b and curString == cursor_s:
-              fieldString = "+"
+              cursorPos = True
+            else:
+              cursorPos = False
+            if cursorPos:
+              fieldString = "<"
             else:
               fieldString = "-"
 
             if note == None:
-              fieldString += "--"
+              if cursorPos:
+                fieldString += "->"
+              else:
+                fieldString += "--"
             else:
               if note.fret > 9:
                 fieldString += "%2d" % (note.fret)
@@ -456,28 +453,28 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
     print line
 
 def getInput ():
-    # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
-    import termios, fcntl, sys, os
-    fd = sys.stdin.fileno()
-    flags_save = fcntl.fcntl(fd, fcntl.F_GETFL)
-    attrs_save = termios.tcgetattr(fd)
-    attrs = list(attrs_save)
-    attrs[0] &= ~(termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
-                  termios.IGNCR | termios.ICRNL | termios.IXON )
-    attrs[1] &= ~termios.OPOST
-    attrs[2] &= ~(termios.CSIZE | termios.PARENB)
-    attrs[2] |= termios.CS8
-    attrs[3] &= ~(termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN)
-    termios.tcsetattr(fd, termios.TCSANOW, attrs)
-    fcntl.fcntl(fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK)
-    try:
-      ret = sys.stdin.read(1)
-    except KeyboardInterrupt:
-      ret = 0
-    finally:
-      termios.tcsetattr(fd, termios.TCSAFLUSH, attrs_save)
-      fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
-    return ret
+  # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
+  import termios, fcntl, sys, os
+  fd = sys.stdin.fileno()
+  flags_save = fcntl.fcntl(fd, fcntl.F_GETFL)
+  attrs_save = termios.tcgetattr(fd)
+  attrs = list(attrs_save)
+  attrs[0] &= ~(termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
+                termios.IGNCR | termios.ICRNL | termios.IXON )
+  attrs[1] &= ~termios.OPOST
+  attrs[2] &= ~(termios.CSIZE | termios.PARENB)
+  attrs[2] |= termios.CS8
+  attrs[3] &= ~(termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN)
+  termios.tcsetattr(fd, termios.TCSANOW, attrs)
+  fcntl.fcntl(fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK)
+  try:
+    ret = sys.stdin.read(1)
+  except KeyboardInterrupt:
+    ret = 0
+  finally:
+    termios.tcsetattr(fd, termios.TCSAFLUSH, attrs_save)
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
+  return ret
 
 def pytabTest ():
   # generate test song, add some stuff, do some sanity checks, save it
@@ -627,7 +624,7 @@ while True:
   elif ch == 'd': # delete beat. Delete measure if empty
     m = currentSong.get (cursorMeasure)
     if cursorMeasure == 1 and cursorBeat == 1:
-       if m.count():
+       if m.count() > 1:
          m.pop (cursorBeat)
     else:
       m.pop (cursorBeat)
@@ -637,8 +634,8 @@ while True:
           cursorMeasure -=1
           cursorBeat = currentSong.get (cursorMeasure).count()
       else:
-        if cursorBeat > 1:
-          cursorBeat -= 1
+        if cursorBeat > m.count():
+          cursorBeat = m.count()
       unsavedChange = True
 
   elif ch == ' ': # clear note at cursor
