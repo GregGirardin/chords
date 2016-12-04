@@ -222,9 +222,11 @@ def save (song):
         curBeat += 1
         if dispMandB:
           f.write ("\n")
-      # if last beat in measure has no notes, create it.
-      if m.get (m.count()) == None:
-        f.write ("m%db%d XXX\n" % (curMeasure, m.count() + 1))
+      # if last beat in measure has no notes, create it to preserve measure length.
+      lastBeat = m.get (m.count())
+      if lastBeat == None or (lastBeat and lastBeat.count() == 0):
+        f.write ("m%db%d\n" % (curMeasure, m.count()))
+
     curMeasure += 1
   f.close ()
   statusString = "Saved."
@@ -343,7 +345,7 @@ def displayUI (song, measure,
                    'sp  Clear note.',
                    'm   Add a measure.',
                    'n   Rename song.',
-                   'z   Save.',
+                   's   Save.',
                    'l   Load.',
                    'x   Export.',
                    'q   Quit.']
@@ -639,7 +641,7 @@ while True:
       octaveFlag = False
     else:
       octaveFlag = True
-  elif ch == 'z': # save
+  elif ch == 's': # save
     save (currentSong)
     unsavedChange = False
   elif ch == 'l': # load
