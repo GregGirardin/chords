@@ -8,6 +8,7 @@ It tries to be intelligent about when to show notes as sharp or flat based on th
 
 
 Also a python tablature creator for getting down ideas. Runs in a terminal
+Allows for easily saving musical ideas as tablature. Can export as readable tab.
 
 Greg Girardin
 Nashua, NH

@@ -8,18 +8,6 @@ Greg Girardin
 Nashua NH, USA
 November, 2016
 
-The UI will look something like this:
-
-  1            2   3      <- measures
-   ^  ^  ^  ^    ^    ^   <- beats
-   xx xx xx xx   xx   xx
-E -------------|----|----
-B -------------|----|----
-G -----------0-|----|---X
-D --------2----|----|----
-A --------2----|----|--3-
-E -----0-------|----|----
-
 A song will be modeled as a list of measures.
 Each measure contains a list of beats.
 Each beat is a list of simultaneous notes, empty list indicates a rest
@@ -31,9 +19,11 @@ One line per beat. If a measure ends with a rest we need to create it to
 preserve the number of beats in the measure.
 
 m1b2 s6f0 # measure 1 beat 2. String 6 fret 0
-m1b3 s5f2 s4f2
+m1a Verse 1 starts here # annotation of measure 1
+m1b2a Comment # annotation of m1b2
+m1b3 s5f2 s4f2 # this beat has two notes
 m1b4 s3f0
-m2b1 # rest
+m2b6 # this beat has no notes, but it's the last beat of the measure
 
 '''
 songExt = ".pytab"
@@ -41,17 +31,18 @@ songExt = ".pytab"
 version = "v1.0"
 
 statusString = None
-insertMode = False # TBD. If true, move cursor after every note
+insertMode = False # May implement. If true, move cursor after every note
 octaveFlag = False
 MAX_WIDTH = 120
 '''
  Wrapper around a list.
- The api is 1 based
+ This api is 1 based
 '''
 class pytabContainer (object):
 
   def __init__ (self):
     self.objects = []
+    self.annotation = None # place to allow comments
 
   def rangeCheck (self, index):
     if not index:
@@ -144,13 +135,9 @@ class pytabSong (pytabContainer):
       assert measure > 0, "First measure is 1."
     return self.set (pytabMeasure (), measure, insert)
 
-# class pytabUtil (object):
-  '''
-    This class handles UI, file IO
-  '''
-
 def load (name):
   global statusString
+
   song = pytabSong (name)
   fileName = song.songName + songExt
   try:
@@ -167,26 +154,46 @@ def load (name):
     return None
 
   for line in content [1:]:
-    beatline = line.split ()
-    mbs = beatline [0][1:].split ('b')
-    measure = int (mbs [0])
-    beat = int (mbs [1])
+    linenocomment = line.split ('#')[0] # strip comment
+    linefields = linenocomment.split ()
+    if linefields [0][-1:] == 'a': # This is an annotation
+      annotation = linenocomment [len (linefields[0]) + 1:]
+      f = linefields[0][1:-1] # first field minus the m and trailing a
+      if not 'b' in f: # annotation of a measure
+        measure = int (f)
+        if song.get (measure) == None:
+          song.addMeasure (measure)
+        song.get (measure).annotation = annotation
+      else: # .. of a beat
+        mbs = f.split ('b')
+        measure = int (mbs [0])
+        beat = int (mbs [1])
 
-    # create measure if necessary
-    if song.get (measure) == None:
-      # print "Adding measure", measure
-      song.addMeasure (measure)
+        if song.get (measure) == None:
+          song.addMeasure (measure)
+        m = song.get (measure)
+        if m.get (beat) == None:
+          m.addBeat (beat)
 
-    songmeasure = song.get (measure)
-    if songmeasure.get (beat) == None:
-      # print "Adding beat", beat
-      songmeasure.addBeat (beat)
+        m.get (beat).annotation = annotation
 
-    songbeat = songmeasure.get (beat)
-    for note in beatline [1:]:
-      sf = note[1:].split ('f')
-      # print "Adding note", int (sf[0]), int (sf [1])
-      songbeat.addNote (int (sf[0]), int (sf [1]))
+    else: # This line is a sequence of notes.
+      mbs = linefields [0][1:].split ('b')
+      measure = int (mbs [0])
+      beat = int (mbs [1])
+
+      # create measure if necessary
+      if song.get (measure) == None:
+        song.addMeasure (measure)
+
+      m = song.get (measure)
+      if m.get (beat) == None:
+        m.addBeat (beat)
+
+      songbeat = m.get (beat)
+      for note in linefields [1:]:
+        sf = note[1:].split ('f')
+        songbeat.addNote (int (sf[0]), int (sf [1]))
 
   return song
 
@@ -200,18 +207,21 @@ def save (song):
     statusString = "Could not open:" + fileName
     return
 
-  # version
   f.write (version + "\n")
 
   curMeasure = 1
 
   for m in song.get ():
-    if m: # only need to create measures that aren't empty
+    if m: # All measures should be valid
+      if m.annotation:
+        f.write ("m%da %s\n" % (curMeasure, m.annotation))
+
       curBeat = 1
       for b in m.get():
         dispMandB = False
-
         if b:
+          if b.annotation:
+            f.write ("m%db%da %s\n" % (curMeasure, curBeat, b.annotation))
           for n in b.get():
             if n:
               if not dispMandB:
@@ -222,18 +232,32 @@ def save (song):
         curBeat += 1
         if dispMandB:
           f.write ("\n")
-      # if last beat in measure has no notes, create it to preserve measure length.
+      # if last beat in measure has no notes, save it to preserve measure length.
       lastBeat = m.get (m.count())
       if lastBeat == None or (lastBeat and lastBeat.count() == 0):
         f.write ("m%db%d\n" % (curMeasure, m.count()))
 
     curMeasure += 1
+
   f.close ()
   statusString = "Saved."
 
+def annotate (o, h, ANN_IX, BEAT_IX):
+  ''' Display annotation if it won't overwrite a previous one.
+      o is the object that may have an annotation (measure or beat)
+      h is the header to be modified, we're also passed the indexes since
+      they vary between the UI and export
+      We use the 'beat' line as a way to determine the current x position '''
+  if o:
+    if o.annotation:
+      if len (h [ANN_IX]) < len (h [BEAT_IX]):
+        while len (h [ANN_IX]) < len (h [BEAT_IX]):
+          h [ANN_IX] += ' '
+        h [ANN_IX] += o.annotation
+
 def export (song):
   global statusString
-  # save in human readable format
+  # Save in human readable format. Could probably refactor with displayUI()
   fileName = song.songName + ".txt"
 
   try:
@@ -242,13 +266,17 @@ def export (song):
     statusString = "Could not open" + fileName
     return
 
-  f.write (song.songName + "\n\n")
+  MEAS_IX = 0
+  ANN_IX  = 1
+  BEAT_IX = 2
+
+  f.write (song.songName + "\n")
   measure = 1
 
-  while (measure <= song.count ()):
-
+  while measure <= song.count ():
     headerLines = ['  ', # measures
-                   '  ' ] # beats
+                   '',   # annotations
+                   '  '] # beats
 
     fretboardLines = [ 'E ', # string 1
                        'B ',
@@ -261,22 +289,25 @@ def export (song):
       for s in range (6):
         fretboardLines [s] += '|'
 
-      headerLines [0] += ' ' # Measures
-      headerLines [1] += ' ' # Beats
+      headerLines [MEAS_IX] += ' '
+      headerLines [BEAT_IX] += ' '
 
-    # display a line of tab
     while True:
       if measure <= song.count () and len (fretboardLines [0]) < MAX_WIDTH:
-        curMeasure = song.get (measure)
-        if curMeasure == None:
+        m = song.get (measure)
+        if m == None:
           endOfMeasure ()
         else:
+          annotate (m, headerLines, ANN_IX, BEAT_IX)
+
           # display measure
           curBeatNum = 1
-          for curBeat in curMeasure.get():
+          for b in m.get():
+            annotate (b, headerLines, ANN_IX, BEAT_IX)
+
             for curString in range (1,7):
-              if curBeat is not None:
-                note = curBeat.get (curString)
+              if b:
+                note = b.get (curString)
               else:
                 note = None
               fieldString = "-"
@@ -291,14 +322,13 @@ def export (song):
 
               fretboardLines [curString - 1] += fieldString
             if curBeatNum == 1:
-              headerLines [0] += "%-3d" % (measure)
+              headerLines [MEAS_IX] += "%-3d" % (measure)
             else:
-              headerLines [0] += '   '
-            headerLines [1] += '  .' # beat
+              headerLines [MEAS_IX] += '   '
+            headerLines [BEAT_IX] += '  .'
             curBeatNum += 1
 
           endOfMeasure ()
-
       else:
         break
       measure += 1
@@ -315,8 +345,7 @@ def export (song):
   statusString = "Exported."
   f.close()
 
-def displayUI (song, measure,
-               cursor_m, cursor_b, cursor_s):
+def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   ''' display starting from current measure
       display MAX_WIDTH characters, so that's about MAX_WIDTH/3 beats
       each beat takes 3 spaces, plus the measure delimiter
@@ -324,10 +353,17 @@ def displayUI (song, measure,
   global statusString, octaveFlag, insertMode
   assert cursor_m >= measure, "Cursor before current measure."
 
-  headerLines = ['Name:', # Song name
-                 '',
-                 '  ', # measures
-                 '  ' ] # beats
+  SUMMARY_IX = 0 # header lines
+  STATUS_IX  = 1
+  MEAS_IX    = 2
+  ANN_IX     = 3
+  BEAT_IX    = 4
+
+  headerLines = ['Name:', # Song name, number of measures.
+                 '',      # Status
+                 '  ',    # Measures
+                 '',      # Annotations
+                 '  ' ]   # Beats
 
   fretboardLines = [ 'E ', # string 1
                      'B ',
@@ -342,45 +378,47 @@ def displayUI (song, measure,
                    'o   Toggle octave. Notes become 12-24.',
                    'a/i Add beat to measure.',
                    'd   Delete beat.',
-                   'sp  Clear note.',
+                   'sb  Clear note.',
                    'm   Add a measure.',
-                   'n   Rename song.',
+                   'n   Annotate.',
+                   'r   Rename song.',
                    's   Save.',
                    'l   Load.',
-                   'x   Export.',
+                   'x   Export as tablature.',
                    'q   Quit.']
 
-  headerLines [0] += song.songName + " " + str (song.count()) + " Measures."
+  headerLines [SUMMARY_IX] += song.songName + " " + str (song.count()) + " Measures."
   if statusString is not None:
-    headerLines [1] += statusString
+    headerLines [STATUS_IX] += statusString
   else:
     if octaveFlag:
-      headerLines [1] += "Octave "
+      headerLines [STATUS_IX] += "Octave "
     if insertMode:
-      headerLines [1] += "Insert"
+      headerLines [STATUS_IX] += "Insert"
 
   statusString = None
 
   def endOfMeasure ():
     for s in range (6):
       fretboardLines [s] += '|'
+    headerLines [MEAS_IX] += ' ' # Measures
+    headerLines [BEAT_IX] += ' ' # Beats
 
-    headerLines [2] += ' ' # Measures
-    headerLines [3] += ' ' # Beats
-
-  # keep displaying measures
+  # Display measures
   while True:
-    if measure <= song.count () and len (headerLines [2]) < MAX_WIDTH:
-      curMeasure = song.get (measure)
-      if curMeasure == None:
+    if measure <= song.count () and len (headerLines [MEAS_IX]) < MAX_WIDTH:
+      m = song.get (measure)
+      if m == None:
         endOfMeasure ()
       else:
-        # display measure
+        annotate (m, headerLines, ANN_IX, BEAT_IX)
         curBeatNum = 1
-        for curBeat in curMeasure.get():
+        for b in m.get():
+          annotate (b, headerLines, ANN_IX, BEAT_IX)
+
           for curString in range (1,7):
-            if curBeat is not None:
-              note = curBeat.get (curString)
+            if b:
+              note = b.get (curString)
             else:
               note = None
             if measure == cursor_m and curBeatNum == cursor_b and curString == cursor_s:
@@ -398,10 +436,10 @@ def displayUI (song, measure,
 
             fretboardLines [curString - 1] += fieldString
           if curBeatNum == 1:
-            headerLines [2] += "%-3d" % (measure)
+            headerLines [MEAS_IX] += "%-3d" % (measure)
           else:
-            headerLines [2] += '   '
-          headerLines [3] += '  .' # beat
+            headerLines [MEAS_IX] += '   '
+          headerLines [BEAT_IX] += '  .'
           curBeatNum += 1
 
         endOfMeasure ()
@@ -418,9 +456,7 @@ def displayUI (song, measure,
     print line
 
 def getInput ():
-    """
-    Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
-    """
+    # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
     import termios, fcntl, sys, os
     fd = sys.stdin.fileno()
     flags_save = fcntl.fcntl(fd, fcntl.F_GETFL)
@@ -471,7 +507,6 @@ def pytabTest ():
   assert testsong.get (numMeasures) is not None, "Test measure was None."
   assert testsong.get (numMeasures - 1) is None, "Fill measure was not None."
 
-  # save
   save (testsong)
 
   # open
@@ -509,7 +544,6 @@ def pytabTest ():
   # displayUI (testsong, 1, 3, 4, 5)
 
 def findPrevBeat (song, curMeasure, curBeat):
-
   if curBeat > 1:
     curBeat -= 1
   elif curMeasure > 1:
@@ -519,7 +553,6 @@ def findPrevBeat (song, curMeasure, curBeat):
   return curMeasure, curBeat
 
 def findNextBeat (song, curMeasure, curBeat):
-
   if song.count() > 0:
     if curBeat < song.get (curMeasure).count():
       curBeat += 1
@@ -532,7 +565,7 @@ def findNextBeat (song, curMeasure, curBeat):
 # pytabTest()
 
 # main loop
-songName = "default"
+songName = "Song"
 
 currentSong = pytabSong (songName)
 currentSong.addMeasure ()
@@ -540,7 +573,7 @@ currentSong.get (1).addBeat()
 
 currentMeasure = 1 # Where the UI starts displaying from
 
-cursorMeasure = 1 # Our cursor position
+cursorMeasure = 1 # Cursor position
 cursorBeat = 1
 cursorString = 1
 unsavedChange = False
@@ -549,19 +582,17 @@ def setNote (fret):
   if octaveFlag:
     fret += 12
   m = currentSong.get (cursorMeasure)
+  if not m.get (cursorBeat):
+    m.addBeat (cursorBeat)
   b = m.get (cursorBeat)
   b.addNote (cursorString, fret)
   unsavedChange = True
 
 while True:
-  displayUI (currentSong,
-             currentMeasure,
-             cursorMeasure,
-             cursorBeat,
-             cursorString)
+  displayUI (currentSong, currentMeasure, cursorMeasure, cursorBeat, cursorString)
   ch = getInput()
   if ch == 'q':
-    if unsavedChange:
+    if unsavedChange   and False: # Disable this for now.
       verify = raw_input ('Unsaved changes, quit? (y/n)')
       if verify == 'y':
         exit()
@@ -594,8 +625,11 @@ while True:
     unsavedChange = True
 
   elif ch == 'd': # delete beat. Delete measure if empty
-    if cursorMeasure > 1 or cursorBeat > 1:
-      m = currentSong.get (cursorMeasure)
+    m = currentSong.get (cursorMeasure)
+    if cursorMeasure == 1 and cursorBeat == 1:
+       if m.count():
+         m.pop (cursorBeat)
+    else:
       m.pop (cursorBeat)
       if m.count () == 0: # delete measure
         currentSong.pop (cursorMeasure)
@@ -620,11 +654,28 @@ while True:
     # create as many beats as exist in the current measure
     for _ in range (currentSong.get (cursorMeasure).count()):
       m.addBeat ()
-      unsavedChange = True
-  elif ch == 'n': # change name
+    unsavedChange = True
+  elif ch == 'r': # rename
     songName = raw_input ('Enter song name:')
     currentSong.songName = songName
     unsavedChange = True
+  elif ch == 'n':
+    note = raw_input ("Enter annotation:")
+    # if we're on beat 1, add the note to the measure, else to the beat
+    if len (note) == 0: # clear
+      note = None
+    m = currentSong.get (cursorMeasure)
+    if m:
+      if cursorBeat == 1:
+        m.annotation = note
+      else:
+        b = m.get (cursorBeat)
+        if b:
+          b.annotation = note
+        else:
+          statusString = "Invalid beat."
+    else:
+      statusString = "Invalid measure."
   elif ch == '`':
     setNote (0)
   elif ch >= '1' and ch <= '9':
