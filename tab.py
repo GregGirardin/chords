@@ -248,10 +248,11 @@ def annotate (o, h, ANN_IX, BEAT_IX):
       h is the header to be modified, we're also passed the indexes since
       they vary between the UI and export
       We use the 'beat' line as a way to determine the current x position '''
+  OFFSET = 1
   if o:
     if o.annotation:
-      if len (h [ANN_IX]) < len (h [BEAT_IX]):
-        while len (h [ANN_IX] ) < len (h [BEAT_IX]):
+      if len (h [ANN_IX]) < len (h [BEAT_IX]) + OFFSET:
+        while len (h [ANN_IX] ) < len (h [BEAT_IX]) + OFFSET:
           h [ANN_IX] += ' '
         h [ANN_IX] += o.annotation
 
@@ -354,7 +355,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   ANN_IX     = 3
   BEAT_IX    = 4
 
-  headerLines = ['Name:', # Song name, number of measures.
+  headerLines = ['Name:', # Song name, number of measures. Beats
                  '',      # Status
                  '  ',    # Measures
                  '',      # Annotations
@@ -377,7 +378,9 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                    'x   Export as tablature.',
                    'q   Quit.']
 
-  headerLines [SUMMARY_IX] += song.songName + " " + str (song.count()) + " Measures."
+  headerLines [SUMMARY_IX] += song.songName + ", " + str (song.count()) + " Measures, " + \
+                              "%d beats in measure." % (song.get (cursorMeasure).count())
+
   if statusString is not None:
     headerLines [STATUS_IX] += statusString
   else:
@@ -415,28 +418,30 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
               cursorPos = True
             else:
               cursorPos = False
-            if cursorPos:
-              fieldString = "<"
-            else:
-              fieldString = "-"
+
+            fieldString = ""
 
             if note == None:
               if cursorPos:
-                fieldString += "->"
+                fieldString += "<->"
               else:
-                fieldString += "--"
+                fieldString += "---"
             else:
               if note.fret > 9:
                 fieldString += "%2d" % (note.fret)
               else:
                 fieldString += "-%d" % (note.fret)
+              if cursorPos:
+                fieldString += ">"
+              else:
+                fieldString += "-"
 
             fretboardLines [curString - 1] += fieldString
           if curBeatNum == 1:
             headerLines [MEAS_IX] += "%-3d" % (measure)
           else:
             headerLines [MEAS_IX] += '   '
-          headerLines [BEAT_IX] += '  .'
+          headerLines [BEAT_IX] += ' . '
           curBeatNum += 1
 
         endOfMeasure ()
