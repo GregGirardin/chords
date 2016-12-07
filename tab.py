@@ -23,7 +23,13 @@ m1a Verse 1 starts here # annotation of measure 1
 m1b2a Comment # annotation of m1b2
 m1b3 s5f2 s4f2 # this beat has two notes
 m1b4 s3f0
+m1p # page break (for export)
 m2b6 # this beat has no notes, but it's the last beat of the measure
+
+TBD: Fix arrow key escape handling
+     +/- some number of measures, or goto?
+     jump to end of song
+     mark a measure as a repeat
 
 '''
 songExt = ".pytab"
@@ -116,6 +122,10 @@ class pytabBeat (pytabContainer):
 
 class pytabMeasure (pytabContainer):
 
+  def __init__ (self):
+    self.pageBreak = False
+    pytabContainer.__init__(self)
+
   def addBeat (self, beat = None, insert = False):
     if beat:
       assert beat <= 64, "Max 64 beats per measure."
@@ -156,7 +166,13 @@ def load (name):
   for line in content [1:]:
     linenocomment = line.split ('#')[0] # strip comment
     linefields = linenocomment.split ()
-    if linefields [0][-1:] == 'a': # This is an annotation
+    if linefields [0][-1:] == 'p': # This is a page Break
+      f = linefields[0][1:-1] # first field minus the m and trailing b
+      measure = int (f)
+      if song.get (measure) == None:
+        song.addMeasure (measure)
+      song.get (measure).pageBreak = True
+    elif linefields [0][-1:] == 'a': # This is an annotation
       annotation = linenocomment [len (linefields[0]) + 1:]
       f = linefields[0][1:-1] # first field minus the m and trailing a
       if not 'b' in f: # annotation of a measure
@@ -213,6 +229,9 @@ def save (song):
 
   for m in song.get ():
     if m: # All measures should be valid
+      if m.pageBreak:
+        f.write ("m%dp\n" % curMeasure)
+
       if m.annotation:
         f.write ("m%da %s\n" % (curMeasure, m.annotation))
 
@@ -328,6 +347,9 @@ def export (song):
       else:
         break
       measure += 1
+      if song.get (measure):
+        if song.get (measure).pageBreak:
+          break
 
     for line in headerLines:
       f.write (line)
@@ -373,6 +395,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                    'm   Add a measure.',
                    'n   Annotate.',
                    'r   Rename song.',
+                   'b   Page break.',
                    's   Save.',
                    'l   Load.',
                    'x   Export as tablature.',
@@ -391,9 +414,14 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
 
   statusString = None
 
-  def endOfMeasure ():
+  def endOfMeasure (pageBreak = False):
+    if pageBreak:
+      bc = '/'
+    else:
+      bc = '|'
+
     for s in range (6):
-      fretboardLines [s] += '|'
+      fretboardLines [s] += bc
     headerLines [MEAS_IX] += ' ' # Measures
     headerLines [BEAT_IX] += ' ' # Beats
 
@@ -444,7 +472,13 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
           headerLines [BEAT_IX] += ' . '
           curBeatNum += 1
 
-        endOfMeasure ()
+        pb = False
+        if measure + 1 <= song.count():
+          nm = song.get (measure + 1)
+          if nm and nm.pageBreak:
+            pb = nm.pageBreak
+
+        endOfMeasure (pb)
     else:
       break
     measure += 1
@@ -564,6 +598,22 @@ def findNextBeat (song, curMeasure, curBeat):
 
   return curMeasure, curBeat
 
+def findPrevMeasure (song, curMeasure, curBeat):
+  if curMeasure > 1:
+    curMeasure -= 1
+    if curBeat > song.get (curMeasure).count():
+      curBeat = song.get (curMeasure).count()
+
+  return curMeasure, curBeat
+
+def findNextMeasure (song, curMeasure, curBeat):
+  if song.count() > curMeasure:
+    curMeasure += 1
+    if curBeat > song.get (curMeasure).count():
+      curBeat = song.get (curMeasure).count()
+
+  return curMeasure, curBeat
+
 # pytabTest()
 
 # main loop
@@ -611,7 +661,10 @@ while True:
   elif ch == 'B':
     if cursorString < 6:
       cursorString += 1
-
+  elif ch == ',':
+    cursorMeasure, cursorBeat = findPrevMeasure (currentSong, cursorMeasure, cursorBeat)
+  elif ch == '.':
+    cursorMeasure, cursorBeat = findNextMeasure (currentSong, cursorMeasure, cursorBeat)
   elif ch == 'a' or ch == 'i': # add/insert beat
     if ch == 'a':
       offset = 1
@@ -625,7 +678,13 @@ while True:
     else:
       m.addBeat (cursorBeat + offset, insert = True)
     unsavedChange = True
-
+  elif ch == 'b': # toggle page break
+    m = currentSong.get (cursorMeasure)
+    if m:
+      if m.pageBreak == True:
+        m.pageBreak = False
+      else:
+        m.pageBreak = True
   elif ch == 'd': # delete beat. Delete measure if empty
     m = currentSong.get (cursorMeasure)
     if cursorMeasure == 1 and cursorBeat == 1:
