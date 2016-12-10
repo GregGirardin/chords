@@ -270,7 +270,7 @@ def annotate (o, h, ANN_IX, BEAT_IX):
   if o:
     if o.annotation:
       if len (h [ANN_IX]) < len (h [BEAT_IX]) + OFFSET:
-        while len (h [ANN_IX] ) < len (h [BEAT_IX]) + OFFSET:
+        while len (h [ANN_IX]) < len (h [BEAT_IX]) + OFFSET:
           h [ANN_IX] += ' '
         h [ANN_IX] += o.annotation
 
@@ -436,7 +436,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
         for b in m.get():
           annotate (b, headerLines, ANN_IX, BEAT_IX)
 
-          for curString in range (1,7):
+          for curString in range (1, 7):
             if b:
               note = b.get (curString)
             else:
@@ -535,11 +535,11 @@ def pytabTest ():
   numMeasures = 8
 
   # add beats to a test measure
-  for testMeasure in (1,3,5):
+  for testMeasure in (1, 3, 5):
     tm = testsong.addMeasure (testMeasure)
     assert tm is not None, "Test measure was None."
 
-    for testBeat in (1,2,4):
+    for testBeat in (1, 2, 4):
       tb = tm.addBeat (testBeat)
       assert tb is not None, "Test beat was None."
 
@@ -586,9 +586,6 @@ def pytabTest ():
   assert content1 == content2, "Files differ."
 
   # can't validate export
-
-  # if you want to test the UI
-  # displayUI (testsong, 1, 3, 4, 5)
 
 def findPrevBeat (song, curMeasure, curBeat):
   if curBeat > 1:
@@ -686,7 +683,7 @@ while True:
       offset = 0
     m = currentSong.get (cursorMeasure)
 
-    if m == None:
+    if not m:
       m = currentSong.addMeasure (cursorMeasure)
     if m.count() == MAX_BEATS_PER_MEAS:
       statusString = "Max beats reached."
@@ -742,6 +739,8 @@ while True:
     if len (note) == 0: # clear
       note = None
     m = currentSong.get (cursorMeasure)
+    if not m:
+      m = currentSong.addMeasure (cursorMeasure)
     if m:
       if cursorBeat == 1:
         m.annotation = note
