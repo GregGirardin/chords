@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+
 '''
 A basic tablature editing utility.
 
@@ -37,7 +38,6 @@ songExt = ".pytab"
 version = "v1.0"
 
 statusString = None
-insertMode = False # May implement. If true, move cursor after every note
 octaveFlag = False
 MAX_WIDTH = 120
 '''
@@ -368,7 +368,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
       display MAX_WIDTH characters, so that's about MAX_WIDTH/3 beats
       each beat takes 3 spaces, plus the measure delimiter
   '''
-  global statusString, octaveFlag, insertMode
+  global statusString, octaveFlag
   assert cursor_m >= measure, "Cursor before current measure."
 
   SUMMARY_IX = 0 # header lines
@@ -387,21 +387,23 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
 
   instructions = [ '',
                    'Use arrows to move cursor.',
+                   '><  Forward / back measure.',
                    '`1234567890-= Insert note at fret (0-12).',
-                   'o   Toggle octave. Notes become 12-24.',
-                   'a/i Add beat to measure.',
+                   'o   Octave.',
+                   'a/i Add/Insert beat.',
                    'd   Delete beat.',
                    'sb  Clear note.',
-                   'm   Add a measure.',
+                   'm   Add measure.',
                    'n   Annotate.',
                    'r   Rename song.',
                    'b   Page break.',
                    's   Save.',
                    'l   Load.',
-                   'x   Export as tablature.',
+                   'x   Export tablature.',
                    'q   Quit.']
 
-  headerLines [SUMMARY_IX] += song.songName + ", " + str (song.count()) + " Measures, " + \
+  headerLines [SUMMARY_IX] += song.songName + ", " + \
+                              str (song.count()) + " measures, " + \
                               "%d beats in measure." % (song.get (cursorMeasure).count())
 
   if statusString is not None:
@@ -409,8 +411,6 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   else:
     if octaveFlag:
       headerLines [STATUS_IX] += "Octave "
-    if insertMode:
-      headerLines [STATUS_IX] += "Insert"
 
   statusString = None
 
@@ -485,9 +485,9 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
 
   os.system ('clear')
   for line in headerLines:
-    print line [0:MAX_WIDTH]
+    print line [0 : MAX_WIDTH]
   for line in fretboardLines:
-    print line [0:MAX_WIDTH]
+    print line [0 : MAX_WIDTH]
   for line in instructions:
     print line
 
@@ -495,24 +495,36 @@ def getInput ():
   # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
   import termios, fcntl, sys, os
   fd = sys.stdin.fileno()
-  flags_save = fcntl.fcntl(fd, fcntl.F_GETFL)
-  attrs_save = termios.tcgetattr(fd)
-  attrs = list(attrs_save)
-  attrs[0] &= ~(termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
-                termios.IGNCR | termios.ICRNL | termios.IXON )
-  attrs[1] &= ~termios.OPOST
-  attrs[2] &= ~(termios.CSIZE | termios.PARENB)
-  attrs[2] |= termios.CS8
-  attrs[3] &= ~(termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN)
+  flags_save = fcntl.fcntl (fd, fcntl.F_GETFL)
+  attrs_save = termios.tcgetattr (fd)
+  attrs = list (attrs_save)
+  attrs [0] &= ~(termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
+                 termios.IGNCR | termios.ICRNL | termios.IXON)
+  attrs [1] &= ~termios.OPOST
+  attrs [2] &= ~(termios.CSIZE | termios.PARENB)
+  attrs [2] |= termios.CS8
+  attrs [3] &= ~(termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN)
   termios.tcsetattr(fd, termios.TCSANOW, attrs)
   fcntl.fcntl(fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK)
   try:
-    ret = sys.stdin.read(1)
+    ret = sys.stdin.read (1)
+    if ord (ret) == 27: # Escape
+      ret = sys.stdin.read (1)
+      ret = sys.stdin.read (1)
+      if ret == 'A':
+        ret = 'UP'
+      elif ret == 'B':
+        ret = 'DOWN'
+      elif ret == 'C':
+        ret = 'RIGHT'
+      elif ret == 'D':
+        ret = 'LEFT'
+
   except KeyboardInterrupt:
     ret = 0
   finally:
-    termios.tcsetattr(fd, termios.TCSAFLUSH, attrs_save)
-    fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
+    termios.tcsetattr (fd, termios.TCSAFLUSH, attrs_save)
+    fcntl.fcntl (fd, fcntl.F_SETFL, flags_save)
   return ret
 
 def pytabTest ():
@@ -644,21 +656,20 @@ while True:
   displayUI (currentSong, currentMeasure, cursorMeasure, cursorBeat, cursorString)
   ch = getInput()
   if ch == 'q':
-    if unsavedChange   and False: # Disable this for now.
+    if unsavedChange:
       verify = raw_input ('Unsaved changes, quit? (y/n)')
       if verify == 'y':
         exit()
     else:
       exit()
-  # TBD: fix the arrow key escapes, (these work on my MAC)
-  elif ch == 'C':  # go to the next beat if one exists
+  elif ch == 'RIGHT':  # go to the next beat if one exists
     cursorMeasure, cursorBeat = findNextBeat (currentSong, cursorMeasure, cursorBeat)
-  elif ch == 'D': # go to the previous beat if possible
+  elif ch == 'LEFT': # go to the previous beat if possible
     cursorMeasure, cursorBeat = findPrevBeat (currentSong, cursorMeasure, cursorBeat)
-  elif ch == 'A':
+  elif ch == 'UP':
     if cursorString > 1:
       cursorString -= 1
-  elif ch == 'B':
+  elif ch == 'DOWN':
     if cursorString < 6:
       cursorString += 1
   elif ch == ',':
@@ -685,10 +696,10 @@ while True:
         m.pageBreak = False
       else:
         m.pageBreak = True
-  elif ch == 'd': # delete beat. Delete measure if empty
+  elif ch == 'd': # delete beat.
     m = currentSong.get (cursorMeasure)
     if cursorMeasure == 1 and cursorBeat == 1:
-       if m.count() > 1:
+       if m.count() > 1: # delete measure if empty
          m.pop (cursorBeat)
     else:
       m.pop (cursorBeat)
@@ -696,31 +707,30 @@ while True:
         currentSong.pop (cursorMeasure)
         if cursorMeasure > 1:
           cursorMeasure -=1
-          cursorBeat = currentSong.get (cursorMeasure).count()
+          cursorBeat = currentSong.get (cursorMeasure).count ()
       else:
         if cursorBeat > m.count():
           cursorBeat = m.count()
       unsavedChange = True
-
-  elif ch == ' ': # clear note at cursor
+  elif ch == ' ': # clear note
     m = currentSong.get (cursorMeasure)
     b = m.get (cursorBeat)
     b.clr (cursorString)
     unsavedChange = True
   elif ch == 'm': # add a measure after the current one
-    if cursorMeasure == currentSong.count():
+    if cursorMeasure == currentSong.count ():
       m = currentSong.addMeasure ()
     else:
       m = currentSong.addMeasure (cursorMeasure + 1, insert = True)
-    # create as many beats as exist in the current measure
-    for _ in range (currentSong.get (cursorMeasure).count()):
+    # Create as many beats as exist in the current measure
+    for _ in range (currentSong.get (cursorMeasure).count ()):
       m.addBeat ()
     unsavedChange = True
-  elif ch == 'r': # rename
+  elif ch == 'r': # rename song
     songName = raw_input ('Enter song name:')
     currentSong.songName = songName
     unsavedChange = True
-  elif ch == 'n':
+  elif ch == 'n': # Annotate measure or beat
     note = raw_input ("Enter annotation:")
     # if we're on beat 1, add the note to the measure, else to the beat
     if len (note) == 0: # clear
@@ -737,7 +747,8 @@ while True:
           statusString = "Invalid beat."
     else:
       statusString = "Invalid measure."
-  elif ch == '`':
+
+  elif ch == '`': # various notes follow `1234567890-= represent fretboard 0-12.
     setNote (0)
   elif ch >= '1' and ch <= '9':
     fret = int (ch)
@@ -748,7 +759,8 @@ while True:
     setNote (11)
   elif ch == '=':
     setNote (12)
-  elif ch == 'o':
+
+  elif ch == 'o': # Toggle 0-12 or 12-24
     if octaveFlag:
       octaveFlag = False
     else:
