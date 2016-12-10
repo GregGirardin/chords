@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-
+import sys
 '''
 A basic tablature editing utility.
 
@@ -27,11 +27,8 @@ m1b4 s3f0
 m1p # page break (for export)
 m2b6 # this beat has no notes, but it's the last beat of the measure
 
-TBD: Fix arrow key escape handling
-     +/- some number of measures, or goto?
-     jump to end of song
-     mark a measure as a repeat
-
+If you give it a command line parameter that's the song name
+ex: ./tab.py mynewsong
 '''
 songExt = ".pytab"
 
@@ -40,6 +37,8 @@ version = "v1.0"
 statusString = None
 octaveFlag = False
 MAX_WIDTH = 120
+MAX_BEATS_PER_MEAS = 32 #
+DISPLAY_BEATS = 32 # number of beats we can display on a line
 '''
  Wrapper around a list.
  This api is 1 based
@@ -128,7 +127,7 @@ class pytabMeasure (pytabContainer):
 
   def addBeat (self, beat = None, insert = False):
     if beat:
-      assert beat <= 64, "Max 64 beats per measure."
+      assert beat <= MAX_BEATS_PER_MEAS, "Exceeded max beats per measure."
       assert beat > 0, "First beat is 1."
     return self.set (pytabBeat (), beat, insert)
 
@@ -631,6 +630,9 @@ def findNextMeasure (song, curMeasure, curBeat):
 # main loop
 songName = "Song"
 
+if len (sys.argv) == 2:
+  songName = sys.argv [1].split (".")[0]
+
 currentSong = pytabSong (songName)
 currentSong.addMeasure ()
 currentSong.get (1).addBeat()
@@ -662,7 +664,7 @@ while True:
         exit()
     else:
       exit()
-  elif ch == 'RIGHT':  # go to the next beat if one exists
+  elif ch == 'RIGHT': # go to the next beat if one exists
     cursorMeasure, cursorBeat = findNextBeat (currentSong, cursorMeasure, cursorBeat)
   elif ch == 'LEFT': # go to the previous beat if possible
     cursorMeasure, cursorBeat = findPrevBeat (currentSong, cursorMeasure, cursorBeat)
@@ -677,14 +679,18 @@ while True:
   elif ch == '.':
     cursorMeasure, cursorBeat = findNextMeasure (currentSong, cursorMeasure, cursorBeat)
   elif ch == 'a' or ch == 'i': # add/insert beat
+
     if ch == 'a':
       offset = 1
     else:
       offset = 0
     m = currentSong.get (cursorMeasure)
+
     if m == None:
       m = currentSong.addMeasure (cursorMeasure)
-    if cursorBeat == m.count():
+    if m.count() == MAX_BEATS_PER_MEAS:
+      statusString = "Max beats reached."
+    elif cursorBeat == m.count():
       m.addBeat ()
     else:
       m.addBeat (cursorBeat + offset, insert = True)
@@ -780,11 +786,22 @@ while True:
   elif ch == 'x': # export
     export (currentSong)
 
-  # Calculate currentMeasure based on cursorMeasure.
-  # May need to get a bit more intelligent about this computation in case of large measures.
-  # ideally have a cursorMeasure a couple ahead of currentMeasure so you can
-  # see measures on both sides of the cursor.
-  if cursorMeasure > 3:
-    currentMeasure = cursorMeasure - 3
-  else:
-    currentMeasure = 1
+  # Calculate currentMeasure
+  displayBeats = 0
+  currentMeasure = cursorMeasure
+  testMeasure = cursorMeasure
+
+  m = currentSong.get (testMeasure)
+  if m:
+    displayBeats = m.count()
+  testMeasure -= 1
+
+  while testMeasure >= 1:
+    m = currentSong.get (testMeasure)
+    if m:
+      displayBeats += m.count()
+    displayBeats += 1 # the end of measure line takes up some space
+    if displayBeats >= DISPLAY_BEATS:
+      break
+    currentMeasure = testMeasure
+    testMeasure -= 1
