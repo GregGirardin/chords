@@ -2,6 +2,7 @@
 
 import os
 import sys
+import glob
 '''
 A basic tablature editing utility.
 
@@ -35,6 +36,7 @@ songExt = ".pytab"
 version = "v1.0"
 
 statusString = None
+selectedfileIx = 0
 octaveFlag = False
 MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32 #
@@ -397,7 +399,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                    'r   Rename song.',
                    'b   Page break.',
                    's   Save.',
-                   'l   Load.',
+                   'l/L Load/Reload.',
                    'x   Export tablature.',
                    'q   Quit.']
 
@@ -622,6 +624,44 @@ def findNextMeasure (song, curMeasure, curBeat):
 
   return curMeasure, curBeat
 
+def findSong ():
+  global statusString, selectedfileIx
+  re = "./*" + songExt
+
+  matchList = glob.glob (re)
+
+  if not matchList:
+    statusString = "No files."
+    return None
+
+  if selectedfileIx >= len (matchList):
+    selectedfileIx = len (matchList) - 1
+
+  while True:
+    os.system ('clear')
+    print "Use arrow keys to select or exit.\n"
+    index = 0
+    for s in matchList:
+      line = "  "
+      if index == selectedfileIx:
+        line = "> "
+      line += s [2:].split (".")[0]
+      index += 1
+
+      print line
+
+    c = getInput()
+    if c == "LEFT":
+      return None
+    if c == "RIGHT":
+      return matchList [selectedfileIx][2:].split (".")[0]
+    if c == "DOWN":
+      if selectedfileIx < len (matchList) - 1:
+        selectedfileIx += 1
+    if c == "UP":
+      if selectedfileIx > 0:
+        selectedfileIx -= 1
+
 # pytabTest()
 
 # main loop
@@ -773,7 +813,10 @@ while True:
   elif ch == 's': # save
     save (currentSong)
     unsavedChange = False
-  elif ch == 'l': # load
+
+  elif ch == 'x': # export
+    export (currentSong)
+  elif ch == 'L': # re-load
     if unsavedChange:
       verify = raw_input ('Unsaved changes, Load? (y/n)')
       if verify != 'y':
@@ -782,8 +825,18 @@ while True:
     if loadedSong is not None:
       currentSong = loadedSong
       unsavedChange = False
-  elif ch == 'x': # export
-    export (currentSong)
+  elif ch == 'l': # load
+    if unsavedChange:
+      verify = raw_input ('Unsaved changes, Load? (y/n)')
+      if verify != 'y':
+        continue
+    newSongName = findSong ()
+    if newSongName:
+      loadedSong = load (newSongName)
+      if loadedSong is not None:
+        currentSong = loadedSong
+        songName = newSongName
+        unsavedChange = False
 
   # Calculate currentMeasure
   displayBeats = 0
