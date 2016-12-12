@@ -1,8 +1,6 @@
 #!/usr/bin/python
 
-import os
-import sys
-import glob
+import os, sys, glob, copy, time
 '''
 A basic tablature editing utility.
 
@@ -34,6 +32,8 @@ ex: ./tab.py mynewsong
 songExt = ".pytab"
 
 version = "v1.0"
+
+unsavedChgStr = 'Unsaved changes. Continue? (y/n)'
 
 statusString = None
 selectedfileIx = 0
@@ -72,7 +72,7 @@ class pytabContainer (object):
     if index:
       index -= 1 # make 0 based
       # add empty entries if necessary, ex: we're adding measure 10 to a new song.
-      while index >= self.count ():
+      while self.count () <= index:
         self.objects.append (None)
 
       if insert:
@@ -395,6 +395,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                    'd   Delete beat.',
                    'sb  Clear note.',
                    'm   Add measure.',
+                   'c/p Copy/Paste.',
                    'n   Annotate.',
                    'r   Rename song.',
                    'b   Page break.',
@@ -605,6 +606,12 @@ def findNextBeat (song, curMeasure, curBeat):
     elif curMeasure < song.count():
       curMeasure += 1
       curBeat = 1
+    elif not measureEmpty (song, curMeasure):
+      # create new empty measure if you scroll right passed a non-empty measure
+      curMeasure += 1
+      curBeat = 1
+      m = song.addMeasure ()
+      m.addBeat ()
 
   return curMeasure, curBeat
 
@@ -662,6 +669,117 @@ def findSong ():
       if selectedfileIx > 0:
         selectedfileIx -= 1
 
+def handleCopy (song, measure, beat):
+  global statusString
+  bList = []
+  print "Beats to copy? (1-9,c,m)"
+  numBeats = 0
+  beatsCopied = 0
+
+  c = getInput()
+  if c >= '1' and c <= '9':
+    numBeats = int (c)
+  elif c == '0':
+    numBeats = 10
+  elif c == 'c':
+    numBeats = 1
+  elif c == 'm':
+    numBeats = song.get (measure).count()
+    beat = 1
+
+  if not numBeats:
+    statusString = "Invalid input for copy."
+    return None
+  while numBeats:
+    m = song.get (measure)
+    if m:
+      b = m.get (beat)
+      bList.append (b)
+      beatsCopied += 1
+    beat += 1
+    if beat > m.count():
+      measure += 1
+      beat = 1
+    if measure > song.count():
+      break
+
+    numBeats -= 1
+
+  statusString = "%d beats copied." % (beatsCopied)
+
+  return bList
+
+def measureEmpty (song, measure):
+
+  empty = False
+
+  m = song.get (measure)
+
+  if m.count() == 1:
+    b = m.get (1)
+    if b:
+      nList = b.get()
+      if not nList:
+        empty = True
+      else:
+        anyNotes = False
+        for n in nList:
+          if n is not None:
+            anyNotes = True
+            break
+        if not anyNotes:
+          empty = True
+
+  return empty
+
+def handlePaste (song, beats, measure, beat):
+  global statusString, MAX_BEATS_PER_MEAS
+
+  if song is None:
+    statusString = "Invalid song."
+    return 0
+  if beats is None:
+    statusString = "Nothing to paste."
+    return 0
+  m = song.get (measure)
+  if not m:
+    statusString = "Invalid measure."
+    return 0
+
+  emptyMeasure = measureEmpty (song, measure)
+
+  # Normally paste after current beat
+  # but if the measure is empty we'll handle it differently.
+
+  if not emptyMeasure:
+    beat += 1
+  else:
+    m.pop (1)
+
+  if beat == m.count() + 1:
+    inserting = False
+  else:
+    inserting = True
+
+  beatsPasted = 0
+  for b in beats:
+    if m.count() >= MAX_BEATS_PER_MEAS:
+      statusString = "Hit max measure length."
+      return beatsPasted
+
+    if inserting:
+      m.set (copy.deepcopy (b), beat, True)
+    else:
+      m.set (copy.deepcopy (b))
+
+    beat += 1
+    beatsPasted += 1
+
+  if beatsPasted:
+    statusString = "Pasted %d beats." % beatsPasted
+
+  return beatsPasted
+
 # pytabTest()
 
 # main loop
@@ -681,6 +799,8 @@ cursorBeat = 1
 cursorString = 1
 unsavedChange = False
 
+cpBuf = []
+
 def setNote (fret):
   if octaveFlag:
     fret += 12
@@ -696,7 +816,8 @@ while True:
   ch = getInput()
   if ch == 'q':
     if unsavedChange:
-      verify = raw_input ('Unsaved changes, quit? (y/n)')
+      print (unsavedChgStr)
+      verify = getInput ()
       if verify == 'y':
         exit()
     else:
@@ -716,7 +837,6 @@ while True:
   elif ch == '.':
     cursorMeasure, cursorBeat = findNextMeasure (currentSong, cursorMeasure, cursorBeat)
   elif ch == 'a' or ch == 'i': # add/insert beat
-
     if ch == 'a':
       offset = 1
     else:
@@ -727,7 +847,7 @@ while True:
       m = currentSong.addMeasure (cursorMeasure)
     if m.count() == MAX_BEATS_PER_MEAS:
       statusString = "Max beats reached."
-    elif cursorBeat == m.count():
+    elif cursorBeat == m.count() and ch == 'a':
       m.addBeat ()
     else:
       m.addBeat (cursorBeat + offset, insert = True)
@@ -741,19 +861,16 @@ while True:
         m.pageBreak = True
   elif ch == 'd': # delete beat.
     m = currentSong.get (cursorMeasure)
-    if cursorMeasure == 1 and cursorBeat == 1:
-       if m.count() > 1: # delete measure if empty
-         m.pop (cursorBeat)
-    else:
+    if currentSong.count() > 1 or m.count () > 1:
       m.pop (cursorBeat)
       if m.count () == 0: # delete measure
         currentSong.pop (cursorMeasure)
         if cursorMeasure > 1:
-          cursorMeasure -=1
+          cursorMeasure -= 1
           cursorBeat = currentSong.get (cursorMeasure).count ()
       else:
-        if cursorBeat > m.count():
-          cursorBeat = m.count()
+        if cursorBeat > m.count ():
+          cursorBeat = m.count ()
       unsavedChange = True
   elif ch == ' ': # clear note
     m = currentSong.get (cursorMeasure)
@@ -773,23 +890,30 @@ while True:
     songName = raw_input ('Enter song name:')
     currentSong.songName = songName
     unsavedChange = True
-  elif ch == 'n': # Annotate measure or beat
-    note = raw_input ("Enter annotation:")
-    # if we're on beat 1, add the note to the measure, else to the beat
-    if len (note) == 0: # clear
-      note = None
+  elif ch == 'n': # Annotate beat
+    annotation = raw_input ("Enter beat annotation:")
+    if len (annotation) == 0: # clear
+      annotation = None
     m = currentSong.get (cursorMeasure)
     if not m:
       m = currentSong.addMeasure (cursorMeasure)
     if m:
-      if cursorBeat == 1:
-        m.annotation = note
-      else:
         b = m.get (cursorBeat)
         if b:
-          b.annotation = note
+          b.annotation = annotation
         else:
           statusString = "Invalid beat."
+    else:
+      statusString = "Invalid measure."
+  elif ch == 'N': # Annotate measure
+    annotation = raw_input ("Enter measure annotation:")
+    if len (annotation) == 0: # clear
+      annotation = None
+    m = currentSong.get (cursorMeasure)
+    if not m:
+      m = currentSong.addMeasure (cursorMeasure)
+    if m:
+        m.annotation = annotation
     else:
       statusString = "Invalid measure."
 
@@ -818,7 +942,8 @@ while True:
     export (currentSong)
   elif ch == 'L': # re-load
     if unsavedChange:
-      verify = raw_input ('Unsaved changes, Load? (y/n)')
+      print (unsavedChgStr)
+      verify = getInput()
       if verify != 'y':
         continue
     loadedSong = load (songName)
@@ -827,7 +952,8 @@ while True:
       unsavedChange = False
   elif ch == 'l': # load
     if unsavedChange:
-      verify = raw_input ('Unsaved changes, Load? (y/n)')
+      print (unsavedChgStr)
+      verify = getInput()
       if verify != 'y':
         continue
     newSongName = findSong ()
@@ -837,6 +963,16 @@ while True:
         currentSong = loadedSong
         songName = newSongName
         unsavedChange = False
+    cursorMeasure = 1
+    cursorBeat = 1
+    cursorString = 1
+  elif ch == 'c': # copy
+    cpBuf = handleCopy (currentSong, cursorMeasure, cursorBeat)
+  elif ch == 'p': # paste
+    cursorBeat += handlePaste (currentSong, cpBuf, cursorMeasure, cursorBeat)
+    if cursorBeat > currentSong.get (cursorMeasure).count():
+      cursorBeat = currentSong.get (cursorMeasure).count()
+    # ^ corner case because of how we handle pasting into empty measures.
 
   # Calculate currentMeasure
   displayBeats = 0
