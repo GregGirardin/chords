@@ -20,8 +20,8 @@ from functools import partial
 import tkFont
 
 """
-dictionary keyed by instrument name, value is a dictionary of instrument attributes
-"tuning" is high to low
+Dictionary keyed by instrument name, value is a dictionary of instrument attributes
+"tuning" is high to low.
 "fretOffset" is the base fret of a string (for supporting instruments like Banjo)
   if the offset is 5 and the string is "G", then the 5th fret is a G.
 """
@@ -34,6 +34,14 @@ instrumentMap = \
                 },
   'Guitar':     {
                 "tuning":      ("E", "B", "G", "D", "A", "E"),
+                "fretOffset":  (0, 0, 0, 0, 0, 0)
+                },
+  'Dropped D':  {
+                "tuning":      ("E", "B", "G", "D", "A", "D"),
+                "fretOffset":  (0, 0, 0, 0, 0, 0)
+                },
+  'DADGAD':     {
+                "tuning":      ("D", "A", "G", "D", "A", "D"),
                 "fretOffset":  (0, 0, 0, 0, 0, 0)
                 },
   'Bass':       {
@@ -49,9 +57,11 @@ instrumentMap = \
                                 "E", "A", "D", "G", "C", "F"),
                 "fretOffset":   (0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0)
-                },
+                }
   }
-instruments = ('Mandolin', 'Guitar', 'Bass', 'Banjo', 'Stick-4ths') # instrumentMap.keys() doesn't guarantee order
+# pick the instruments you care about
+instruments = ('Mandolin', 'Guitar', 'Dropped D', 'DADGAD', 'Bass')
+# instruments = instrumentMap.keys() # doesn't guarantee order
 
 intervalList = ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7', '8', 'b9', '9']
 # display with a #/b if that's how we'd display the major key.
@@ -64,16 +74,16 @@ bKeys = ('F', 'Bb', 'Eb', 'Ab', 'Db') # (Major) keys to be displayed as having f
 # if you add an entry, also add it to spellings tuple below.
 spellingMap = \
   {
-  "M":        ('R',  '3', '5'),
-  "m":        ('R', 'b3', '5'),
-  "7":        ('R',  '3', '5', 'b7'),
-  "m7":       ('R', 'b3', '5', 'b7'),
-  "M7":       ('R', 'b3', '5', '7'),
-  "2":        ('R',  '2', '5'),
-  "4":        ('R',  '4', '5'),
-  "dim":      ('R', 'b3', 'b5', '6'),
-  "M-Key":    ('R',  '2', '3',  '4', '5',  '6', '7'),
-  "m-Key":    ('R',  '2', 'b3', '4', '5', 'b6', 'b7')
+  "M":     ('R',  '3', '5'),
+  "m":     ('R', 'b3', '5'),
+  "7":     ('R',  '3', '5', 'b7'),
+  "m7":    ('R', 'b3', '5', 'b7'),
+  "M7":    ('R', 'b3', '5', '7'),
+  "2":     ('R',  '2', '5'),
+  "4":     ('R',  '4', '5'),
+  "dim":   ('R', 'b3', 'b5', '6'),
+  "M-Key": ('R',  '2', '3',  '4', '5',  '6', '7'),
+  "m-Key": ('R',  '2', 'b3', '4', '5', 'b6', 'b7')
   }
 spellings = ('M', 'm', '7', 'm7', 'M7', '2', '4', 'dim', 'M-Key', 'm-Key')
 minorSpellings = ('m', 'm7', 'm-Key')
@@ -440,7 +450,7 @@ class runGui ():
     self.spelling = spellings [0]
 
     root = Tk()
-    root.title ("Fretboard Utility")
+    root.title ("Chords")
 
     self.instrumentsFrame = Frame (root)
     self.spellingsFrame = Frame (root)

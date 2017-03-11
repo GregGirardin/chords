@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, sys, glob, copy, time
+import os, sys, glob, copy
 '''
 A basic tablature editing utility.
 
@@ -788,9 +788,11 @@ songName = "Song"
 if len (sys.argv) == 2:
   songName = sys.argv [1].split (".")[0]
 
-currentSong = pytabSong (songName)
-currentSong.addMeasure ()
-currentSong.get (1).addBeat()
+currentSong = load (songName)
+if not currentSong:
+  currentSong = pytabSong (songName)
+  currentSong.addMeasure ()
+  currentSong.get (1).addBeat()
 
 currentMeasure = 1 # Where the UI starts displaying from
 
