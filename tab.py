@@ -37,7 +37,12 @@ unsavedChgStr = 'Unsaved changes. Continue? (y/n)'
 
 statusString = None
 selectedfileIx = 0
-octaveFlag = False
+
+OFFSET_MODE_NORMAL = 0
+OFFSET_MODE_MIDDLE = 1
+OFFSET_MODE_OCTAVE = 2
+
+offsetMode = OFFSET_MODE_NORMAL
 MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32 #
 DISPLAY_BEATS = 32 # number of beats we can display on a line
@@ -369,7 +374,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
       display MAX_WIDTH characters, so that's about MAX_WIDTH/3 beats
       each beat takes 3 spaces, plus the measure delimiter
   '''
-  global statusString, octaveFlag
+  global statusString, offsetMode
   assert cursor_m >= measure, "Cursor before current measure."
 
   SUMMARY_IX = 0 # header lines
@@ -387,22 +392,22 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   fretboardLines = [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ']
 
   instructions = [ '',
-                   'Use arrows to move cursor.',
-                   '><  Forward / back measure.',
-                   '`1234567890-= Insert note at fret (0-12).',
-                   'o   Octave.',
-                   'a/i Add/Insert beat.',
-                   'd   Delete beat.',
-                   'sb  Clear note.',
-                   'm   Add measure.',
-                   'c/p Copy/Paste.',
-                   'n   Annotate.',
-                   'r   Rename song.',
-                   'b   Page break.',
-                   's   Save.',
-                   'l/L Load/Reload.',
-                   'x   Export tablature.',
-                   'q   Quit.']
+                   'Use arrows to move cursor',
+                   '><  Forward / back measure',
+                   '`1234567890-= note at (0-12, 7-18, 12-24)',
+                   'o   Offset',
+                   'a/i Add/Insert beat',
+                   'd   Delete beat',
+                   'sp  Clear note',
+                   'm   Add measure',
+                   'c/p Copy/Paste',
+                   'n   Annotate',
+                   'r   Rename song',
+                   'b   Page break',
+                   's   Save',
+                   'l/L Load/Reload',
+                   'x   Export',
+                   'q   Quit']
 
   headerLines [SUMMARY_IX] += song.songName + ", " + \
                               str (song.count()) + " measures, " + \
@@ -411,8 +416,10 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   if statusString is not None:
     headerLines [STATUS_IX] += statusString
   else:
-    if octaveFlag:
-      headerLines [STATUS_IX] += "Octave "
+    if offsetMode == OFFSET_MODE_MIDDLE:
+      headerLines [STATUS_IX] += "7-18"
+    elif offsetMode == OFFSET_MODE_OCTAVE:
+      headerLines [STATUS_IX] += "12-24"
 
   statusString = None
 
@@ -804,8 +811,12 @@ unsavedChange = False
 cpBuf = []
 
 def setNote (fret):
-  if octaveFlag:
+  if offsetMode == OFFSET_MODE_OCTAVE:
     fret += 12
+  elif offsetMode == OFFSET_MODE_MIDDLE:
+    if fret < 7:
+      fret += 12
+
   m = currentSong.get (cursorMeasure)
   if not m.get (cursorBeat):
     m.addBeat (cursorBeat)
@@ -931,11 +942,11 @@ while True:
   elif ch == '=':
     setNote (12)
 
-  elif ch == 'o': # Toggle 0-12 or 12-24
-    if octaveFlag:
-      octaveFlag = False
+  elif ch == 'o': # Toggle 0-12, 7-16 or 12-24
+    if offsetMode == OFFSET_MODE_OCTAVE:
+      offsetMode = OFFSET_MODE_NORMAL
     else:
-      octaveFlag = True
+      offsetMode += 1
   elif ch == 's': # save
     save (currentSong)
     unsavedChange = False
