@@ -3,19 +3,45 @@ from __future__ import print_function
 import os, sys, glob, copy
 '''
 Convert a list of text files into a html page.
-
-The purpose of this is to turn a direction of txt lyric files into a single html file.
 '''
 
-class Song (object):
-  def __init__ (self, name, set = None):
-    self.name = name
-    self.set = set
 
-songList = []
+class bcolors:
+  HEADER = '\033[95m'
+  BLUE = '\033[94m'
+  OKGREEN = '\033[92m'
+  WARNING = '\033[93m'
+  FAIL = '\033[91m'
+  ENDC = '\033[0m'
+  BOLD = '\033[1m'
+  UNDERLINE = '\033[4m'
+
+class Set (object):
+  def __init__(self, name = None):
+    self.name = name
+    self.songList = []
+
+class Song (object):
+  def __init__ (self, name):
+    self.name = name # file name
+
+unassignedSetName = "Unassigned"
 statusString = None
-setListName = "default"
-songIx = 1
+setLists = []
+showName = "Set List"
+currentSet = 0
+currentSong = 0
+
+SONG_COLUMNS = 4
+
+# input modes
+CURSOR_MODE_NORMAL = 0
+CURSOR_MODE_MOVE = 1
+
+inputMode = CURSOR_MODE_NORMAL
+
+unassignedSet = Set (unassignedSetName)
+setLists.append (unassignedSet)
 
 def findSetlist ():
   global statusString, selectedfileIx
@@ -55,33 +81,46 @@ def findSetlist ():
       if selectedfileIx > 0:
         selectedfileIx -= 1
 
-def populateSongs ( ):
-  global songIx
-  songIx = 1
+def getSetByName (name):
+  for s in setLists:
+    if s.name == name:
+      return s
+  return None
+
+def getLocalSongs ():
   songList = []
   re = "*.txt"
-
   matchList = glob.glob (re)
   for s in matchList:
-    song = Song (s, None)
+    song = Song (s)
     songList.append (song)
 
   return songList
 
 def displayUI ():
   os.system ('clear')
-  global songIx, setListName
-  print ("Setlist:", setListName)
-  index = 0
-  for s in songList:
-    index += 1
-    print ("%s%4s %-25s %s" % ("> " if index == songIx else "  ",
-                               "?"  if not s.set else s.set,
-                               s.name [:-4],
-                               "< " if index == songIx else "  "), end = "")
-    if index % 4 == 0:
-      print ("")
-  print ("")
+  global songIx, showName, setLists
+  print ("Setlist:", showName)
+
+  setNumber = 0
+
+  for l in setLists:
+    print ("Set: %s" % (l.name if l.name else setNumber + 1))
+
+    songIx = 0
+    for s in l.songList:
+      cursor = True if setNumber == currentSet and songIx == currentSong else False
+      if cursor:
+        print (bcolors.BOLD if inputMode == CURSOR_MODE_NORMAL else bcolors.BLUE,
+               end = "")
+      print ("%-20s " % (s.name [:-4]), end = "")
+      if cursor:
+        print (bcolors.ENDC, end = "")
+      if (songIx + 1) % SONG_COLUMNS == 0:
+        print ("")
+      songIx += 1
+    print ("")
+    setNumber += 1
 
 def getInput ():
   # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
@@ -122,49 +161,59 @@ def getInput ():
 def saveList():
   pass
 
-def sortList ():
-  global songList
-  sList = []
-  for set in (1, 2, 3, 4, None):
-    for s in songList:
-      if s.set == set:
-        sList.append (s)
-  songList = sList
+s = getSetByName (unassignedSetName)
+s.songList = getLocalSongs()
 
-songList = populateSongs()
+def songFwd (count):
+  global currentSong
+  l = len (setLists [currentSet].songList) - 1
+  if currentSong + count <= l:
+    currentSong += count
+  else:
+    currentSong = l
+
+def songBack (count):
+  global currentSong, currentSet
+  if currentSong == 0:
+    if currentSet > 0:
+      currentSet -= 1
+      currentSong = len (setLists [currentSet].songList) - 1
+  elif currentSong > count:
+    currentSong -= count
+  else:
+    currentSong = 0
+
+def newSet():
+
+
+def toggleMode ():
+  global inputMode
+
+  inputMode += 1
+  if inputMode > CURSOR_MODE_MOVE:
+    inputMode = 0
+
 displayUI()
 while True:
   ch = getInput()
   if ch == "DOWN":
-    songIx += 4
+    songFwd (SONG_COLUMNS)
   elif ch == "RIGHT":
-    songIx += 1
+    songFwd (1)
   elif ch == "UP":
-    songIx -= 4
+    songBack (SONG_COLUMNS)
   elif ch == "LEFT":
-    songIx -= 1
-  elif songIx < 1:
-    songIx = 1
-  elif songIx > len (songList):
-    songIx = len (songList)
+    songBack (1)
   elif ch == 'q':
     exit()
-  elif ch == '1':
-    songList [songIx - 1].set = 1
-  elif ch == '2':
-    songList [songIx - 1].set = 2
-  elif ch == '3':
-    songList [songIx - 1].set = 3
-  elif ch == '4':
-    songList [songIx - 1].set = 4
-  elif ch == ' ':
-    songList [songIx - 1].set = None
   elif ch == 's':
     saveList()
-  elif ch == 'o':
-    sortList ()
   elif ch == 'r':
     setListName = raw_input ('Enter set list name:')
+  elif ch == 'm':
+    toggleMode()
+  elif ch == 'n':
+    newSet ()
 
 
   displayUI()
