@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os, sys, glob, copy
-import pdb
 '''
 Convert a list of text files into a html page.
 '''
@@ -28,7 +27,7 @@ unassignedSetName = "Unassigned"
 statusString = None
 setLists = []
 showName = "Set List"
-currentSet = 0
+currentSet = 0 # these represent the 'cursor'
 currentSong = 0
 
 SONG_COLUMNS = 4
@@ -114,7 +113,7 @@ def displayUI ():
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
         print (bcolors.BOLD if inputMode == CURSOR_MODE_NORMAL else bcolors.BLUE, end="" )
-      print ("%-20s " % (s.name [:-4]), end = "")
+      print ("%-24s " % (s.name [:-4]), end = "")
       if cursor:
         print (bcolors.ENDC, end = "")
       if (songIx + 1) % SONG_COLUMNS == 0:
@@ -169,60 +168,68 @@ s.songList = getLocalSongs()
 
 def songFwd (count):
   global currentSong, currentSet
-  temp = None
 
-  # pdb.set_trace()
+  if (currentSet == len (setLists) - 1 and currentSong == len (setLists [currentSet].songList) - 1):
+    return
 
   if inputMode == CURSOR_MODE_MOVE and currentSong is not None:
-    temp = setLists[ currentSet ].songList [currentSong]
-    del (setLists[ currentSet ].songList [currentSong])
-    if len (setLists [currentSet].songList) == 0:
-      currentSong = None
+    temp = setLists [currentSet].songList [currentSong]
+    del (setLists [currentSet].songList [currentSong])
 
-  if currentSong == None:
-    if currentSet < len (setLists):
+    if currentSong == len (setLists [currentSet].songList):
       currentSet += 1
-      l = len (setLists[ currentSet ].songList)
-      if l:
-        currentSong = 0
-  else:
-    l = len (setLists [currentSet].songList)
-    if currentSong == l - 1: # at the end of the set
+      currentSong = 0
+    else:
+      l = len (setLists [currentSet].songList)
+      currentSong += count
+      if currentSong >= l: # at the end of the set
+        currentSong = l
+    setLists [currentSet].songList.insert (currentSong, temp)
+  else: # Normal mode (or on empty set)
+    if currentSong == None:
       if currentSet < len (setLists):
         currentSet += 1
-    elif currentSong + count < l:
-      currentSong += count
+        if len (setLists [currentSet].songList):
+          currentSong = 0
     else:
-      currentSong = l - 1
-
-  if temp:
-    if currentSong == None:
-      currentSong = 0
-    setLists[ currentSet ].songList.insert (currentSong, temp)
+      l = len (setLists [currentSet].songList)
+      if currentSong == l - 1: # at the end of the set
+        if currentSet < len (setLists):
+          currentSet += 1
+          currentSong = 0
+      elif currentSong + count < l:
+        currentSong += count
+      else:
+        currentSong = l - 1
 
 def songBack (count):
   global currentSong, currentSet
 
-  temp = None
+  if currentSet == 0 and (currentSong == 0 or currentSong == None):
+    return
 
   if inputMode == CURSOR_MODE_MOVE and currentSong is not None:
-    temp = setLists[ currentSet ].songList [currentSong]
-    del (setLists[ currentSet ].songList [currentSong])
+    temp = setLists [currentSet].songList [currentSong]
+    del (setLists [currentSet].songList [currentSong])
 
-  if currentSong == None or currentSong == 0:
-    if currentSet > 0:
+    if currentSong == 0:
       currentSet -= 1
-      l = len (setLists [currentSet].songList)
-      currentSong = l - 1 if l else None
-  elif currentSong > count:
-    currentSong -= count
+      currentSong = len (setLists [currentSet].songList)
+    else:
+      currentSong -= count
+      if currentSong < 0:
+        currentSong = 0
+    setLists [currentSet].songList.insert (currentSong, temp)
   else:
-    currentSong = 0
-
-  if temp:
-    if currentSong == None:
+    if currentSong == None or currentSong == 0:
+      if currentSet > 0:
+        currentSet -= 1
+        l = len (setLists [currentSet].songList)
+        currentSong = l - 1 if l else None
+    elif currentSong > count:
+      currentSong -= count
+    else:
       currentSong = 0
-    setLists[ currentSet ].songList.insert (currentSong, temp)
 
 def newSet():
   global currentSet, setLists
