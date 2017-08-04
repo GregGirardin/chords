@@ -1,11 +1,10 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os, sys, glob, copy
+import pdb
 '''
 Convert a list of text files into a html page.
 '''
-
-
 class bcolors:
   HEADER = '\033[95m'
   BLUE = '\033[94m'
@@ -105,14 +104,16 @@ def displayUI ():
   setNumber = 0
 
   for l in setLists:
+    if setNumber == currentSet and not len (setLists [currentSet].songList):
+      print (bcolors.BOLD, end = "") # This set is empty, highlight the name
     print ("Set: %s" % (l.name if l.name else setNumber + 1))
-
+    if setNumber == currentSet:
+      print (bcolors.ENDC, end = "")
     songIx = 0
     for s in l.songList:
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
-        print (bcolors.BOLD if inputMode == CURSOR_MODE_NORMAL else bcolors.BLUE,
-               end = "")
+        print (bcolors.BOLD if inputMode == CURSOR_MODE_NORMAL else bcolors.BLUE, end="" )
       print ("%-20s " % (s.name [:-4]), end = "")
       if cursor:
         print (bcolors.ENDC, end = "")
@@ -121,6 +122,8 @@ def displayUI ():
       songIx += 1
     print ("")
     setNumber += 1
+
+  print (currentSet, currentSong)
 
 def getInput ():
   # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
@@ -165,26 +168,79 @@ s = getSetByName (unassignedSetName)
 s.songList = getLocalSongs()
 
 def songFwd (count):
-  global currentSong
-  l = len (setLists [currentSet].songList) - 1
-  if currentSong + count <= l:
-    currentSong += count
+  global currentSong, currentSet
+  temp = None
+
+  # pdb.set_trace()
+
+  if inputMode == CURSOR_MODE_MOVE and currentSong is not None:
+    temp = setLists[ currentSet ].songList [currentSong]
+    del (setLists[ currentSet ].songList [currentSong])
+    if len (setLists [currentSet].songList) == 0:
+      currentSong = None
+
+  if currentSong == None:
+    if currentSet < len (setLists):
+      currentSet += 1
+      l = len (setLists[ currentSet ].songList)
+      if l:
+        currentSong = 0
   else:
-    currentSong = l
+    l = len (setLists [currentSet].songList)
+    if currentSong == l - 1: # at the end of the set
+      if currentSet < len (setLists):
+        currentSet += 1
+    elif currentSong + count < l:
+      currentSong += count
+    else:
+      currentSong = l - 1
+
+  if temp:
+    if currentSong == None:
+      currentSong = 0
+    setLists[ currentSet ].songList.insert (currentSong, temp)
 
 def songBack (count):
   global currentSong, currentSet
-  if currentSong == 0:
+
+  temp = None
+
+  if inputMode == CURSOR_MODE_MOVE and currentSong is not None:
+    temp = setLists[ currentSet ].songList [currentSong]
+    del (setLists[ currentSet ].songList [currentSong])
+
+  if currentSong == None or currentSong == 0:
     if currentSet > 0:
       currentSet -= 1
-      currentSong = len (setLists [currentSet].songList) - 1
+      l = len (setLists [currentSet].songList)
+      currentSong = l - 1 if l else None
   elif currentSong > count:
     currentSong -= count
   else:
     currentSong = 0
 
-def newSet():
+  if temp:
+    if currentSong == None:
+      currentSong = 0
+    setLists[ currentSet ].songList.insert (currentSong, temp)
 
+def newSet():
+  global currentSet, setLists
+  newSet = Set()
+  setLists.insert (currentSet, newSet)
+  currentSet += 1
+
+def deleteSet():
+  global currentSet, currentSong
+  # move all songs to unassigned
+  l = len (setLists)
+  if l > 1 and currentSet < l - 1:
+    u = getSetByName (unassignedSetName).songList
+    for s in setLists [currentSet].songList:
+      u.append (s)
+    del setLists [currentSet]
+    l = len( setLists[ currentSet ].songList )
+    currentSong = 0 if l else None
 
 def toggleMode ():
   global inputMode
@@ -214,6 +270,8 @@ while True:
     toggleMode()
   elif ch == 'n':
     newSet ()
+  elif ch == 'd':
+    deleteSet()
 
 
   displayUI()
