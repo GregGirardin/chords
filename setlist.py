@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
-import os, sys, glob, copy
-import pickle
+import os, sys, glob, copy, pickle
+import pdb
 '''
 Convert a list of text files into a html page.
 '''
@@ -111,6 +111,7 @@ def displayUI ():
   os.system ('clear')
   if statusString:
     print (statusString)
+    print ()
     statusString = None
 
   print ("Setlist:", setListName)
@@ -258,7 +259,7 @@ def songBack (count):
     else:
       currentSong = 0
 
-def newSet():
+def addSet():
   global currentSet, setLists
   newSet = Set()
   setLists.insert (currentSet, newSet)
@@ -310,6 +311,41 @@ def pasteClipboard():
 
   cutList = []
 
+def exportSet():
+  global statusString, setLists
+
+  fname = setListName + ".html"
+  f = open (fname, "w")
+
+  f.write( "<!DOCTYPE html> <html> <body> <h3>Setlist:%s</h3>\n" % (setListName) )
+  # setlist summary
+  setNumber = 1
+  for l in setLists [0:-1]:
+    f.write ( "<h4>Set: %s</h4>\n" % (l.name if l.name else setNumber) )
+    for s in l.songList:
+      f.write ("<p>%s</p>\n" % (s.name))
+    f.write ( "</p>\n")
+    setNumber += 1
+  # songs
+  # pdb.set_trace()
+  for l in setLists [0:-1]:
+    for s in l.songList:
+      try:
+        sName = s.name
+        sf = open (sName, "r")
+        fLines = sf.readlines()
+        sf.close()
+        f.write( "<p style=\"font-family:courier;\">\n" )
+        for line in fLines:
+          f.write ("%s<br>\n" % (line))
+        f.write ("</p>\n<br>\n")
+
+      except:
+        print ("Exception..")
+
+  f.write( "</body> </html>\n" )
+  f.close()
+  statusString = "Export complete."
 # start with all the local txt files.
 s = getSetByName (unassignedSetName)
 s.songList = getLocalSongs()
@@ -325,8 +361,6 @@ while True:
     songBack (SONG_COLUMNS)
   elif ch == "LEFT":
     songBack (1)
-  elif ch == 'q':
-    exit()
   elif ch == 's':
     saveList()
   elif ch == 'l':
@@ -335,14 +369,28 @@ while True:
     setListName = raw_input ('Enter set list name:')
   elif ch == 'm':
     toggleMode()
-  elif ch == 'n':
-    newSet ()
+  elif ch == 'a':
+    addSet ()
   elif ch == 'd':
     deleteSet()
   elif ch == 'c':
     cutSongToClipboard()
   elif ch == 'p':
     pasteClipboard()
-
+  elif ch == 'x':
+    exportSet()
+  elif ch == 'q':
+    exit()
+  elif ch == '?' or ch == 'h':
+    print ()
+    print ("Arrow to navigate.")
+    print ("m - move song mode.")
+    print ("s,l - save/load a setlist")
+    print ("r - rename")
+    print ("n,d - add/delete a set")
+    print ("c,p - cut/paste to clipboard")
+    print ("x - Export as html")
+    print ("q - quit")
+    foo = getInput()
 
   displayUI()
