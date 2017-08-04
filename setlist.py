@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os, sys, glob, copy, pickle
-import pdb
 '''
 Convert a list of text files into a html page.
 '''
@@ -317,33 +316,40 @@ def exportSet():
   fname = setListName + ".html"
   f = open (fname, "w")
 
-  f.write( "<!DOCTYPE html> <html> <body> <h3>Setlist:%s</h3>\n" % (setListName) )
+  f.write( "<!DOCTYPE html> <html> <body> <h3>%s</h3>\n" % (setListName))
   # setlist summary
   setNumber = 1
   for l in setLists [0:-1]:
-    f.write ( "<h4>Set: %s</h4>\n" % (l.name if l.name else setNumber) )
+    songNumber = 0
+    f.write ( "<h2>Set %s</h2>\n" % (l.name if l.name else setNumber))
     for s in l.songList:
-      f.write ("<p>%s</p>\n" % (s.name))
-    f.write ( "</p>\n")
+      f.write ("<p id=\"t%dt%d\"><a href=\"#s%ds%d\">%s</a>\n" %
+               (setNumber, songNumber, setNumber, songNumber, s.name [0:-4]))
+      songNumber += 1
+    f.write( "</p>\n" )
     setNumber += 1
   # songs
-  # pdb.set_trace()
+  setNumber = 1
   for l in setLists [0:-1]:
+    f.write("<hr><h2>Set %s</h2>\n" % (l.name if l.name else setNumber))
+    songNumber = 0
     for s in l.songList:
       try:
         sName = s.name
+        f.write( "<p id=\"s%ds%d\"><a href=\"#t%dt%d\">%s</a></p>\n" %
+                 (setNumber, songNumber, setNumber, songNumber, sName [0:-4]))
         sf = open (sName, "r")
         fLines = sf.readlines()
         sf.close()
         f.write( "<p style=\"font-family:courier;\">\n" )
         for line in fLines:
           f.write ("%s<br>\n" % (line))
-        f.write ("</p>\n<br>\n")
-
+        f.write ("</p>\n")
       except:
         print ("Exception..")
-
-  f.write( "</body> </html>\n" )
+      songNumber += 1
+    setNumber += 1
+  f.write( "</body></html>\n" )
   f.close()
   statusString = "Export complete."
 # start with all the local txt files.
