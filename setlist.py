@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os, sys, glob, copy
+import pickle
 '''
 Convert a list of text files into a html page.
 '''
@@ -23,12 +24,15 @@ class Song (object):
   def __init__ (self, name):
     self.name = name # file name
 
+setLists = []
+cutList = []
+
 unassignedSetName = "Unassigned"
 statusString = None
-setLists = []
-showName = "Set List"
+setListName = "SetList"
 currentSet = 0 # these represent the 'cursor'
 currentSong = 0
+setListExt = ".set"
 
 SONG_COLUMNS = 4
 
@@ -41,20 +45,22 @@ inputMode = CURSOR_MODE_NORMAL
 unassignedSet = Set (unassignedSetName)
 setLists.append (unassignedSet)
 
-def findSetlist ():
-  global statusString, selectedfileIx
+def loadSetList ():
+  global statusString, setLists, setListName
+  selectedfileIx = 0
   re = "./*" + setListExt
 
   matchList = glob.glob (re)
 
   if not matchList:
-    statusString = "No files."
+    statusString = "No setlists."
     return None
 
   if selectedfileIx >= len (matchList):
     selectedfileIx = len (matchList) - 1
 
   while True:
+    selSong = None
     os.system ('clear')
     print ("Use arrow keys to select or exit.\n")
     index = 0
@@ -62,6 +68,7 @@ def findSetlist ():
       line = "  "
       if index == selectedfileIx:
         line = "> "
+        selSong = s
       line += s [2:].split (".")[0]
       index += 1
 
@@ -71,7 +78,10 @@ def findSetlist ():
     if c == "LEFT":
       return None
     if c == "RIGHT":
-      return matchList [selectedfileIx][2:].split (".")[0]
+      with open (selSong, 'rb' ) as f:
+        setLists = pickle.load (f)
+      setListName = selSong [2:].split (".")[0]
+      return
     if c == "DOWN":
       if selectedfileIx < len (matchList) - 1:
         selectedfileIx += 1
@@ -96,9 +106,14 @@ def getLocalSongs ():
   return songList
 
 def displayUI ():
+  global songIx, setListName, setLists, statusString
+
   os.system ('clear')
-  global songIx, showName, setLists
-  print ("Setlist:", showName)
+  if statusString:
+    print (statusString)
+    statusString = None
+
+  print ("Setlist:", setListName)
 
   setNumber = 0
 
@@ -112,17 +127,25 @@ def displayUI ():
     for s in l.songList:
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
-        print (bcolors.BOLD if inputMode == CURSOR_MODE_NORMAL else bcolors.BLUE, end="" )
+        print (bcolors.BOLD if inputMode == CURSOR_MODE_NORMAL else bcolors.BLUE, end="")
       print ("%-24s " % (s.name [:-4]), end = "")
       if cursor:
         print (bcolors.ENDC, end = "")
       if (songIx + 1) % SONG_COLUMNS == 0:
         print ("")
       songIx += 1
-    print ("")
+    print ("\n")
     setNumber += 1
 
-  print (currentSet, currentSong)
+  if cutList:
+    print ("\nClipboard:")
+    songIx = 0
+    for s in cutList:
+      print ("%-24s " % (s.name [:-4]), end = "")
+      if (songIx + 1) % SONG_COLUMNS == 0:
+        print ("")
+      songIx += 1
+    print( "" )
 
 def getInput ():
   # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
@@ -160,11 +183,15 @@ def getInput ():
     fcntl.fcntl (fd, fcntl.F_SETFL, flags_save)
   return ret
 
-def saveList():
-  pass
+def saveList ():
+  global setListName, setListExt, setLists, statusString
 
-s = getSetByName (unassignedSetName)
-s.songList = getLocalSongs()
+  statusString = "Saved."
+
+  fileName = setListName + setListExt
+
+  with open (fileName, 'wb' ) as f:
+    pickle.dump (setLists, f)
 
 def songFwd (count):
   global currentSong, currentSet
@@ -256,6 +283,37 @@ def toggleMode ():
   if inputMode > CURSOR_MODE_MOVE:
     inputMode = 0
 
+def cutSongToClipboard():
+  global currentSet, currentSong, cutList
+
+  if currentSong is not None:
+    s = setLists [currentSet].songList [currentSong]
+    del (setLists [currentSet].songList [currentSong])
+    cutList.append(s)
+    l = len (setLists [currentSet].songList)
+    if l == 0:
+      currentSong = None
+    elif currentSong == l:
+      currentSong -= 1
+
+def pasteClipboard():
+  global currentSong, cutList
+
+  if currentSong == None:
+    currentSong = 0
+  else:
+    currentSong += 1
+
+  for s in cutList:
+    setLists[ currentSet ].songList.insert (currentSong, s)
+    currentSong += 1
+
+  cutList = []
+
+# start with all the local txt files.
+s = getSetByName (unassignedSetName)
+s.songList = getLocalSongs()
+
 displayUI()
 while True:
   ch = getInput()
@@ -271,6 +329,8 @@ while True:
     exit()
   elif ch == 's':
     saveList()
+  elif ch == 'l':
+    loadSetList()
   elif ch == 'r':
     setListName = raw_input ('Enter set list name:')
   elif ch == 'm':
@@ -279,6 +339,10 @@ while True:
     newSet ()
   elif ch == 'd':
     deleteSet()
+  elif ch == 'c':
+    cutSongToClipboard()
+  elif ch == 'p':
+    pasteClipboard()
 
 
   displayUI()
