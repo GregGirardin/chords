@@ -393,7 +393,7 @@ while True:
     print ("m - move song mode.")
     print ("s,l - save/load a setlist")
     print ("r - rename")
-    print ("n,d - add/delete a set")
+    print ("a,d - add/delete a set")
     print ("c,p - cut/paste to clipboard")
     print ("x - Export as html")
     print ("q - quit")
