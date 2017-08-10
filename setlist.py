@@ -410,22 +410,22 @@ def exportSet():
             if setNumber < numSets - 1 or songNumber < numSongs - 1:
               sameSet = True if songNumber < numSongs - 1 else False
               if sameSet or (sameSet == False and setNumber < numSets):
-                f.write ("&nbsp <a href=\"#s%ds%d\"> &darr; </a>" %
+                f.write ("&nbsp &nbsp <a href=\"#s%ds%d\"> &darr; </a>" %
                          (setNumber      if sameSet else setNumber + 1,
                           songNumber + 1 if sameSet else 0))
             # Link to Prev
             sameSet = True if songNumber > 0 else False
             if sameSet or setNumber > 0:
-              f.write ("&nbsp <a href=\"#s%ds%d\"> &uarr; </a>" %
+              f.write ("&nbsp &nbsp <a href=\"#s%ds%d\"> &uarr; </a>" %
                        (setNumber      if sameSet else setNumber - 1,
                         songNumber - 1 if sameSet else len (setLists [setNumber - 1].songList) - 1))
             f.write ("</h4>\n")
 
           # some 'tags' that can be put in the lyric text (or you can just put in html)
           elif line == "tab\n": # fixed font
-            f.write ("<font style=\"font-family:courier;\" size=\"2\">\n")
+            f.write ("<b><font style=\"font-family:courier;\" size=\"2\">\n")
           elif line == "!tab\n":
-            f.write ("</font>\n")
+            f.write ("</b></font>\n")
           elif "horus" in line: # chorus
             f.write ("<b><font style=\"font-family:courier;\" size=\"0\">&nbsp Chorus</font></b><br>\n")
           # ignore 2nd line if empty. It's unnecessary space in the html
@@ -437,7 +437,6 @@ def exportSet():
             f.write ("%s<br>\n" % (line.rstrip ()))
 
           fileLine += 1
-
       except:
         print ("Exception..")
       songNumber += 1
