@@ -9,19 +9,19 @@ class bcolors:
   FAIL = '\033[91m'
   ENDC = '\033[0m'
 
-helpString = bcolors.WARNING + \
-  "\nArrow to navigate.\n" \
-  "m   - Toggle Move mode.\n" \
+helpString = bcolors.WARNING +   \
+  "\nArrow to navigate.\n"       \
+  "m   - Toggle Move mode.\n"    \
   "s,l - Save/Load a setlist.\n" \
-  "r   - Rename setlist.\n" \
-  "a,d - Add/Delete a set.\n" \
-  "c,p - Cut/Paste to clipboard.\n" \
-  "x   - eXport as html.\n" \
-  "n   - Name the set.\n" \
-  "R   - Remove song.\n" \
-  "S   - Scan for new songs.\n" \
-  "1~9 - Jump to set.\n" \
-  "q - quit." + bcolors.ENDC
+  "r   - Rename setlist.\n"      \
+  "a,d - Add/Delete a set.\n"    \
+  "c,p - Cut/Paste clipboard.\n" \
+  "x   - eXport as html.\n"      \
+  "n   - Name the set.\n"        \
+  "R   - Remove song.\n"         \
+  "S   - Scan for new songs.\n"  \
+  "1~9 - Jump to set.\n"         \
+  "q   - quit." + bcolors.ENDC
 
 class Set (object):
   def __init__(self, name = None):
@@ -173,14 +173,25 @@ def getInput ():
   flags_save = fcntl.fcntl (fd, fcntl.F_GETFL)
   attrs_save = termios.tcgetattr (fd)
   attrs = list (attrs_save)
-  attrs [0] &= ~(termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
-                 termios.IGNCR | termios.ICRNL | termios.IXON)
+  attrs [0] &= ~(termios.IGNBRK |
+                 termios.BRKINT |
+                 termios.PARMRK |
+                 termios.ISTRIP |
+                 termios.INLCR  |
+                 termios.IGNCR  |
+                 termios.ICRNL  |
+                 termios.IXON)
   attrs [1] &= ~termios.OPOST
-  attrs [2] &= ~(termios.CSIZE | termios.PARENB)
+  attrs [2] &= ~(termios.CSIZE |
+                 termios.PARENB)
   attrs [2] |= termios.CS8
-  attrs [3] &= ~(termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN)
-  termios.tcsetattr(fd, termios.TCSANOW, attrs)
-  fcntl.fcntl(fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK)
+  attrs [3] &= ~(termios.ECHONL |
+                 termios.ECHO   |
+                 termios.ICANON |
+                 termios.ISIG   |
+                 termios.IEXTEN)
+  termios.tcsetattr (fd, termios.TCSANOW, attrs)
+  fcntl.fcntl (fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK)
   try:
     ret = sys.stdin.read (1)
     if ord (ret) == 27: # Escape
@@ -308,7 +319,7 @@ def deleteSet():
     for s in setLists [currentSet].songList:
       u.append (s)
     del setLists [currentSet]
-    l = len( setLists[ currentSet ].songList )
+    l = len (setLists [currentSet].songList)
     currentSong = 0 if l else None
 
 def cutSong ():
@@ -355,19 +366,23 @@ def exportSet():
   fname = setListName + ".html"
   f = open (fname, "w")
 
-  f.write( "<!DOCTYPE html><html><head>"
-           "<style type=\"text/css\">a {text-decoration: none}</style>"
-           "</head><body><h1>%s</h3>\n" % (setListName))
+  f.write( "<!DOCTYPE html>\n"
+           "<html>\n"
+           "<head>\n"
+           "<style type=\"text/css\">a {text-decoration: none}</style>\n"
+           "</head>\n"
+           "<body>\n"
+           "<h1>%s</h3>\n" % (setListName))
   # setlist summary
   setNumber = 0
   for l in setLists [0:-1]:
     songNumber = 0
-    f.write ( "<h2>%s</h3><font size=\"5\">\n\n" % (l.name if l.name else setNumber + 1))
+    f.write ("<h2>%s</h2><font size=\"5\">\n" % (l.name if l.name else setNumber + 1))
     for s in l.songList:
-      f.write ("<p id=\"t%dt%d\"><a href=\"#s%ds%d\">%s</a>\n" %
+      f.write ("<a id=\"t%dt%d\" href=\"#s%ds%d\">%s</a><br>\n" %
                (setNumber, songNumber, setNumber, songNumber, s.name [0:-4]))
       songNumber += 1
-    f.write ("</font></p>\n")
+    f.write ("</font></br>\n")
     setNumber += 1
   # songs
   setNumber = 0
@@ -380,33 +395,49 @@ def exportSet():
     for s in l.songList:
       try:
         sName = s.name
-        f.write ("<h1> <p id=\"s%ds%d\"</p>" % (setNumber, songNumber)) # add our ID
-        # Link to Next
-        if setNumber < numSets - 1 or songNumber < numSongs - 1:
-          sameSet = True if songNumber < numSongs - 1 else False
-          if sameSet or (sameSet == False and setNumber < numSets):
-            f.write( "<a href=\"#s%ds%d\"> &darr; </a>" %
-                     (setNumber      if sameSet else setNumber + 1,
-                      songNumber + 1 if sameSet else 0))
-        # Link to Prev
-        sameSet = True if songNumber > 0 else False
-        if sameSet or setNumber > 0:
-          f.write( "<a href=\"#s%ds%d\"> &uarr; </a>" %
-                   (setNumber      if sameSet else setNumber - 1,
-                    songNumber - 1 if sameSet else len (setLists [setNumber - 1].songList) - 1))
-        # link back to set
-        f.write( "<a href=\"#t%dt%d\"> <- </a></h2>\n" % (setNumber, songNumber))
+
         sf = open (sName, "r")
         fLines = sf.readlines()
         sf.close()
-        f.write ("<p style=\"font-family:courier;\">\n")
+        fileLine = 0
         for line in fLines:
-          # add spaces
-          while line [0] == " ":
-            line = line [1:]
-            f.write ("&nbsp")
-          f.write ("%s<br>\n" % (line.rstrip()))
-        f.write ("</p>\n")
+          if fileLine == 0: # assume first line is title
+            f.write ("<h4 id=\"s%ds%d\">" % (setNumber, songNumber))
+            # song text is link back to location in setlist
+            f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % (setNumber, songNumber, line.rstrip ()))
+
+            # Link to Next
+            if setNumber < numSets - 1 or songNumber < numSongs - 1:
+              sameSet = True if songNumber < numSongs - 1 else False
+              if sameSet or (sameSet == False and setNumber < numSets):
+                f.write ("&nbsp <a href=\"#s%ds%d\"> &darr; </a>" %
+                         (setNumber      if sameSet else setNumber + 1,
+                          songNumber + 1 if sameSet else 0))
+            # Link to Prev
+            sameSet = True if songNumber > 0 else False
+            if sameSet or setNumber > 0:
+              f.write ("&nbsp <a href=\"#s%ds%d\"> &uarr; </a>" %
+                       (setNumber      if sameSet else setNumber - 1,
+                        songNumber - 1 if sameSet else len (setLists [setNumber - 1].songList) - 1))
+            f.write ("</h4>\n")
+
+          # some 'tags' that can be put in the lyric text (or you can just put in html)
+          elif line == "tab\n": # fixed font
+            f.write ("<font style=\"font-family:courier;\" size=\"2\">\n")
+          elif line == "!tab\n":
+            f.write ("</font>\n")
+          elif "horus" in line: # chorus
+            f.write ("<b><font style=\"font-family:courier;\" size=\"0\">&nbsp Chorus</font></b><br>\n")
+          # ignore 2nd line if empty. It's unnecessary space in the html
+          elif fileLine > 1 or line != "\n":
+            # add spaces
+            while line [0] == " ":
+              line = line [1:]
+              f.write ("&nbsp")
+            f.write ("%s<br>\n" % (line.rstrip ()))
+
+          fileLine += 1
+
       except:
         print ("Exception..")
       songNumber += 1
@@ -434,13 +465,13 @@ def scanForNew():
       u.append (s)
       added += 1
 
-  statusString = "Scan complete"
+  statusString = "Scan complete."
   if added:
     statusString += ", %d added" % (added)
 
 # start with all the local txt files.
 s = getSetByName (unassignedSetName)
-s.songList = getLocalSongs()
+s.songList = getLocalSongs ()
 
 displayUI()
 while True:
@@ -481,7 +512,7 @@ while True:
   elif ch == 'p':
     pasteClipboard()
   elif ch == 'x':
-    exportSet()
+    exportSet ()
   elif ch == 'R':
     cutSong ()
   elif ch == 'n':
