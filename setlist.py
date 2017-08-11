@@ -85,17 +85,17 @@ def loadSetList ():
       print (line)
 
     c = getInput()
-    if c == "LEFT":
+    if c == "LEFT" or c == "h":
       return None
-    if c == "RIGHT":
+    if c == "RIGHT" or c == "l":
       with open (selSong, 'rb' ) as f:
         setLists = pickle.load (f)
       setListName = selSong [2:].split (".")[0]
       return
-    if c == "DOWN":
+    if c == "DOWN" or c == "j":
       if selectedfileIx < len (matchList) - 1:
         selectedfileIx += 1
-    if c == "UP":
+    if c == "UP" or c == "k":
       if selectedfileIx > 0:
         selectedfileIx -= 1
 
@@ -475,13 +475,13 @@ s.songList = getLocalSongs ()
 displayUI()
 while True:
   ch = getInput()
-  if ch == "DOWN":
+  if ch == "DOWN" or ch == "j":
     songFwd (SONG_COLUMNS)
-  elif ch == "RIGHT":
+  elif ch == "RIGHT" or ch == "l":
     songFwd (1)
-  elif ch == "UP":
+  elif ch == "UP" or ch == "k":
     songBack (SONG_COLUMNS)
-  elif ch == "LEFT":
+  elif ch == "LEFT" or ch == "h":
     songBack (1)
   elif ch == 's':
     if len (clipboard):
