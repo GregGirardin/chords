@@ -12,7 +12,7 @@ class bcolors:
 helpString = bcolors.WARNING +   \
   "\nArrow to navigate.\n"       \
   "m   - Toggle Move mode.\n"    \
-  "s,l - Save/Load a setlist.\n" \
+  "s,o - Save/Open setlist.\n" \
   "r   - Rename setlist.\n"      \
   "a,d - Add/Delete a set.\n"    \
   "c,p - Cut/Paste clipboard.\n" \
@@ -130,9 +130,9 @@ def displayUI ():
     if setNumber == currentSet and not len (setLists [currentSet].songList):
       print (bcolors.BLUE, end = "") # This set is empty, highlight the name
     if l.name:
-      print ("\n-",l.name,"-")
+      print ("\n-", l.name, "-", "/", len (l.songList))
     else:
-      print ("\nSet:", setNumber + 1)
+      print ("\nSet:", setNumber + 1, "/", len (l.songList))
 
     if setNumber == currentSet:
       print (bcolors.ENDC, end = "")
@@ -281,7 +281,7 @@ def songBack (count):
     if currentSet:
       currentSet -= 1
       l = len (setLists [currentSet].songList)
-      currentSong = l if l else None
+      currentSong = l - 1 if l else None
   elif currentSong > count:
     currentSong -= count
   else:
@@ -453,7 +453,11 @@ def scanForNew():
       for sng in l.songList:
         if sng.name == s.name:
           return True
+    for c in clipboard:
+      if c.name == s.name:
+        return True
     return False
+
   added = 0
 
   u = getSetByName (unassignedSetName).songList
@@ -464,9 +468,11 @@ def scanForNew():
       u.append (s)
       added += 1
 
-  statusString = "Scan complete."
+  statusString = "Scan complete"
   if added:
     statusString += ", %d added" % (added)
+  else:
+    statusString += "."
 
 # start with all the local txt files.
 s = getSetByName (unassignedSetName)
@@ -488,7 +494,7 @@ while True:
       statusString = "Can't save with songs in clipboard."
     else:
       saveList()
-  elif ch == 'l':
+  elif ch == 'o':
     loadSetList()
   elif ch == 'r':
     setListName = raw_input ('Enter set list name:')
