@@ -360,6 +360,8 @@ def pasteClipboard():
 
   clipboard = []
 
+tabMode = False
+
 def exportSet():
   global statusString, setLists
 
@@ -395,15 +397,24 @@ def exportSet():
     for s in l.songList:
       try:
         sName = s.name
-
         sf = open (sName, "r")
         fLines = sf.readlines()
         sf.close()
         fileLine = 0
+
+        def toggleTab (f):
+          global tabMode
+          if tabMode == True:
+            f.write ("</font>\n")
+            tabMode = False
+          else:
+            f.write ("<font style=\"font-family:courier;\" size=\"2\">\n")
+            tabMode = True
+
         for line in fLines:
-          if fileLine == 0: # assume first line is title
+          if fileLine == 0: # Assume first line is song title
             f.write ("<h4 id=\"s%ds%d\">" % (setNumber, songNumber))
-            # song text is link back to location in setlist
+            # song name is link back to location in setlist
             f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % (setNumber, songNumber, line.rstrip ()))
 
             # Link to Next
@@ -421,12 +432,13 @@ def exportSet():
                         songNumber - 1 if sameSet else len (setLists [setNumber - 1].songList) - 1))
             f.write ("</h4>\n")
 
-          # some 'tags' that can be put in the lyric text (or you can just put in html)
-          elif line == "tab\n": # fixed font
-            f.write ("<b><font style=\"font-family:courier;\" size=\"2\">\n")
-          elif line == "!tab\n":
-            f.write ("</b></font>\n")
-          elif "horus" in line: # chorus
+          # some 'pseudo tags' that can be put in the lyric text
+          # You can also just put in html in the txt since we paste it directly.
+          elif line [:2] == "t!":
+            toggleTab (f)
+          elif line [:2] == "s!":
+            f.write ("<b><font style=\"font-family:courier;\" size=\"1\">&nbsp Solo</font></b><br>\n")
+          elif line [:2] == "c!": # chorus
             f.write ("<b><font style=\"font-family:courier;\" size=\"0\">&nbsp Chorus</font></b><br>\n")
           # ignore 2nd line if empty. It's unnecessary space in the html
           elif fileLine > 1 or line != "\n":
