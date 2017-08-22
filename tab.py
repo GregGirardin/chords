@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, sys, glob, copy
+import os, sys, glob, copy, pickle
 '''
 A basic tablature editing utility.
 
@@ -12,26 +12,9 @@ A song will be modeled as a list of measures.
 Each measure contains a list of beats.
 Each beat is a list of simultaneous notes, empty list indicates a rest
 Each note is a value representing the fret and string
-
-File format
-
-One line per beat. If a measure ends with a rest we need to create it to
-preserve the number of beats in the measure.
-
-m1b2 s6f0 # measure 1 beat 2. String 6 fret 0
-m1a Verse 1 starts here # annotation of measure 1
-m1b2a Comment # annotation of m1b2
-m1b3 s5f2 s4f2 # this beat has two notes
-m1b4 s3f0
-m1p # page break (for export)
-m2b6 # this beat has no notes, but it's the last beat of the measure
-
-If you give it a command line parameter that's the song name
-ex: ./tab.py mynewsong
 '''
-songExt = ".pytab"
 
-version = "v1.0"
+songExt = ".pytab"
 
 unsavedChgStr = 'Unsaved changes. Continue? (y/n)'
 
@@ -43,8 +26,16 @@ OFFSET_MODE_MIDDLE = 1
 OFFSET_MODE_OCTAVE = 2
 
 offsetMode = OFFSET_MODE_NORMAL
+DISPLAY_BEATS = 32
+
+class bcolors:
+  BLUE = '\033[94m'
+  WARNING = '\033[93m'
+  FAIL = '\033[91m'
+  ENDC = '\033[0m'
+
 MAX_WIDTH = 120
-MAX_BEATS_PER_MEAS = 32 #
+MAX_BEATS_PER_MEAS = 32
 DISPLAY_BEATS = 32 # number of beats we can display on a line
 '''
  Wrapper around a list.
@@ -115,16 +106,17 @@ class pytabContainer (object):
 
 class pytabNote (object):
 
-  def __init__ (self, string, fret):
+  def __init__ (self, string, fret, hLight = None):
     self.string = string
     self.fret = fret
+    self.hLight = hLight # highlight (indicate melody)
 
 class pytabBeat (pytabContainer):
 
-  def addNote (self, string, fret):
+  def addNote (self, string, fret, hLight = None):
     assert string >= 1 and string <= 6, "Valid strings are 1-6"
     assert fret >= 0 and fret <= 24, "Valid frets are 0-24"
-    return self.set (pytabNote (string, fret), string)
+    return self.set (pytabNote (string, fret, hLight), string)
 
 class pytabMeasure (pytabContainer):
 
@@ -153,69 +145,14 @@ class pytabSong (pytabContainer):
 
 def load (name):
   global statusString
+  fileName = name + songExt
 
-  song = pytabSong (name)
-  fileName = song.songName + songExt
   try:
-    f = open (fileName, 'r')
+    with open (fileName, 'rb' ) as f:
+      song = pickle.load (f)
   except:
     statusString = "Could not open: " + fileName
     return None
-
-  content = [line.rstrip('\n') for line in f.readlines()]
-  f.close ()
-
-  if content [0] != version:
-    statusString = "Unsupported version" + content [0]
-    return None
-
-  for line in content [1:]:
-    linenocomment = line.split ('#')[0] # strip comment
-    linefields = linenocomment.split ()
-    if linefields [0][-1:] == 'p': # This is a page Break
-      f = linefields[0][1:-1] # first field minus the m and trailing b
-      measure = int (f)
-      if song.get (measure) == None:
-        song.addMeasure (measure)
-      song.get (measure).pageBreak = True
-    elif linefields [0][-1:] == 'a': # This is an annotation
-      annotation = linenocomment [len (linefields[0]) + 1:]
-      f = linefields[0][1:-1] # first field minus the m and trailing a
-      if not 'b' in f: # annotation of a measure
-        measure = int (f)
-        if song.get (measure) == None:
-          song.addMeasure (measure)
-        song.get (measure).annotation = annotation
-      else: # .. of a beat
-        mbs = f.split ('b')
-        measure = int (mbs [0])
-        beat = int (mbs [1])
-
-        if song.get (measure) == None:
-          song.addMeasure (measure)
-        m = song.get (measure)
-        if m.get (beat) == None:
-          m.addBeat (beat)
-
-        m.get (beat).annotation = annotation
-
-    else: # This line is a sequence of notes.
-      mbs = linefields [0][1:].split ('b')
-      measure = int (mbs [0])
-      beat = int (mbs [1])
-
-      # create measure if necessary
-      if song.get (measure) == None:
-        song.addMeasure (measure)
-
-      m = song.get (measure)
-      if m.get (beat) == None:
-        m.addBeat (beat)
-
-      songbeat = m.get (beat)
-      for note in linefields [1:]:
-        sf = note[1:].split ('f')
-        songbeat.addNote (int (sf[0]), int (sf [1]))
 
   return song
 
@@ -223,48 +160,9 @@ def save (song):
   global statusString
   fileName = song.songName + songExt
 
-  try:
-    f = open (fileName, 'w')
-  except:
-    statusString = "Could not open:" + fileName
-    return
+  with open (fileName, 'wb' ) as f:
+    pickle.dump (song, f)
 
-  f.write (version + "\n")
-
-  curMeasure = 1
-
-  for m in song.get ():
-    if m: # All measures should be valid
-      if m.pageBreak:
-        f.write ("m%dp\n" % curMeasure)
-
-      if m.annotation:
-        f.write ("m%da %s\n" % (curMeasure, m.annotation))
-
-      curBeat = 1
-      for b in m.get():
-        dispMandB = False
-        if b:
-          if b.annotation:
-            f.write ("m%db%da %s\n" % (curMeasure, curBeat, b.annotation))
-          for n in b.get():
-            if n:
-              if not dispMandB:
-                f.write ("m%db%d" % (curMeasure, curBeat))
-                dispMandB = True
-              f.write (" s%df%d" % (n.string, n.fret))
-
-        curBeat += 1
-        if dispMandB:
-          f.write ("\n")
-      # if last beat in measure has no notes, save it to preserve measure length.
-      lastBeat = m.get (m.count())
-      if lastBeat == None or (lastBeat and lastBeat.count() == 0):
-        f.write ("m%db%d\n" % (curMeasure, m.count()))
-
-    curMeasure += 1
-
-  f.close ()
   statusString = "Saved."
 
 def annotate (o, h, ANN_IX, BEAT_IX):
@@ -304,7 +202,7 @@ def export (song):
                    '',   # annotations
                    '  '] # beats
 
-    fretboardLines = [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ']
+    fretboardLines = [ 'E ','B ','G ','D ','A ','E ']
 
     def endOfMeasure ():
       for s in range (6):
@@ -312,9 +210,9 @@ def export (song):
 
       headerLines [MEAS_IX] += ' '
       headerLines [BEAT_IX] += ' '
-
+    disBeats = DISPLAY_BEATS
     while True:
-      if measure <= song.count () and len (fretboardLines [0]) < MAX_WIDTH:
+      if measure <= song.count () and disBeats > 0:
         m = song.get (measure)
         if m == None:
           endOfMeasure ()
@@ -324,6 +222,7 @@ def export (song):
           # display measure
           curBeatNum = 1
           for b in m.get():
+            disBeats -= 1
             annotate (b, headerLines, ANN_IX, BEAT_IX)
 
             for curString in range (1,7):
@@ -371,8 +270,8 @@ def export (song):
 
 def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   ''' display starting from current measure
-      display MAX_WIDTH characters, so that's about MAX_WIDTH/3 beats
-      each beat takes 3 spaces, plus the measure delimiter
+      display DISPLAY_BEATS beats, so the width isn't quite fixed
+      based on how many measures that is.
   '''
   global statusString, offsetMode
   assert cursor_m >= measure, "Cursor before current measure."
@@ -402,6 +301,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                    'm   Add measure',
                    'c/p Copy/Paste',
                    'n   Annotate',
+                   'h   Highlight',
                    'r   Rename song',
                    'b   Page break',
                    's   Save',
@@ -435,8 +335,9 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
     headerLines [BEAT_IX] += ' ' # Beats
 
   # Display measures
+  disBeats = DISPLAY_BEATS
   while True:
-    if measure <= song.count () and len (headerLines [MEAS_IX]) < MAX_WIDTH:
+    if measure <= song.count () and disBeats > 0:
       m = song.get (measure)
       if m == None:
         endOfMeasure ()
@@ -444,6 +345,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
         annotate (m, headerLines, ANN_IX, BEAT_IX)
         curBeatNum = 1
         for b in m.get():
+          disBeats -= 1
           annotate (b, headerLines, ANN_IX, BEAT_IX)
 
           for curString in range (1, 7):
@@ -465,9 +367,16 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                 fieldString += "---"
             else:
               if note.fret > 9:
+                if note.hLight:
+                  fieldString += bcolors.FAIL
                 fieldString += "%2d" % (note.fret)
               else:
-                fieldString += "-%d" % (note.fret)
+                fieldString += "-"
+                if note.hLight:
+                  fieldString += bcolors.FAIL
+                fieldString += "%d" % (note.fret)
+              if note.hLight:
+                fieldString += bcolors.ENDC
               if cursorPos:
                 fieldString += ">"
               else:
@@ -494,9 +403,9 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
 
   os.system ('clear')
   for line in headerLines:
-    print line [0 : MAX_WIDTH]
+    print line # [0 : MAX_WIDTH]
   for line in fretboardLines:
-    print line [0 : MAX_WIDTH]
+    print line # [0 : MAX_WIDTH]
   for line in instructions:
     print line
 
@@ -535,67 +444,6 @@ def getInput ():
     termios.tcsetattr (fd, termios.TCSAFLUSH, attrs_save)
     fcntl.fcntl (fd, fcntl.F_SETFL, flags_save)
   return ret
-
-def pytabTest ():
-  # generate test song, add some stuff, do some sanity checks, save it
-  # load it and save that, make sure they're the same.
-  songName1 = "testsong1"
-  songName2 = "testsong2"
-  testsong = pytabSong (songName1)
-  numMeasures = 8
-
-  # add beats to a test measure
-  for testMeasure in (1, 3, 5):
-    tm = testsong.addMeasure (testMeasure)
-    assert tm is not None, "Test measure was None."
-
-    for testBeat in (1, 2, 4):
-      tb = tm.addBeat (testBeat)
-      assert tb is not None, "Test beat was None."
-
-      # add notes to test beat
-      for testNote in range (1, 6):
-        tb.addNote (testNote, testNote + testMeasure)
-
-  # verify addMeasure adds empty measures up to the measure you're creating.
-  testsong.addMeasure (numMeasures)
-
-  assert testsong.count() == numMeasures, "Wrong number of measures."
-  assert testsong.get (numMeasures) is not None, "Test measure was None."
-  assert testsong.get (numMeasures - 1) is None, "Fill measure was not None."
-
-  save (testsong)
-
-  # open
-  testsong2 = load (songName1)
-  # compare
-  # rather than walk through the lists comparing note by note, just diff the files for now.
-  testsong2.songName = songName2
-  save (testsong2)
-
-  fileName = songName1 + songExt
-  try:
-    f = open (fileName, 'r')
-  except:
-    print "Could not open", fileName
-    assert 0
-
-  content1 = f.readlines()
-  f.close ()
-
-  fileName = songName2 + songExt
-  try:
-    f = open (fileName, 'r')
-  except:
-    print "Could not open", fileName
-    assert 0
-
-  content2 = f.readlines()
-  f.close ()
-
-  assert content1 == content2, "Files differ."
-
-  # can't validate export
 
 def findPrevBeat (song, curMeasure, curBeat):
   if curBeat > 1:
@@ -787,8 +635,6 @@ def handlePaste (song, beats, measure, beat):
 
   return beatsPasted
 
-# pytabTest()
-
 # main loop
 songName = "Song"
 
@@ -810,7 +656,18 @@ unsavedChange = False
 
 cpBuf = []
 
+def getNote ():
+  m = currentSong.get (cursorMeasure)
+  if not m:
+    return None
+  if not m.get (cursorBeat):
+    return None
+  b = m.get (cursorBeat)
+  return b.get (cursorString)
+
 def setNote (fret):
+  global unsavedChange
+
   if offsetMode == OFFSET_MODE_OCTAVE:
     fret += 12
   elif offsetMode == OFFSET_MODE_MIDDLE:
@@ -903,6 +760,13 @@ while True:
     songName = raw_input ('Enter song name:')
     currentSong.songName = songName
     unsavedChange = True
+  elif ch == 'h': # toggle highlight
+    n = getNote()
+    if n:
+      if n.hLight is True:
+        n.hLight = False
+      else:
+        n.hLight = True
   elif ch == 'n': # Annotate beat
     annotation = raw_input ("Enter beat annotation:")
     if len (annotation) == 0: # clear
