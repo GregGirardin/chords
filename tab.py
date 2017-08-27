@@ -122,6 +122,7 @@ class pytabMeasure (pytabContainer):
 
   def __init__ (self):
     self.pageBreak = False
+    self.repeat = False
     pytabContainer.__init__(self)
 
   def addBeat (self, beat = None, insert = False):
@@ -204,19 +205,28 @@ def export (song):
 
     fretboardLines = [ 'E ','B ','G ','D ','A ','E ']
 
-    def endOfMeasure ():
-      for s in range (6):
+    def endOfMeasure (repeat = False):
+      for s in (0, 1, 4, 5):
         fretboardLines [s] += '|'
+      if repeat:
+        ch = ':'
+      else:
+        ch = "|"
+      fretboardLines [2] += ch
+      fretboardLines [3] += ch
 
       headerLines [MEAS_IX] += ' '
       headerLines [BEAT_IX] += ' '
     disBeats = DISPLAY_BEATS
+    repeat = False
+
     while True:
       if measure <= song.count () and disBeats > 0:
         m = song.get (measure)
         if m == None:
-          endOfMeasure ()
+          endOfMeasure (repeat)
         else:
+          repeat = m.repeat
           annotate (m, headerLines, ANN_IX, BEAT_IX)
 
           # display measure
@@ -248,7 +258,7 @@ def export (song):
             headerLines [BEAT_IX] += '  .'
             curBeatNum += 1
 
-          endOfMeasure ()
+          endOfMeasure (repeat)
       else:
         break
       measure += 1
@@ -304,6 +314,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                    'h   Highlight',
                    'r   Rename song',
                    'b   Page break',
+                   'R   Repeat',
                    's   Save',
                    'l/L Load/Reload',
                    'x   Export',
@@ -323,25 +334,39 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
 
   statusString = None
 
-  def endOfMeasure (pageBreak = False):
+  def endOfMeasure (pageBreak = False, repeat = False):
+
     if pageBreak:
       bc = '/'
     else:
       bc = '|'
 
-    for s in range (6):
+    for s in (0, 1, 4, 5):
       fretboardLines [s] += bc
+
+    if repeat:
+      bc = ":"
+    elif pageBreak:
+      bc = "/"
+    else:
+      bc = "|"
+
+    for s in (2, 3):
+      fretboardLines [s] += bc
+
     headerLines [MEAS_IX] += ' ' # Measures
     headerLines [BEAT_IX] += ' ' # Beats
 
   # Display measures
   disBeats = DISPLAY_BEATS
+  repeat = False
   while True:
     if measure <= song.count () and disBeats > 0:
       m = song.get (measure)
       if m == None:
-        endOfMeasure ()
+        endOfMeasure (repeat)
       else:
+        repeat = m.repeat
         annotate (m, headerLines, ANN_IX, BEAT_IX)
         curBeatNum = 1
         for b in m.get():
@@ -396,7 +421,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
           if nm and nm.pageBreak:
             pb = nm.pageBreak
 
-        endOfMeasure (pb)
+        endOfMeasure (pb, repeat)
     else:
       break
     measure += 1
@@ -729,6 +754,13 @@ while True:
         m.pageBreak = False
       else:
         m.pageBreak = True
+  elif ch == 'R': # toggle repeat
+    m = currentSong.get (cursorMeasure)
+    if m:
+      if m.repeat == True:
+        m.repeat = False
+      else:
+        m.repeat = True
   elif ch == 'd': # delete beat.
     m = currentSong.get (cursorMeasure)
     if currentSong.count() > 1 or m.count () > 1:
@@ -814,7 +846,6 @@ while True:
   elif ch == 's': # save
     save (currentSong)
     unsavedChange = False
-
   elif ch == 'x': # export
     export (currentSong)
   elif ch == 'L': # re-load
@@ -826,6 +857,9 @@ while True:
     loadedSong = load (songName)
     if loadedSong is not None:
       currentSong = loadedSong
+      cursorMeasure = 1
+      cursorBeat = 1
+      cursorString = 1
       unsavedChange = False
   elif ch == 'l': # load
     if unsavedChange:
