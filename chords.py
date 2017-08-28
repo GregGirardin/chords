@@ -386,8 +386,9 @@ class runGui ():
 
   def displayFretboards (self, frame):
 
+    dFont = tkFont.Font (family = 'Courier', size = 12)
+
     def generateFB (dispKey):
-      dFont = tkFont.Font (family = 'Courier', size = 12)
 
       for stringNum in range (1, numStrings + 1):
         string = fretboard [stringNum]
@@ -435,7 +436,7 @@ class runGui ():
       if fret == 0:
         dispLine += " "
 
-    s = Label (frame, text = dispLine, font = "TkFixedFont")
+    s = Label (frame, text = dispLine, font = dFont)
     s.pack (side = TOP)
 
     generateFB ('note')
