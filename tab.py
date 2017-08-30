@@ -29,10 +29,10 @@ offsetMode = OFFSET_MODE_NORMAL
 DISPLAY_BEATS = 32
 
 class bcolors:
-  BLUE = '\033[94m'
+  BLUE    = '\033[94m'
   WARNING = '\033[93m'
-  FAIL = '\033[91m'
-  ENDC = '\033[0m'
+  FAIL    = '\033[91m'
+  ENDC    = '\033[0m'
 
 MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32
@@ -161,29 +161,35 @@ def save (song):
   global statusString
   fileName = song.songName + songExt
 
-  with open (fileName, 'wb' ) as f:
+  with open (fileName, 'wb') as f:
     pickle.dump (song, f)
 
   statusString = "Saved."
 
-def annotate (o, h, ANN_IX, BEAT_IX):
-  ''' Display annotation if it won't overwrite a previous one.
-      o is the object that may have an annotation (measure or beat)
-      h is the header to be modified, we're also passed the indexes since
-      they vary between the UI and export
-      We use the 'beat' line as a way to determine the current x position '''
-  OFFSET = 1
+def annotate (o, h, ANN_IX, curOff, html):
+  '''
+  Display annotation if it won't overwrite a previous one.
+  o is the object that may have an annotation (measure or beat)
+  h is the header to be modified, we're also passed the indexes since
+  they vary between the UI and export
+  '''
   if o:
     if o.annotation:
-      if len (h [ANN_IX]) < len (h [BEAT_IX]) + OFFSET:
-        while len (h [ANN_IX]) < len (h [BEAT_IX]) + OFFSET:
-          h [ANN_IX] += ' '
-        h [ANN_IX] += o.annotation
+      if curOff [1] < curOff [0]:
+        while curOff [1] < curOff [0]:
+          if html:
+            h [ANN_IX] += '&nbsp'
+          else:
+            h [ANN_IX] += ' '
+          curOff [1] += 1
 
-def export (song):
+        h [ANN_IX] += o.annotation
+        curOff [1] += len (o.annotation)
+
+def export (song, html):
   global statusString
   # Save in human readable format. Could probably refactor with displayUI()
-  fileName = song.songName + ".txt"
+  fileName = song.songName + (".html" if html else ".txt")
 
   try:
     f = open (fileName, 'w')
@@ -191,19 +197,32 @@ def export (song):
     statusString = "Could not open" + fileName
     return
 
+  if html:
+    f.write( "<!DOCTYPE html>\n"
+             "<html><head><style type=\"text/css\">a {text-decoration: none}</style></head>\n"
+             "<body><font style=\"font-family:courier;\" size=\"2\">\n<h2>\n")
   MEAS_IX = 0
   ANN_IX  = 1
-  BEAT_IX = 2
+  f.write (song.songName + ("<br>\n" if html else "\n"))
+  if html:
+     f.write ("</h2><hr>")
 
-  f.write (song.songName + "\n")
   measure = 1
+  curOff = [3, 0] # current, where the space is
+
+  twoSp = '&nbsp&nbsp'
+  highLightOn = "<font style=\"color:red;\"><b>" # "<b>"
+  highLightOff = "</b></font>"                    # "</b>"
 
   while measure <= song.count ():
-    headerLines = ['  ', # measures
-                   '',   # annotations
-                   '  '] # beats
+    if html:
+      headerLines = ['&nbsp', # measures
+                     '' ]     # annotations
+    else:
+      headerLines = [' ', # measures
+                     '' ] # annotations
 
-    fretboardLines = [ 'E ','B ','G ','D ','A ','E ']
+    fretboardLines = ['E ','B ','G ','D ','A ','E ']
 
     def endOfMeasure (repeat = False):
       for s in (0, 1, 4, 5):
@@ -215,50 +234,65 @@ def export (song):
       fretboardLines [2] += ch
       fretboardLines [3] += ch
 
-      headerLines [MEAS_IX] += ' '
-      headerLines [BEAT_IX] += ' '
+      headerLines [MEAS_IX] += '&nbsp' if html else ' '
+
     disBeats = DISPLAY_BEATS
     repeat = False
 
     while True:
-      if measure <= song.count () and disBeats > 0:
+      if measure <= song.count() and disBeats > 0:
         m = song.get (measure)
         if m == None:
           endOfMeasure (repeat)
+          curOff [0] += 1
         else:
           repeat = m.repeat
-          annotate (m, headerLines, ANN_IX, BEAT_IX)
+          annotate (m, headerLines, ANN_IX, curOff, html)
 
           # display measure
           curBeatNum = 1
           for b in m.get():
             disBeats -= 1
-            annotate (b, headerLines, ANN_IX, BEAT_IX)
+            annotate (b, headerLines, ANN_IX, curOff, html)
 
-            for curString in range (1,7):
+            for curString in range (1, 7):
               if b:
                 note = b.get (curString)
               else:
                 note = None
-              fieldString = "-"
+              fieldString = ""
 
               if note == None:
                 fieldString += "--"
               else:
                 if note.fret > 9:
+                  if note.hLight and html:
+                    fieldString += highLightOn
                   fieldString += "%2d" % (note.fret)
                 else:
-                  fieldString += "-%d" % (note.fret)
-
+                  fieldString += "-"
+                  if note.hLight and html:
+                    fieldString += highLightOn
+                  fieldString += "%d" % (note.fret)
+                if note.hLight and html:
+                  fieldString += highLightOff
+              fieldString += "-"
               fretboardLines [curString - 1] += fieldString
+
             if curBeatNum == 1:
-              headerLines [MEAS_IX] += "%-3d" % (measure)
+              if html:
+                if measure < 10:
+                  headerLines [MEAS_IX] += twoSp
+                elif measure < 100:
+                  headerLines [MEAS_IX] += "&nbsp"
+                headerLines [MEAS_IX] += "%d" % (measure)
             else:
-              headerLines [MEAS_IX] += '   '
-            headerLines [BEAT_IX] += '  .'
+              headerLines [MEAS_IX] += '&nbsp&nbsp&nbsp' if html else '   '
+            curOff [0] += 3
             curBeatNum += 1
 
           endOfMeasure (repeat)
+          curOff [0] += 1
       else:
         break
       measure += 1
@@ -268,18 +302,27 @@ def export (song):
 
     for line in headerLines:
       f.write (line)
+      if html:
+        f.write ("<br>")
       f.write ("\n")
 
     for line in fretboardLines:
       f.write (line)
+      if html:
+        f.write ("<br>")
       f.write ("\n")
-    f.write("\n")
+    f.write ("\n")
 
-  statusString = "Exported."
+  if html:
+    f.write ("</font></body></html>\n")
+    statusString = "Exported HTML."
+  else:
+    statusString = "Exported txt."
+
   f.close()
 
 def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
-  ''' display starting from current measure
+  ''' Display starting from current measure
       display DISPLAY_BEATS beats, so the width isn't quite fixed
       based on how many measures that is.
   '''
@@ -317,7 +360,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                    'R   Repeat',
                    's   Save',
                    'l/L Load/Reload',
-                   'x   Export',
+                   'x/X Export (txt / html)',
                    'q   Quit']
 
   headerLines [SUMMARY_IX] += song.songName + ", " + \
@@ -332,10 +375,11 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
     elif offsetMode == OFFSET_MODE_OCTAVE:
       headerLines [STATUS_IX] += "12-24"
 
+  curOff = [3, 0]
+
   statusString = None
 
   def endOfMeasure (pageBreak = False, repeat = False):
-
     if pageBreak:
       bc = '/'
     else:
@@ -365,13 +409,14 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
       m = song.get (measure)
       if m == None:
         endOfMeasure (repeat)
+        curOff [0] += 1
       else:
         repeat = m.repeat
-        annotate (m, headerLines, ANN_IX, BEAT_IX)
+        annotate (m, headerLines, ANN_IX, curOff, False)
         curBeatNum = 1
         for b in m.get():
           disBeats -= 1
-          annotate (b, headerLines, ANN_IX, BEAT_IX)
+          annotate (b, headerLines, ANN_IX, curOff, False)
 
           for curString in range (1, 7):
             if b:
@@ -396,7 +441,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                   fieldString += bcolors.FAIL
                 fieldString += "%2d" % (note.fret)
               else:
-                fieldString += "-"
+                fieldString += "<" if cursorPos else "-"
                 if note.hLight:
                   fieldString += bcolors.FAIL
                 fieldString += "%d" % (note.fret)
@@ -413,6 +458,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
           else:
             headerLines [MEAS_IX] += '   '
           headerLines [BEAT_IX] += ' . '
+          curOff [0] += 3
           curBeatNum += 1
 
         pb = False
@@ -422,6 +468,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
             pb = nm.pageBreak
 
         endOfMeasure (pb, repeat)
+        curOff [0] += 1
     else:
       break
     measure += 1
@@ -847,7 +894,9 @@ while True:
     save (currentSong)
     unsavedChange = False
   elif ch == 'x': # export
-    export (currentSong)
+    export (currentSong, False)
+  elif ch == 'X': # export
+    export (currentSong, True)
   elif ch == 'L': # re-load
     if unsavedChange:
       print (unsavedChgStr)
