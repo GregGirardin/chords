@@ -48,6 +48,10 @@ instrumentMap = \
                 "tuning":      ("G", "D", "A", "E"),
                 "fretOffset":  (0, 0, 0, 0)
                 },
+  'Uke':       {
+                "tuning":      ("A", "E", "C", "G"),
+                "fretOffset":  (0, 0, 0, 0)
+                },
   'Banjo':      {
                 "tuning":      ("D", "B", "G", "D", "G"),
                 "fretOffset":  (0, 0, 0, 0, 5)
@@ -60,7 +64,7 @@ instrumentMap = \
                 }
   }
 # pick the instruments you care about
-instruments = ('Mandolin', 'Guitar', 'Dropped D', 'DADGAD', 'Bass')
+instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin', 'Dropped D')
 # instruments = instrumentMap.keys() # doesn't guarantee order
 
 intervalList = ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7', '8', 'b9', '9']
