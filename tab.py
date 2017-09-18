@@ -25,13 +25,21 @@ OFFSET_MODE_NORMAL = 0
 OFFSET_MODE_MIDDLE = 1
 OFFSET_MODE_OCTAVE = 2
 
-INST_GUITAR = 1
-INST_BASS = 2
-
 offsetMode = OFFSET_MODE_NORMAL
-instrument = INST_GUITAR
 
 DISPLAY_BEATS = 32
+
+instruments = { # name       # strings, notes.
+                "Guitar"   : (6, ('E ','B ','G ','D ','A ','E ')),
+                "DroppedD" : (6, ('E ','B ','G ','D ','A ','D ')),
+                "Bass"     : (4, (''  , '' ,'G ','D ','A ','E ')),
+                "BassB"    : (5, (''  ,'G ','D ','A ','E ','B ')),
+                "Mandy"    : (4, (''  , '' ,'E ','A ','D ','G '))
+              }
+
+# instruments in order we want to cycle through them.
+instSet = ("Guitar", "Bass", "DroppedD", "BassB", "Mandy")
+numStrings = 0
 
 class bcolors:
   BLUE    = '\033[94m'
@@ -124,7 +132,6 @@ class pytabBeat (pytabContainer):
     return self.set (pytabNote (string, fret, hLight), string)
 
 class pytabMeasure (pytabContainer):
-
   def __init__ (self):
     self.pageBreak = False
     self.repeat = False
@@ -137,9 +144,9 @@ class pytabMeasure (pytabContainer):
     return self.set (pytabBeat (), beat, insert)
 
 class pytabSong (pytabContainer):
-
-  def __init__ (self, name):
+  def __init__ (self, name, instIx):
     self.songName = name
+    self.iIx = instIx
     pytabContainer.__init__(self)
 
   def addMeasure (self, measure = None, insert = False):
@@ -192,7 +199,8 @@ def annotate (o, h, ANN_IX, curOff, html):
         curOff [1] += len (o.annotation)
 
 def export (song, html):
-  global statusString, instrument
+  global statusString, instruments, numStrings
+
   # Save in human readable format. Could probably refactor with displayUI()
   fileName = song.songName + (".html" if html else ".txt")
 
@@ -216,8 +224,8 @@ def export (song, html):
   curOff = [3, 0] # current, where the space is
 
   twoSp = '&nbsp&nbsp'
-  highLightOn = "<font style=\"color:red;\"><b>" # "<b>"
-  highLightOff = "</b></font>"                    # "</b>"
+  highLightOn = "<font style=\"color:red;\"><b>"
+  highLightOff = "</b></font>"
 
   while measure <= song.count ():
     if html:
@@ -227,7 +235,7 @@ def export (song, html):
       headerLines = [' ', # measures
                      '' ] # annotations
 
-    fretboardLines = ['E ','B ','G ','D ','A ','E ']
+    fretboardLines = list (instruments [instSet [currentSong.iIx]][1])
 
     def endOfMeasure (repeat = False):
       for s in (0, 1, 4, 5):
@@ -260,7 +268,9 @@ def export (song, html):
             disBeats -= 1
             annotate (b, headerLines, ANN_IX, curOff, html)
 
-            for curString in range (1 if instrument == INST_GUITAR else 3, 7):
+            startStr = 7 - numStrings
+
+            for curString in range (startStr, 7):
               if b:
                 note = b.get (curString)
               else:
@@ -310,10 +320,8 @@ def export (song, html):
         f.write ("<br>")
       f.write ("\n")
 
-    if instrument == INST_GUITAR:
-      fl = fretboardLines
-    else:
-      fl = fretboardLines [2:]
+    startLine = 6 - numStrings
+    fl = fretboardLines [startLine:]
 
     for line in fl:
       f.write (line)
@@ -335,7 +343,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
       display DISPLAY_BEATS beats, so the width isn't quite fixed
       based on how many measures that is.
   '''
-  global statusString, offsetMode
+  global statusString, offsetMode, instruments, numStrings
   assert cursor_m >= measure, "Cursor before current measure."
 
   SUMMARY_IX = 0 # header lines
@@ -350,7 +358,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
                  '',      # Annotations
                  '  ' ]   # Beats
 
-  fretboardLines = [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ']
+  fretboardLines = list (instruments [instSet [currentSong.iIx]][1])
 
   instructions = [ '',
                    'Use arrows to move cursor',
@@ -382,14 +390,17 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   statusString = None
 
   def endOfMeasure (pageBreak = False, repeat = False):
-    global instrument
+    global instruments, numStrings
+
     if pageBreak:
       bc = '/'
     else:
       bc = '|'
 
-    if instrument == INST_GUITAR:
+    if numStrings == 6:
       strs = (0, 1, 4, 5)
+    elif numStrings == 5:
+      strs = (1, 2, 5)
     else:
       strs = (2, 5)
 
@@ -403,7 +414,7 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
     else:
       bc = "|"
 
-    if instrument == INST_GUITAR:
+    if numStrings == 6:
       strs = (2, 3)
     else:
       strs = (3, 4)
@@ -490,10 +501,8 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   os.system ('clear')
   for line in headerLines:
     print line
-  if instrument == INST_GUITAR:
-    fl = fretboardLines
-  else:
-    fl = fretboardLines [2:]
+  startLine = 6 - numStrings
+  fl = fretboardLines [startLine:]
   for line in fl:
     print line
   for line in instructions:
@@ -733,9 +742,11 @@ if len (sys.argv) == 2:
 
 currentSong = load (songName)
 if not currentSong:
-  currentSong = pytabSong (songName)
+  currentSong = pytabSong (songName, iIx)
   currentSong.addMeasure ()
   currentSong.get (1).addBeat()
+
+numStrings = instruments [instSet [currentSong.iIx]][0]
 
 currentMeasure = 1 # Where the UI starts displaying from
 
@@ -787,7 +798,7 @@ while True:
   elif ch == 'LEFT': # go to the previous beat if possible
     cursorMeasure, cursorBeat = findPrevBeat (currentSong, cursorMeasure, cursorBeat)
   elif ch == 'UP':
-    if cursorString > (1 if instrument == INST_GUITAR else 3):
+    if cursorString > (1 if numStrings == 6 else 3):
       cursorString -= 1
   elif ch == 'DOWN':
     if cursorString < 6:
@@ -952,12 +963,14 @@ while True:
       cursorBeat = currentSong.get (cursorMeasure).count()
     # ^ corner case because of how we handle pasting into empty measures.
   elif ch == 'I': # not destructive, only display, so no concern about unsaved
-    if instrument == INST_GUITAR:
-      instrument = INST_BASS
-      if cursorString < 3:
-        cursorString = 3
-    else:
-      instrument = INST_GUITAR
+    currentSong.iIx += 1
+    if currentSong.iIx == len (instSet):
+      currentSong.iIx = 0
+    if cursorString < 3:
+      cursorString = 3
+
+    numStrings = instruments [instSet [currentSong.iIx]][0]
+    statusString = instSet [currentSong.iIx]
 
   # Calculate currentMeasure
   displayBeats = 0
