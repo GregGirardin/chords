@@ -25,16 +25,18 @@ OFFSET_MODE_NORMAL = 0
 OFFSET_MODE_MIDDLE = 1
 OFFSET_MODE_OCTAVE = 2
 
-offsetMode = OFFSET_MODE_NORMAL
-
-DISPLAY_BEATS = 32
-
-instruments = { # name       # strings, notes.
+instruments = { # name       # strings, notes. TBD, the string count is redundant, clean up later.
                 "Guitar"   : (6, ('E ','B ','G ','D ','A ','E ')),
                 "DroppedD" : (6, ('E ','B ','G ','D ','A ','D ')),
                 "Bass"     : (4, (''  , '' ,'G ','D ','A ','E ')),
                 "BassB"    : (5, (''  ,'G ','D ','A ','E ','B ')),
                 "Mandy"    : (4, (''  , '' ,'E ','A ','D ','G '))
+              }
+
+repeatLines = { # if a measure has a repeat indication, which lines do we put the ":"
+                4 : (3, 4),
+                5 : (3,),
+                6 : (2, 3)
               }
 
 # instruments in order we want to cycle through them.
@@ -50,6 +52,8 @@ class bcolors:
 MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32
 DISPLAY_BEATS = 32 # number of beats we can display on a line
+offsetMode = OFFSET_MODE_NORMAL
+
 '''
  Wrapper around a list.
  This api is 1 based
@@ -238,15 +242,14 @@ def export (song, html):
     fretboardLines = list (instruments [instSet [currentSong.iIx]][1])
 
     def endOfMeasure (repeat = False):
-      for s in (0, 1, 4, 5):
-        fretboardLines [s] += '|'
-      if repeat:
-        ch = ':'
-      else:
-        ch = "|"
-      fretboardLines [2] += ch
-      fretboardLines [3] += ch
+      global numStrings, repeatLines
 
+      for s in range (0, 6):
+        if repeat and s in repeatLines [numStrings]:
+          ch = ":"
+        else:
+          ch = "|"
+        fretboardLines [s] += ch
       headerLines [MEAS_IX] += ('&nbsp' if html else ' ')
 
     disBeats = DISPLAY_BEATS
@@ -268,9 +271,7 @@ def export (song, html):
             disBeats -= 1
             annotate (b, headerLines, ANN_IX, curOff, html)
 
-            startStr = 7 - numStrings
-
-            for curString in range (startStr, 7):
+            for curString in range (7 - numStrings, 7):
               if b:
                 note = b.get (curString)
               else:
@@ -320,8 +321,7 @@ def export (song, html):
         f.write ("<br>")
       f.write ("\n")
 
-    startLine = 6 - numStrings
-    fl = fretboardLines [startLine:]
+    fl = fretboardLines [6 - numStrings:]
 
     for line in fl:
       f.write (line)
@@ -390,36 +390,15 @@ def displayUI (song, measure, cursor_m, cursor_b, cursor_s):
   statusString = None
 
   def endOfMeasure (pageBreak = False, repeat = False):
-    global instruments, numStrings
+    global instruments, numStrings, repeatLines
 
-    if pageBreak:
-      bc = '/'
-    else:
-      bc = '|'
-
-    if numStrings == 6:
-      strs = (0, 1, 4, 5)
-    elif numStrings == 5:
-      strs = (1, 2, 5)
-    else:
-      strs = (2, 5)
-
-    for s in strs:
-      fretboardLines [s] += bc
-
-    if repeat:
-      bc = ":"
-    elif pageBreak:
-      bc = "/"
-    else:
-      bc = "|"
-
-    if numStrings == 6:
-      strs = (2, 3)
-    else:
-      strs = (3, 4)
-
-    for s in strs:
+    for s in range (0, 6):
+      if repeat and s in repeatLines [numStrings]:
+        bc = ":"
+      elif pageBreak:
+        bc = "/"
+      else:
+        bc = "|"
       fretboardLines [s] += bc
 
     headerLines [MEAS_IX] += ' ' # Measures
@@ -742,7 +721,7 @@ if len (sys.argv) == 2:
 
 currentSong = load (songName)
 if not currentSong:
-  currentSong = pytabSong (songName, iIx)
+  currentSong = pytabSong (songName, 0)
   currentSong.addMeasure ()
   currentSong.get (1).addBeat()
 
