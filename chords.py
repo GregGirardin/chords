@@ -28,70 +28,66 @@ Dictionary keyed by instrument name, value is a dictionary of instrument attribu
 
 instrumentMap = \
   {
-  'Mandolin':   {
-                "tuning":      ("E", "A", "D", "G"),
-                "fretOffset":  (0, 0, 0, 0)
-                },
-  'Guitar':     {
-                "tuning":      ("E", "B", "G", "D", "A", "E"),
-                "fretOffset":  (0, 0, 0, 0, 0, 0)
-                },
-  'Dropped D':  {
-                "tuning":      ("E", "B", "G", "D", "A", "D"),
-                "fretOffset":  (0, 0, 0, 0, 0, 0)
-                },
-  'DADGAD':     {
-                "tuning":      ("D", "A", "G", "D", "A", "D"),
-                "fretOffset":  (0, 0, 0, 0, 0, 0)
-                },
-  'Bass':       {
-                "tuning":      ("G", "D", "A", "E"),
-                "fretOffset":  (0, 0, 0, 0)
-                },
-  'Uke':       {
-                "tuning":      ("A", "E", "C", "G"),
-                "fretOffset":  (0, 0, 0, 0)
-                },
-  'Banjo':      {
-                "tuning":      ("D", "B", "G", "D", "G"),
-                "fretOffset":  (0, 0, 0, 0, 5)
-                },
-  'Stick-4ths': {
-                "tuning":      ("C", "G", "D", "A", "E", "B",
-                                "E", "A", "D", "G", "C", "F"),
-                "fretOffset":   (0, 0, 0, 0, 0, 0,
-                                 0, 0, 0, 0, 0, 0)
-                }
+  'Mandolin':   { "t": ("E", "A", "D", "G"),           "f": (0, 0, 0, 0) },
+  'Guitar':     { "t": ("E", "B", "G", "D", "A", "E"), "f": (0, 0, 0, 0, 0, 0) },
+  'Dropped D':  { "t": ("E", "B", "G", "D", "A", "D"), "f": (0, 0, 0, 0, 0, 0) },
+  'Bass':       { "t": ("G", "D", "A", "E"),           "f": (0, 0, 0, 0) },
+  '5Bass':      { "t": ("G", "D", "A", "E", "B"),      "f": (0, 0, 0, 0, 0) },
+  'Uke':        { "t": ("A", "E", "C", "G"),           "f": (0, 0, 0, 0) },
+  'Banjo':      { "t": ("D", "B", "G", "D", "G"),      "f": (0, 0, 0, 0, 5) }
   }
 # pick the instruments you care about
-instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin', 'Dropped D')
-# instruments = instrumentMap.keys() # doesn't guarantee order
+instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin', 'Dropped D', '5Bass')
 
-intervalList = ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7', '8', 'b9', '9']
+intervals = \
+  {
+  0 : ('R', '', '2', 'b3', '3',  '4', '', '5', '',  '6', 'b7', '7'),
+  1 : ('R', '', '9', 'b3', '3', '11', '', '5', '', '13', 'b7', '7')
+  }
+
 # display with a #/b if that's how we'd display the major key.
 dispKeyList    = ('C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')
 keyListSharps  = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')
 keyListFlats   = ('C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B')
-bKeys = ('F', 'Bb', 'Eb', 'Ab', 'Db') # (Major) keys to be displayed as having flats, (vs sharps)
+bKeys          = ('F', 'Bb', 'Eb','Ab', 'Db') # keys to be displayed as having flats
 
-# spellingMap is a dictionary of names for the spelling and a tuple of intervalList members.
+# spellingMap is a dictionary of names for the spelling and a tuple of intervals members.
 # if you add an entry, also add it to spellings tuple below.
 spellingMap = \
   {
   "M":     ('R',  '3', '5'),
   "m":     ('R', 'b3', '5'),
-  "7":     ('R',  '3', '5', 'b7'),
-  "m7":    ('R', 'b3', '5', 'b7'),
-  "M7":    ('R',  '3', '5', '7'),
   "2":     ('R',  '2', '5'),
   "4":     ('R',  '4', '5'),
+  "6":     ('R',  '3', '5', '6'),
+  "m6":    ('R',  'b3', '5', '6'),
+  "7":     ('R',  '3', '5', 'b7'),
+  "m7":    ('R', 'b3', '5', 'b7'),
+  "M7":    ('R',  '3', '5',  '7'),
+  "9":     ('R',  '3', '5', 'b7', '9'),
+  "m9":    ('R', 'b3', '5', 'b7', '9'),
+  "M9":    ('R',  '3', '5',  '7', '9'),
+  "11":    ('R',  '3', '5', 'b7', '9', '11'),
+  "m11":   ('R', 'b3', '5', 'b7', '9', '11'),
+  "M11":   ('R',  '3', '5',  '7', '9', '11'),
+  "13":    ('R',  '3', '5', 'b7', '9', '11', '13'),
+  "m13":   ('R', 'b3', '5', 'b7', '9', '11', '13'),
+  "M13":   ('R',  '3', '5',  '7', '9', '11', '13'),
   "dim":   ('R', 'b3', 'b5', '6'),
   "M-Key": ('R',  '2', '3',  '4', '5',  '6', '7'),
   "m-Key": ('R',  '2', 'b3', '4', '5', 'b6', 'b7')
   }
-spellings = ('M', 'm', '7', 'm7', 'M7', '2', '4', 'dim', 'M-Key', 'm-Key')
-minorSpellings = ('m', 'm7', 'm-Key')
+spellings = ('M',  'm',   '2',   '4', '6', 'm6',
+             '7',  'm7',  'M7',  '9',  'm9',  'M9',
+             '11', 'm11', 'M11', '13', 'm13', 'M13',
+             'dim', 'M-Key', 'm-Key')
+extChords = ('9', 'm9', 'M9','11', 'm11', 'M11', '13', 'm13', 'M13')
+extIntervals = ('9', '11', '13')
+minorSpellings = ('m', 'm7', 'm9', 'm11', 'm13', 'm-Key')
 NUM_FRETS = 15
+
+disFont = {0 : ("TkFixedFont", 18, "bold italic"),
+           1 : ("TkFixedFont", 14, "") }
 
 def showWithSharps (key, spelling):
   # return True if we should show this key/spelling as having sharps (vs flats)
@@ -113,12 +109,14 @@ def calcNote (root, fret):
   rootNum = dispKeyList.index (root)
   rootNum += fret
   rootNum %= 12
+
   return dispKeyList [rootNum]
 
 def calcInterval (note, key):
   noteNum = dispKeyList.index (note) + 12 # C = 12, C# = 13, etc
-  keyNum = dispKeyList.index (key)        # C =  0, C# =  1
+  keyNum = dispKeyList.index (key)        # C = 0, C# = 1
   intNum = (noteNum - keyNum) % 12        # (if C) C = 0, C# = 1
+
   return intNum
 
 def fretInfoGen (root, fret, fretOffset, key, spelling):
@@ -128,17 +126,17 @@ def fretInfoGen (root, fret, fretOffset, key, spelling):
   fret is the fret number relative to a zero offset string
   note is the text of the note
   '''
-
   assert fret >= fretOffset, "Fret below fret offset."
 
   fretInfo = {
-    'root': root,
-    'fret': fret,
-    'note': calcNote (root, fret - fretOffset)
+    'root' : root,
+    'fret' : fret,
+    'note' : calcNote (root, fret - fretOffset)
   }
   interval = calcInterval (fretInfo ['note'], key)
-  fretInfo ['interval'] = intervalList [interval]
-  fretInfo ['inSpelling'] = intervalList [interval] in spellingMap [spelling]
+  x = 1 if spelling in extChords else 0
+  fretInfo ['interval'] = intervals [x][interval]
+  fretInfo ['inSpelling'] = intervals [x][interval] in spellingMap [spelling]
 
   # convert note for display
   if showWithSharps (key, spelling):
@@ -150,7 +148,7 @@ def fretInfoGen (root, fret, fretOffset, key, spelling):
 
   return fretInfo
 
-def generateFretboard (instrument, key, spelling):
+def generateFretboard (inst, key, spelling):
   '''
   Returns a dictionary with everything we care about
   strings are keyed by string number (1 - N) and contain a list of dictionaries for each fret
@@ -160,26 +158,25 @@ def generateFretboard (instrument, key, spelling):
   just generate frets on the fly while displaying.
   '''
 
-  fretBoard = {}
+  strings = instrumentMap [inst]['t']
 
-  strings = instrumentMap [instrument]['tuning']
+  fretBoard = {
+                'numStrings': len (strings),
+                'instrument': inst,
+                'spelling'  : spelling,
+                'fretOffset': instrumentMap [inst]['f']
+              }
 
   for string in range (1, len (strings) + 1):
     stringList = []
     rootNote = strings [string - 1]
-    offset = instrumentMap [instrument]['fretOffset'][string - 1]
+    offset = instrumentMap [inst]['f'][string - 1]
+
     for fret in range (offset, NUM_FRETS + 1):
       fretInfo = fretInfoGen (rootNote, fret, offset, key, spelling)
       stringList.append (fretInfo)
 
     fretBoard [string] = stringList
-
-  fretBoard.update({
-    'numStrings': len (strings),
-    'instrument': instrument,
-    'spelling': spelling,
-    'fretOffset': instrumentMap [instrument]['fretOffset']
-  })
 
   return fretBoard
 
@@ -195,9 +192,6 @@ def displayFretboard (fretboard, interval = False):
   print ()
   for stringNum in range (1, numStrings + 1):
     string = fretboard [stringNum]
-
-    if stringNum == 7 and fretboard ['instrument'] == 'Stick-4ths':
-      print () # space between bass and treble strings
 
     print (string [0]['note'], " ", end = "", sep = "")
     print ("     " * fretboard ['fretOffset'][stringNum - 1], end = "")
@@ -217,7 +211,7 @@ def displayFretboard (fretboard, interval = False):
         if len (value) == 1:
           value += "-"
 
-        print ("-%s-%s" % (value,fretChar), end = "", sep='')
+        print ("-%s-%s" % (value, fretChar), end = "", sep='')
       else:
         print ("----%s" % fretChar, end = "")
     print ()
@@ -335,7 +329,7 @@ class runGui ():
 
   def handleSpelling (self, newSpelling):
     self.spelling = newSpelling
-    self.displaySpellings (self.spellingsFrame)
+    self.displaySpellings (self.spellingsFrames)
     self.displayFretboards (self.fretboardFrame)
 
   def handleKey (self, newKey):
@@ -348,29 +342,29 @@ class runGui ():
       widget.destroy()
 
     for inst in instruments:
-      if inst == self.instrument:
-        disfont = ("TkFixedFont", 14, "bold italic")
-      else:
-        disfont = ("TkFixedFont", 10, "")
-
+      f = 0 if inst == self.instrument else 1
       actionAndArg = partial (self.handleInstrument, inst)
 
-      b = Button (frame, text = inst, font = disfont, command = actionAndArg)
+      b = Button (frame, text = inst, font = disFont [f], command = actionAndArg)
       b.pack (side = LEFT)
 
-  def displaySpellings (self, frame):
-    for widget in frame.winfo_children():
-      widget.destroy()
+  def displaySpace (self, frame):
+    sp = Label (frame, text="--")
+    sp.pack (side = BOTTOM)
 
+  def displaySpellings (self, frames):
+    for frame in frames:
+      for widget in frame.winfo_children():
+        widget.destroy()
+
+    frame = frames [0]
     for spelling in spellings:
-      if spelling == self.spelling:
-        disfont = ("TkFixedFont", 14, "bold italic")
-      else:
-        disfont = ("TkFixedFont", 10, "")
-
+      if spelling == '11':
+        frame = frames [1]
+      f = 0 if spelling == self.spelling else 1
       actionAndArg = partial (self.handleSpelling, spelling)
 
-      b = Button (frame, text = spelling, font = disfont, command = actionAndArg)
+      b = Button (frame, text = spelling, font = disFont [f], command = actionAndArg)
       b.pack (side = LEFT)
 
   def displayKeys (self, frame):
@@ -378,22 +372,16 @@ class runGui ():
       widget.destroy()
 
     for key in dispKeyList:
-      if key == self.key:
-        disfont = ("TkFixedFont", 14, "bold italic")
-      else:
-        disfont = ("TkFixedFont", 10, "")
-
+      f = 0 if key == self.key else 1
       actionAndArg = partial (self.handleKey, key)
 
-      b = Button (frame, text = key, font = disfont, command = actionAndArg)
+      b = Button (frame, text = key, font = disFont [f], command = actionAndArg)
       b.pack (side = LEFT)
 
   def displayFretboards (self, frame):
-
-    dFont = tkFont.Font (family = 'Courier', size = 12)
+    dFont = tkFont.Font (family = 'Courier', size = 16)
 
     def generateFB (dispKey):
-
       for stringNum in range (1, numStrings + 1):
         string = fretboard [stringNum]
         dispLine = string [0]['root'] + " "
@@ -402,17 +390,17 @@ class runGui ():
 
         dispLine += ("   " * fretboard ['fretOffset'][stringNum - 1])
 
-        if stringNum == 7 and self.instrument == 'Stick-4ths':
-          s = Label (frame, text = '-', font = dFont)
-          s.pack (side = TOP)
-
         for fret in string:
           if fretboard ['fretOffset'][stringNum - 1] == fret ['fret']:
             fretChar = "X-"
           else:
             fretChar = "|"
 
-          if fret ['inSpelling']:
+          d = True
+          if fret ['interval'] in extIntervals and stringNum > (numStrings / 2):
+            d = False
+
+          if fret ['inSpelling'] and d:
             value = fret [dispKey]
             if len (value) == 1:
               value += "-"
@@ -449,7 +437,6 @@ class runGui ():
     generateFB ('interval')
 
   def __init__ (self):
-
     self.instrument = instruments [0]
     self.key = dispKeyList [0]
     self.spelling = spellings [0]
@@ -458,17 +445,23 @@ class runGui ():
     root.title ("Chords")
 
     self.instrumentsFrame = Frame (root)
-    self.spellingsFrame = Frame (root)
+    self.spellingsFrames = [Frame (root), Frame (root)]
     self.keysFrame = Frame (root)
+    self.spaceFrame = Frame (root)
+
     self.fretboardFrame = Frame (root)
 
     self.instrumentsFrame.pack (side = TOP)
     self.keysFrame.pack (side = TOP)
-    self.spellingsFrame.pack (side = TOP)
+    # add a space
+    self.spaceFrame.pack (side = TOP)
+    self.spellingsFrames[0].pack (side = TOP)
+    self.spellingsFrames[1].pack (side = TOP)
     self.fretboardFrame.pack (side = TOP)
 
     self.displayInstruments (self.instrumentsFrame)
-    self.displaySpellings (self.spellingsFrame)
+    self.displaySpace (self.spaceFrame)
+    self.displaySpellings (self.spellingsFrames)
     self.displayKeys (self.keysFrame)
     self.displayFretboards (self.fretboardFrame)
     root.mainloop ()
