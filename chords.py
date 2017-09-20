@@ -1,15 +1,15 @@
 #!/usr/bin/python
 
 '''
-Chord Utility v1.0
+Chord Utility
 by Greg Girardin
    Nashua NH
    girardin1972@hotmail.com
 
    I wrote everything except for the getInput function.
 
-   These chord generators have existed for many years, but I wanted one I could easily configure the way I
-   wanted.
+   These chord generators have existed for many years,
+   but I wanted one I could easily configure the way I wanted.
 '''
 
 from __future__ import print_function
