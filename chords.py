@@ -19,13 +19,6 @@ from  Tkinter import *
 from functools import partial
 import tkFont
 
-"""
-Dictionary keyed by instrument name, value is a dictionary of instrument attributes
-"tuning" is high to low.
-"fretOffset" is the base fret of a string (for supporting instruments like Banjo)
-  if the offset is 5 and the string is "G", then the 5th fret is a G.
-"""
-
 instrumentMap = \
   {
   'Mandolin':   { "t": ("E", "A", "D", "G"),           "f": (0, 0, 0, 0) },
