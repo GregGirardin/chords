@@ -21,6 +21,7 @@ helpString = bcolors.WARNING +   \
   "R   - Remove song.\n"         \
   "S   - Scan for new songs.\n"  \
   "1~9 - Jump to set.\n"         \
+  "A   - Alphabetize.\n"         \
   "q   - quit." + bcolors.ENDC
 
 class Set( object ):
@@ -292,6 +293,12 @@ def moveToSet( set ):
     elif currentSong == None:
       currentSong = 0
 
+def alphabetize():
+  def getKey( item ):
+    return item.name
+
+  setLists[ currentSet ].songList.sort( key=getKey )
+
 def addSet():
   global currentSet, setLists
   newSet = Set()
@@ -491,6 +498,8 @@ while True:
     songBack( SONG_COLUMNS )
   elif ch == "LEFT" or ch == "h":
     songBack( 1 )
+  elif ch == 'A':
+    alphabetize()
   elif ch == 's':
     if len( clipboard ):
       statusString = "Can't save with songs in clipboard."
