@@ -718,7 +718,7 @@ if len( sys.argv ) == 2:
 currentSong = load( songName )
 if not currentSong:
   currentSong = pytabSong( songName, 0 )
-  currentSong.addMeasure ()-
+  currentSong.addMeasure ()
   currentSong.get( 1 ).addBeat()
 
 numStrings = instruments[ instSet[ currentSong.iIx ] ][ 0 ]
