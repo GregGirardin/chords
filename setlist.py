@@ -433,9 +433,9 @@ def exportSet():
           elif line[ : 2 ] == "t!":
             toggleTab( f )
           elif line[ : 2 ] == "s!":
-            f.write( "<b><font style=\"font-family:courier;\" size=\"1\">&nbsp Solo</font></b><br>\n" )
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
           elif line[ : 2 ] == "c!": # chorus
-            f.write( "<b><font style=\"font-family:courier;\" size=\"0\">&nbsp Chorus</font></b><br>\n" )
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
           # ignore 2nd line if empty. It's unnecessary space in the html
           elif fileLine > 1 or line != "\n":
             # add spaces
