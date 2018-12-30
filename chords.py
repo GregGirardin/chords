@@ -72,17 +72,19 @@ spellingMap = \
   "m-Key" : ( 'R',  '2', 'b3', '4', '5', 'b6', 'b7' ),
   "P-Min" : ( 'R',  'b3', '4', '5', 'b7' ),
   "P-Maj" : ( 'R',  '2',  '3', '5', '6' ),
-  "Blues" : ( 'R',  'b3', '4', 'b5', '5', 'b7' )
+  "mBlues" : ( 'R', 'b3', '4', 'b5', '5', 'b7' ),
+  "MBlues" : ( 'R', '2', 'b3', '3', '5', '6' )
   }
 
 # pick the spelligs you care about
 spellings = ( 'M',  'm',
               # '2', '4', '6', 'm6',
               '7',  'm7',  'M7',
-              # '9',  'm9',  'M9', '11', 'm11', 'M11', '13', 'm13', 'M13', 'dim',
+              # '9',  'm9',  'M9', '11', 'm11', 'M11', '13', 'm13', 'M13',
+              'dim',
               'M-Key', 'm-Key',
               'P-Min', 'P-Maj',
-              'Blues' )
+              'mBlues', 'MBlues' )
 extChords = ( '9', 'm9', 'M9','11', 'm11', 'M11', '13', 'm13', 'M13' )
 extIntervals = ( '9', '11', '13' )
 minorSpellings = ( 'm', 'm7', 'm9', 'm11', 'm13', 'm-Key' )
@@ -103,7 +105,7 @@ def showWithSharps( key, spelling ):
     key = dispKeyList[ index ]
     return key
 
-  if spelling == 'Blues': # Blues is always false
+  if spelling in ( 'mBlues', 'MBlues' ): # Blues is always flats
     return False
 
   if spelling in minorSpellings:
