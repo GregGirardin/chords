@@ -352,6 +352,10 @@ class runGui ():
     self.displayKeys( self.keysFrame )
     self.displayFretboards( self.fretboardFrame )
 
+  def handleFret( self ):
+    self.fretsNotes = not self.fretsNotes
+    self.displayFretboards( self.fretboardFrame )
+
   def displayInstruments( self, frame ):
     for widget in frame.winfo_children():
       widget.destroy()
@@ -364,8 +368,13 @@ class runGui ():
       b.pack( side=LEFT )
 
   def displaySpace( self, frame ):
-    sp = Label( frame, text="--" )
-    sp.pack ( side=BOTTOM )
+    #sp = Label( frame, text="--" )
+    #sp.pack ( side=BOTTOM )
+
+    actionAndArg = partial( self.handleFret )
+
+    b = Button( frame, text="Frets/Notes", font=disFont[ 1 ], command=actionAndArg )
+    b.pack( side=TOP )
 
   def displaySpellings( self, frames ):
     for frame in frames:
@@ -417,7 +426,7 @@ class runGui ():
 
           if fret[ 'inSpelling' ] and d:
             value = fret[ dispKey ]
-            if value == 'R':
+            if ( dispKey == 'note' and self.fretsNotes ) or value == 'R':
               value = u'\u25cf'
             if len ( value ) == 1:
               value += "-"
@@ -457,6 +466,7 @@ class runGui ():
     self.instrument = instruments[ 0 ]
     self.key = dispKeyList[ 0 ]
     self.spelling = spellings[ 0 ]
+    self.fretsNotes = False
 
     root = Tk()
     root.title( "Chords" )
@@ -464,23 +474,25 @@ class runGui ():
     self.instrumentsFrame = Frame( root )
     self.spellingsFrames = [ Frame( root ), Frame( root ) ]
     self.keysFrame = Frame( root )
-    self.spaceFrame = Frame( root )
+    self.fretsFrame = Frame( root )
 
     self.fretboardFrame = Frame( root )
 
     self.instrumentsFrame.pack( side=TOP )
     self.keysFrame.pack( side=TOP )
-    # add a space
-    self.spaceFrame.pack(side = TOP )
     self.spellingsFrames[ 0 ].pack( side=TOP )
     self.spellingsFrames[ 1 ].pack( side=TOP )
+    self.fretsFrame.pack(side = TOP )
+
     self.fretboardFrame.pack( side=TOP)
 
     self.displayInstruments( self.instrumentsFrame )
-    self.displaySpace( self.spaceFrame )
+    self.displaySpace( self.fretsFrame )
     self.displaySpellings( self.spellingsFrames )
     self.displayKeys( self.keysFrame )
     self.displayFretboards( self.fretboardFrame )
+
+
     root.mainloop()
 
 if 'c' in sys.argv:
