@@ -31,7 +31,7 @@ instrumentMap = \
   }
 
 # pick the instruments you care about
-instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin' )
+instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin', 'Banjo' )
 
 intervals = \
   {
@@ -78,9 +78,9 @@ spellingMap = \
 
 # pick the spelligs you care about
 spellings = ( 'M',  'm',
-              # '2', '4', '6', 'm6',
+              '2', '4', '6', 'm6',
               '7',  'm7',  'M7',
-              # '9',  'm9',  'M9', '11', 'm11', 'M11', '13', 'm13', 'M13',
+              '9',  'm9',  'M9', '11', 'm11', 'M11', '13', 'm13', 'M13',
               'dim',
               'M-Key', 'm-Key',
               'P-Min', 'P-Maj',
