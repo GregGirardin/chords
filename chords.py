@@ -31,7 +31,7 @@ instrumentMap = \
   }
 
 # pick the instruments you care about
-instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin', 'Banjo' )
+instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5Bass' )
 
 intervals = \
   {
