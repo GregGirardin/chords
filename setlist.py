@@ -385,7 +385,7 @@ def exportSet():
   # songs
   setNumber = 0
   numSets = len( setLists ) - 1
-  for l in setLists[ 0 : -1 ]: # Don't include the Unassigned
+  for l in setLists[ 0 : -1 ]: # Don't include the Unassigned set
     numSongs = len( l.songList )
 
     f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber + 1 ) )
@@ -410,10 +410,10 @@ def exportSet():
         for line in fLines:
           if fileLine == 0: # Assume first line is song title
             f.write( "<h4 id=\"s%ds%d\">" % ( setNumber, songNumber ) )
-            # song name is link back to location in setlist
+            # Song name is link back to location in setlist
             f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % ( setNumber, songNumber, line.rstrip() ) )
-
-            # Link to Next
+            '''
+            # Link to Next. I never use this, so comment for now.
             if setNumber < numSets - 1 or songNumber < numSongs - 1:
               sameSet = True if songNumber < numSongs - 1 else False
               if sameSet or ( sameSet == False and setNumber < numSets ):
@@ -426,15 +426,16 @@ def exportSet():
               f.write( "&nbsp &nbsp <a href=\"#s%ds%d\"> &uarr; </a>" %
                        ( setNumber      if sameSet else setNumber - 1,
                          songNumber - 1 if sameSet else len( setLists[ setNumber - 1 ].songList ) - 1 ) )
+            '''
             f.write ("</h4>\n")
 
-          # some 'pseudo tags' that can be put in the lyric text
-          # You can also just put in html in the txt since we paste it directly.
-          elif line[ : 2 ] == "t!":
+          # Shortcuts that can be put in the lyric text,
+          # or you can also just put in html in the txt since we paste it directly.
+          elif line[ : 2 ] == "t!": # Tab, use fixed font
             toggleTab( f )
-          elif line[ : 2 ] == "s!":
+          elif line[ : 2 ] == "s!": # Solo
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
-          elif line[ : 2 ] == "c!": # chorus
+          elif line[ : 2 ] == "c!": # Chorus
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
           elif line[ : 2 ] == "h!": # Harmonica
             f.write( "<b><font style=\"font-family:courier;\" size=\"3\" color=\"red\" >&nbsp Harmonica : " )
