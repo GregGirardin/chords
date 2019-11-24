@@ -16,8 +16,7 @@ helpString = bcolors.WARNING +   \
   "r   - Rename setlist.\n"      \
   "a,d - Add/Delete a set.\n"    \
   "c,p - Cut/Paste clipboard.\n" \
-  "x   - eXport.\n"               \
-  "X   - eXport accordion.\n" \
+  "x,X - Export.\n"               \
   "n   - Name the set.\n"        \
   "R   - Remove song.\n"         \
   "S   - Scan for new songs.\n"  \
