@@ -5,23 +5,29 @@ import os, sys, glob, copy, pickle
 
 class bcolors:
   BLUE = '\033[94m'
+  RED = '\033[91m'
+  GREEN = '\033[92m'
   WARNING = '\033[93m'
-  FAIL = '\033[91m'
+  BOLD = '\033[1m'
+  UNDERLINE = '\033[4m'
   ENDC = '\033[0m'
 
 helpString = bcolors.WARNING +   \
   "\nArrow to navigate.\n"       \
   "m   - Toggle Move mode.\n"    \
-  "s,o - Save/Open setlist.\n"   \
-  "r   - Rename setlist.\n"      \
+  "o   - Open.\n"                \
+  "s   - Save.\n"                \
+  "r   - Rename.\n"              \
   "a,d - Add/Delete a set.\n"    \
   "c,p - Cut/Paste clipboard.\n" \
-  "x,X - Export.\n"               \
+  "x,X - Export.\n"              \
   "n   - Name the set.\n"        \
   "R   - Remove song.\n"         \
   "S   - Scan for new songs.\n"  \
   "1~9 - Jump to set.\n"         \
   "A   - Alphabetize.\n"         \
+  "h   - RGB highlight.\n"       \
+  "sp  - Remove highlight.\n"    \
   "q   - quit." + bcolors.ENDC
 
 class Set( object ):
@@ -33,6 +39,7 @@ class Song( object ):
   # Song is just a name for now but may add attributes later
   def __init__( self, name ):
     self.name = name # file name
+    self.highLight = HIGHLIGHT_NONE
 
 setLists = []
 clipboard = []
@@ -50,6 +57,12 @@ MAX_SETS = 10
 # input modes
 MODE_NORMAL = 0
 MODE_MOVE   = 1
+
+# highlihht colors
+HIGHLIGHT_NONE = 0
+HIGHLIGHT_RED = 1
+HIGHLIGHT_BLUE = 2
+HIGHLIGHT_GREEN = 3
 
 inputMode = MODE_NORMAL
 
@@ -141,11 +154,19 @@ def displayUI():
     for s in l.songList:
       if songIx and songIx % SONG_COLUMNS == 0:
         print()
+
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
-        print( bcolors.BLUE if inputMode == MODE_NORMAL else bcolors.FAIL, end="" )
-      print( "%-24s " % ( s.name[ : -4 ] ), end="" )
-      if cursor:
+        print( bcolors.BOLD if inputMode == MODE_NORMAL else bcolors.UNDERLINE, end="" )
+      if s.highLight == HIGHLIGHT_RED:
+        print( bcolors.RED, end="" )
+      elif s.highLight == HIGHLIGHT_BLUE:
+        print( bcolors.BLUE, end="" )
+      elif s.highLight == HIGHLIGHT_GREEN:
+        print( bcolors.GREEN, end="" )
+
+      print( "%-24s" % ( s.name[ : -4 ] ), end = "" )
+      if cursor or s.highLight != HIGHLIGHT_NONE:
         print( bcolors.ENDC, end="" )
       songIx += 1
     print()
@@ -155,7 +176,7 @@ def displayUI():
     print( "\n- Clipboard -" )
     songIx = 0
     for s in clipboard:
-      print( "%-24s " % ( s.name[ : -4 ] ), end="" )
+      print( "%-24s " % ( s.name[ : -4 ] ), end = "" )
       if ( songIx + 1 ) % SONG_COLUMNS == 0:
         print( "" )
       songIx += 1
@@ -163,7 +184,7 @@ def displayUI():
   if statusString:
     print( bcolors.WARNING )
     print( statusString )
-    print( bcolors.ENDC, end="" )
+    print( bcolors.ENDC, end = "" )
 
     statusString = None
 
@@ -213,7 +234,7 @@ def saveList ():
   with open( fileName, 'wb' ) as f:
     pickle.dump( setLists, f )
 
-# a decorator for functions that move the cursor to handle song move
+# A decorator for functions that move the cursor to handle song move
 def cursorMover( func ):
   def decor( *args, **kwargs ):
     global currentSet, currentSong
@@ -243,8 +264,7 @@ def songFwd (count):
   global currentSong, currentSet
 
   if currentSet == len( setLists ) - 1 and \
-    ( ( currentSong == len( setLists[ currentSet ].songList ) - 1 ) or
-        currentSong == None ):
+    ( ( currentSong == len( setLists[ currentSet ].songList ) - 1 ) or currentSong == None ):
     return
 
   if currentSong == None:
@@ -297,7 +317,7 @@ def alphabetize():
   def getKey( item ):
     return item.name
 
-  setLists[ currentSet ].songList.sort( key=getKey )
+  setLists[ currentSet ].songList.sort( key = getKey )
 
 def addSet():
   global currentSet, setLists
@@ -318,7 +338,7 @@ def deleteSet():
     l = len( setLists[ currentSet ].songList )
     currentSong = 0 if l else None
 
-def cutSong ():
+def cutSong():
   # Delete the current song and return it
   global currentSet, currentSong
 
@@ -333,7 +353,7 @@ def cutSong ():
       currentSong -= 1
   return s
 
-def cutSongToClipboard ():
+def cutSongToClipboard():
   global clipboard, statusString
 
   s = cutSong()
@@ -359,91 +379,6 @@ def pasteClipboard():
 tabMode = False
 
 def exportSet():
-  global statusString, setLists
-
-  fname = setListName + ".html"
-  f = open( fname, "w" )
-
-  f.write( "<!DOCTYPE html>\n"
-           "<html>\n"
-           "<head>\n"
-           "<style type=\"text/css\">a {text-decoration: none}</style>\n"
-           "</head>\n"
-           "<body>\n"
-           "<h1>%s</h1>\n" % ( setListName ) )
-  # setlist summary
-  setNumber = 0
-  for l in setLists[0 : -1 ]:
-    songNumber = 0
-    f.write( "<h2>%s</h2><font size=\"5\">\n" % ( l.name if l.name else setNumber + 1 ) )
-    for s in l.songList:
-      f.write( "<a id=\"t%dt%d\" href=\"#s%ds%d\">%s</a><br>\n" %
-              ( setNumber, songNumber, setNumber, songNumber, s.name[ 0 : -4 ] ) )
-      songNumber += 1
-    f.write( "</font></br>\n" )
-    setNumber += 1
-  # songs
-  setNumber = 0
-  numSets = len( setLists ) - 1
-  for l in setLists[ 0 : -1 ]: # Don't include the Unassigned set
-    numSongs = len( l.songList )
-
-    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber + 1 ) )
-    songNumber = 0
-    for s in l.songList:
-      try:
-        sName = s.name
-        sf = open( sName, "r" )
-        fLines = sf.readlines()
-        sf.close()
-        fileLine = 0
-
-        def toggleTab( f ):
-          global tabMode
-          if tabMode == True:
-            f.write( "</font>\n" )
-            tabMode = False
-          else:
-            f.write( "<font style=\"font-family:courier;\" size=\"3\">\n" )
-            tabMode = True
-
-        for line in fLines:
-          if fileLine == 0: # Assume first line is song title
-            f.write( "<h4 id=\"s%ds%d\">" % ( setNumber, songNumber ) )
-            # Song name is link back to location in setlist
-            f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % ( setNumber, songNumber, line.rstrip() ) )
-            f.write ("</h4>\n")
-
-          # Shortcuts that can be put in the lyric text,
-          # or you can also just put in html in the txt since we paste it directly.
-          elif line[ : 2 ] == "t!": # Tab, use fixed font
-            toggleTab( f )
-          elif line[ : 2 ] == "s!": # Solo
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
-          elif line[ : 2 ] == "c!": # Chorus
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
-          elif line[ : 2 ] == "h!": # Harmonica
-            f.write( "<b><font style=\"font-family:courier;\" size=\"3\" color=\"red\" >&nbsp Harmonica : " )
-            f.write( line [ 2 : ] )
-            f.write( "</font></b><br>\n" )
-          # ignore 2nd line if empty. It's unnecessary space in the html
-          elif fileLine > 1 or line != "\n":
-            # add spaces
-            while line[ 0 ] == " ":
-              line = line[ 1 : ]
-              f.write( "&nbsp" )
-            f.write( "%s<br>\n" % ( line.rstrip() ) )
-
-          fileLine += 1
-      except:
-        print( "Exception.." )
-      songNumber += 1
-    setNumber += 1
-  f.write( "</body></html>\n" )
-  f.close()
-  statusString = "Flat HTML export complete."
-
-def exportSetAccordion():
   global statusString, setLists
 
   fname = setListName + ".html"
@@ -508,13 +443,21 @@ def exportSetAccordion():
             f.write( "</font>\n" )
             tabMode = False
           else:
-            f.write( "<font style=\"font-family:courier;\" size=\"3\">\n" )
+            f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
             tabMode = True
 
         for line in fLines:
           if fileLine == 0: # Assume first line is song title
-            f.write( "<button class=\"accordion\">%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
-            f.write( "<div class=\"panel\">\n" )
+            f.write( "<button class=\"accordion\">" )
+            if s.highLight == HIGHLIGHT_RED:
+              f.write( "%s) <font color=\"red\">%s</font>\n" % (songNumber, line.rstrip()) )
+            elif s.highLight == HIGHLIGHT_BLUE:
+              f.write( "%s) <font color=\"blue\">%s</font>\n" % (songNumber, line.rstrip()) )
+            elif s.highLight == HIGHLIGHT_GREEN:
+              f.write( "%s) <font color=\"green\">%s</font>\n" % (songNumber, line.rstrip()) )
+            else:
+              f.write( "%s) %s</button>\n" % (songNumber, line.rstrip()) )
+            f.write( "</button> <div class=\"panel\">\n" )
 
           # Shortcuts that can be put in the lyric text,
           # or you can also just put in html in the txt since we paste it directly.
@@ -553,7 +496,7 @@ def exportSetAccordion():
            "  {\n"
            "    this.classList.toggle(\"active\");\n"
            "    var panel = this.nextElementSibling;\n"
-           "    if (panel.style.display === \"block\")\n"
+           "    if( panel.style.display === \"block\" )\n"
            "    {\n"
            "      panel.style.display = \"none\";\n"
            "    }\n"
@@ -568,6 +511,91 @@ def exportSetAccordion():
 
   f.close()
   statusString = "Export complete."
+
+def exportSetFlat():
+  global statusString, setLists
+
+  fname = setListName + ".html"
+  f = open( fname, "w" )
+
+  f.write( "<!DOCTYPE html>\n"
+           "<html>\n"
+           "<head>\n"
+           "<style type=\"text/css\">a {text-decoration: none}</style>\n"
+           "</head>\n"
+           "<body>\n"
+           "<h1>%s</h1>\n" % ( setListName ) )
+  # setlist summary
+  setNumber = 0
+  for l in setLists[0 : -1 ]:
+    songNumber = 0
+    f.write( "<h2>%s</h2><font size=\"5\">\n" % ( l.name if l.name else setNumber + 1 ) )
+    for s in l.songList:
+      f.write( "<a id=\"t%dt%d\" href=\"#s%ds%d\">%s</a><br>\n" %
+              ( setNumber, songNumber, setNumber, songNumber, s.name[ 0 : -4 ] ) )
+      songNumber += 1
+    f.write( "</font></br>\n" )
+    setNumber += 1
+  # songs
+  setNumber = 0
+  numSets = len( setLists ) - 1
+  for l in setLists[ 0 : -1 ]: # Don't include the Unassigned set
+    numSongs = len( l.songList )
+
+    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber + 1 ) )
+    songNumber = 0
+    for s in l.songList:
+      try:
+        sName = s.name
+        sf = open( sName, "r" )
+        fLines = sf.readlines()
+        sf.close()
+        fileLine = 0
+
+        def toggleTab( f ):
+          global tabMode
+          if tabMode == True:
+            f.write( "</font>\n" )
+            tabMode = False
+          else:
+            f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
+            tabMode = True
+
+        for line in fLines:
+          if fileLine == 0: # Assume first line is song title
+            f.write( "<h4 id=\"s%ds%d\">" % ( setNumber, songNumber ) )
+            # Song name is link back to location in setlist
+            f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % ( setNumber, songNumber, line.rstrip() ) )
+            f.write ("</h4>\n")
+
+          # Shortcuts that can be put in the lyric text,
+          # or you can also just put in html in the txt since we paste it directly.
+          elif line[ : 2 ] == "t!": # Tab, use fixed font
+            toggleTab( f )
+          elif line[ : 2 ] == "s!": # Solo
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
+          elif line[ : 2 ] == "c!": # Chorus
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
+          elif line[ : 2 ] == "h!": # Harmonica
+            f.write( "<b><font style=\"font-family:courier;\" size=\"3\" color=\"red\" >&nbsp Harmonica : " )
+            f.write( line [ 2 : ] )
+            f.write( "</font></b><br>\n" )
+          # ignore 2nd line if empty. It's unnecessary space in the html
+          elif fileLine > 1 or line != "\n":
+            # add spaces
+            while line[ 0 ] == " ":
+              line = line[ 1 : ]
+              f.write( "&nbsp" )
+            f.write( "%s<br>\n" % ( line.rstrip() ) )
+
+          fileLine += 1
+      except:
+        print( "Exception.." )
+      songNumber += 1
+    setNumber += 1
+  f.write( "</body></html>\n" )
+  f.close()
+  statusString = "Flat HTML export complete."
 
 def scanForNew():
   # scan the current directory and add any songs to Unassigned
@@ -606,13 +634,13 @@ s.songList = getLocalSongs()
 displayUI()
 while True:
   ch = getInput()
-  if ch == "DOWN" or ch == "j":
+  if ch == "DOWN":
     songFwd( SONG_COLUMNS )
-  elif ch == "RIGHT" or ch == "l":
+  elif ch == "RIGHT":
     songFwd( 1 )
-  elif ch == "UP" or ch == "k":
+  elif ch == "UP":
     songBack( SONG_COLUMNS )
-  elif ch == "LEFT" or ch == "h":
+  elif ch == "LEFT":
     songBack( 1 )
   elif ch == 'A':
     alphabetize()
@@ -636,7 +664,7 @@ while True:
     if currentSet == MAX_SETS:
       statusString = "Max sets exceeded."
     else:
-      addSet ()
+      addSet()
   elif ch == 'd':
     deleteSet()
   elif ch == 'c' and inputMode == MODE_NORMAL:
@@ -644,11 +672,11 @@ while True:
   elif ch == 'p':
     pasteClipboard()
   elif ch == 'X':
-    exportSet()
+    exportSetFlat()
   elif ch == 'x':
-    exportSetAccordion()
+    exportSet()
   elif ch == 'R':
-    cutSong ()
+    cutSong()
   elif ch == 'n':
     if currentSet == len( setLists ) - 1:
       statusString = "Can't rename Unassigned group."
@@ -659,11 +687,24 @@ while True:
     scanForNew()
   elif ch == 'q':
     exit()
+  elif ch == 'h':
+    s = setLists[ currentSet ].songList[ currentSong ]
+
+    if s.highLight == HIGHLIGHT_NONE:
+      s.highLight = HIGHLIGHT_RED
+    elif s.highLight == HIGHLIGHT_RED:
+      s.highLight = HIGHLIGHT_GREEN
+    elif s.highLight == HIGHLIGHT_GREEN:
+      s.highLight = HIGHLIGHT_BLUE
+    elif s.highLight == HIGHLIGHT_BLUE:
+      s.highLight = HIGHLIGHT_RED
+  elif ch == ' ':
+    s = setLists[ currentSet ].songList[ currentSong ]
+    s.highLight = HIGHLIGHT_NONE
   elif ch >= '1' and ch <= '9':
     moveToSet( int( ch ) - 1 )
   elif ch == '?' or ch == 'h':
     print( helpString )
-
     foo = getInput()
 
   displayUI()
