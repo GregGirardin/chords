@@ -16,7 +16,8 @@ helpString = bcolors.WARNING +   \
   "r   - Rename setlist.\n"      \
   "a,d - Add/Delete a set.\n"    \
   "c,p - Cut/Paste clipboard.\n" \
-  "x   - eXport as html.\n"      \
+  "x   - eXport.\n"               \
+  "X   - eXport accordion.\n" \
   "n   - Name the set.\n"        \
   "R   - Remove song.\n"         \
   "S   - Scan for new songs.\n"  \
@@ -370,7 +371,7 @@ def exportSet():
            "<style type=\"text/css\">a {text-decoration: none}</style>\n"
            "</head>\n"
            "<body>\n"
-           "<h1>%s</h3>\n" % ( setListName ) )
+           "<h1>%s</h1>\n" % ( setListName ) )
   # setlist summary
   setNumber = 0
   for l in setLists[0 : -1 ]:
@@ -413,7 +414,8 @@ def exportSet():
             # Song name is link back to location in setlist
             f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % ( setNumber, songNumber, line.rstrip() ) )
             '''
-            # Link to Next. I never use this, so comment for now.
+            # I never use the links
+            # Link to Next. 
             if setNumber < numSets - 1 or songNumber < numSongs - 1:
               sameSet = True if songNumber < numSongs - 1 else False
               if sameSet or ( sameSet == False and setNumber < numSets ):
@@ -457,6 +459,132 @@ def exportSet():
   f.write( "</body></html>\n" )
   f.close()
   statusString = "Export complete."
+
+def exportSetAccordion():
+  global statusString, setLists
+
+  fname = setListName + ".html"
+  f = open( fname, "w" )
+
+  f.write( "<!DOCTYPE html>\n"
+           "<html>\n"
+           "<head>\n"
+           "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+           "<style>\n"
+           ".accordion\n"
+           "{\n"
+           "  background-color: #eee;\n"
+           "  color: #444;\n"
+           "  cursor: pointer;\n"
+           "  padding: 5px;\n"
+           "  width: 100%;\n"
+           "  border: none;\n"
+           "  text-align: left;\n"
+           "  outline: none;\n"
+           "  font-size: 15px;\n"
+           "  transition: 0.4s;\n"
+           "}\n"
+           "\n"
+           ".active, .accordion:hover\n"
+           "{\n"
+           "  background-color: #ccc;\n"
+           "}\n"
+           "\n"
+           ".panel\n"
+           "{\n"
+           "  padding: 0 18px;\n"
+           "  display: none;\n"
+           "  background-color: white;\n"
+           "  overflow: hidden;\n"
+           "}\n"
+           "</style>\n"
+           "</head>\n"
+           "<body>\n" )
+
+  f.write( "<h1>%s</h1>\n" % ( setListName ) )
+
+  # Songs
+  setNumber = 0
+  numSets = len( setLists ) - 1
+  for l in setLists[ 0 : -1 ]: # Don't include the Unassigned set
+    numSongs = len( l.songList )
+
+    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber + 1 ) )
+    songNumber = 1
+    for s in l.songList:
+      try:
+        sName = s.name
+        sf = open( sName, "r" )
+        fLines = sf.readlines()
+        sf.close()
+        fileLine = 0
+
+        def toggleTab( f ):
+          global tabMode
+          if tabMode == True:
+            f.write( "</font>\n" )
+            tabMode = False
+          else:
+            f.write( "<font style=\"font-family:courier;\" size=\"3\">\n" )
+            tabMode = True
+
+        for line in fLines:
+          if fileLine == 0: # Assume first line is song title
+            f.write( "<button class=\"accordion\">%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
+            f.write( "<div class=\"panel\">\n" )
+
+          # Shortcuts that can be put in the lyric text,
+          # or you can also just put in html in the txt since we paste it directly.
+          elif line[ : 2 ] == "t!": # Tab, use fixed font
+            toggleTab( f )
+          elif line[ : 2 ] == "s!": # Solo
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
+          elif line[ : 2 ] == "c!": # Chorus
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
+          elif line[ : 2 ] == "h!": # Harmonica
+            f.write( "<b><font style=\"font-family:courier;\" size=\"3\" color=\"red\" >&nbsp Harmonica : " )
+            f.write( line [ 2 : ] )
+            f.write( "</font></b><br>\n" )
+          # ignore 2nd line if empty. It's unnecessary space in the html
+          elif fileLine > 1 or line != "\n":
+            # add spaces
+            while line[ 0 ] == " ":
+              line = line[ 1 : ]
+              f.write( "&nbsp" )
+            f.write( "%s<br>\n" % ( line.rstrip() ) )
+
+          fileLine += 1
+      except:
+        print( "Exception.." )
+      f.write( "</div>\n" )
+      songNumber += 1
+    setNumber += 1
+
+  f.write(  "<script>\n"
+            "var acc = document.getElementsByClassName(\"accordion\");\n"
+            "var i;\n"
+            "\n"
+            "for( i = 0;i < acc.length;i++ )\n"
+            "{\n"
+            "  acc[ i ].addEventListener(\"click\", function()\n"
+            "  {\n"
+            "    this.classList.toggle(\"active\");\n"
+            "    var panel = this.nextElementSibling;\n"
+            "    if (panel.style.display === \"block\")\n"
+            "    {\n"
+            "      panel.style.display = \"none\";\n"
+            "    }\n"
+            "    else\n"
+            "    {\n"
+            "      panel.style.display = \"block\";\n"
+            "    }\n"
+            "  } );\n"
+            "}\n"
+            "</script>\n"
+            "</body></html>\n" )
+
+  f.close()
+  statusString = "Export (accordion) complete."
 
 def scanForNew():
   # scan the current directory and add any songs to Unassigned
@@ -533,7 +661,9 @@ while True:
   elif ch == 'p':
     pasteClipboard()
   elif ch == 'x':
-    exportSet ()
+    exportSet()
+  elif ch == 'X':
+    exportSetAccordion()
   elif ch == 'R':
     cutSong ()
   elif ch == 'n':
