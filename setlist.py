@@ -413,22 +413,6 @@ def exportSet():
             f.write( "<h4 id=\"s%ds%d\">" % ( setNumber, songNumber ) )
             # Song name is link back to location in setlist
             f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % ( setNumber, songNumber, line.rstrip() ) )
-            '''
-            # I never use the links
-            # Link to Next. 
-            if setNumber < numSets - 1 or songNumber < numSongs - 1:
-              sameSet = True if songNumber < numSongs - 1 else False
-              if sameSet or ( sameSet == False and setNumber < numSets ):
-                f.write( "&nbsp &nbsp <a href=\"#s%ds%d\"> &darr; </a>" %
-                         ( setNumber      if sameSet else setNumber + 1,
-                           songNumber + 1 if sameSet else 0 ) )
-            # Link to Prev
-            sameSet = True if songNumber > 0 else False
-            if sameSet or setNumber > 0:
-              f.write( "&nbsp &nbsp <a href=\"#s%ds%d\"> &uarr; </a>" %
-                       ( setNumber      if sameSet else setNumber - 1,
-                         songNumber - 1 if sameSet else len( setLists[ setNumber - 1 ].songList ) - 1 ) )
-            '''
             f.write ("</h4>\n")
 
           # Shortcuts that can be put in the lyric text,
@@ -458,7 +442,7 @@ def exportSet():
     setNumber += 1
   f.write( "</body></html>\n" )
   f.close()
-  statusString = "Export complete."
+  statusString = "Flat HTML export complete."
 
 def exportSetAccordion():
   global statusString, setLists
@@ -560,31 +544,31 @@ def exportSetAccordion():
       songNumber += 1
     setNumber += 1
 
-  f.write(  "<script>\n"
-            "var acc = document.getElementsByClassName(\"accordion\");\n"
-            "var i;\n"
-            "\n"
-            "for( i = 0;i < acc.length;i++ )\n"
-            "{\n"
-            "  acc[ i ].addEventListener(\"click\", function()\n"
-            "  {\n"
-            "    this.classList.toggle(\"active\");\n"
-            "    var panel = this.nextElementSibling;\n"
-            "    if (panel.style.display === \"block\")\n"
-            "    {\n"
-            "      panel.style.display = \"none\";\n"
-            "    }\n"
-            "    else\n"
-            "    {\n"
-            "      panel.style.display = \"block\";\n"
-            "    }\n"
-            "  } );\n"
-            "}\n"
-            "</script>\n"
-            "</body></html>\n" )
+  f.write( "<script>\n"
+           "var acc = document.getElementsByClassName(\"accordion\");\n"
+           "var i;\n"
+           "\n"
+           "for( i = 0;i < acc.length;i++ )\n"
+           "{\n"
+           "  acc[ i ].addEventListener(\"click\", function()\n"
+           "  {\n"
+           "    this.classList.toggle(\"active\");\n"
+           "    var panel = this.nextElementSibling;\n"
+           "    if (panel.style.display === \"block\")\n"
+           "    {\n"
+           "      panel.style.display = \"none\";\n"
+           "    }\n"
+           "    else\n"
+           "    {\n"
+           "      panel.style.display = \"block\";\n"
+           "    }\n"
+           "  } );\n"
+           "}\n"
+           "</script>\n"
+           "</body></html>\n" )
 
   f.close()
-  statusString = "Export (accordion) complete."
+  statusString = "Export complete."
 
 def scanForNew():
   # scan the current directory and add any songs to Unassigned
@@ -660,9 +644,9 @@ while True:
     cutSongToClipboard()
   elif ch == 'p':
     pasteClipboard()
-  elif ch == 'x':
-    exportSet()
   elif ch == 'X':
+    exportSet()
+  elif ch == 'x':
     exportSetAccordion()
   elif ch == 'R':
     cutSong ()
