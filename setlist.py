@@ -14,20 +14,22 @@ class bcolors:
 
 helpString = bcolors.WARNING +   \
   "\nArrow to navigate.\n"       \
-  "m   - Toggle Move mode.\n"    \
-  "o   - Open.\n"                \
-  "s   - Save.\n"                \
-  "r   - Rename.\n"              \
+  "m   - Move modes.\n"          \
+  "o,s - Open/Save setlist.\n"   \
+  "r   - Rename the list.\n"     \
   "a,d - Add/Delete a set.\n"    \
   "c,p - Cut/Paste clipboard.\n" \
   "x,X - Export.\n"              \
   "n   - Name the set.\n"        \
+  "N   - Add Note.\n"            \
   "R   - Remove song.\n"         \
   "S   - Scan for new songs.\n"  \
-  "1~9 - Jump to set.\n"         \
-  "A   - Alphabetize.\n"         \
+  "1-9 - Jump to set.\n"         \
+  "A   - Alphabetize set.\n"     \
   "h   - RGB highlight.\n"       \
   "sp  - Remove highlight.\n"    \
+  "C   - Clone song.\n"          \
+  "L   - Clone set.\n"           \
   "q   - quit." + bcolors.ENDC
 
 class Set( object ):
@@ -50,13 +52,15 @@ setListName = "SetList"
 currentSet = 0 # these represent the 'cursor'
 currentSong = 0
 setListExt = ".set"
+annotation = None
 
 SONG_COLUMNS = 4
 MAX_SETS = 10
 
 # input modes
-MODE_NORMAL = 0
-MODE_MOVE   = 1
+MODE_MOVE_NORMAL  = 0
+MODE_MOVE_SONG    = 1
+MODE_MOVE_SET     = 2
 
 # highlihht colors
 HIGHLIGHT_NONE = 0
@@ -64,13 +68,13 @@ HIGHLIGHT_RED = 1
 HIGHLIGHT_BLUE = 2
 HIGHLIGHT_GREEN = 3
 
-inputMode = MODE_NORMAL
+inputMode = MODE_MOVE_NORMAL
 
 unassignedSet = Set( unassignedSetName )
 setLists.append( unassignedSet )
 
 def loadSetList():
-  global statusString, setLists, setListName
+  global statusString, setLists, setListName, annotation
   selectedfileIx = 0
   re = "./*" + setListExt
 
@@ -105,6 +109,7 @@ def loadSetList():
       with open( selSong, 'rb' ) as f:
         setLists = pickle.load( f )
       setListName = selSong[ 2 : ].split( "." )[ 0 ]
+      annotation = setLists[ 0 ].annonation
       return
     if c == "DOWN" or c == "j":
       if selectedfileIx < len( matchList ) - 1:
@@ -132,11 +137,13 @@ def getLocalSongs():
   return songList
 
 def displayUI():
-  global songIx, setListName, setLists, statusString
+  global songIx, setListName, setLists, statusString, annotation
 
   os.system( 'clear' )
 
   print( "Setlist:%s" % ( setListName ) )
+  if annotation and annotation != "":
+    print( annotation )
 
   setNumber = 0
 
@@ -157,7 +164,7 @@ def displayUI():
 
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
-        print( bcolors.BOLD if inputMode == MODE_NORMAL else bcolors.UNDERLINE, end="" )
+        print( bcolors.UNDERLINE if inputMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
       if s.highLight == HIGHLIGHT_RED:
         print( bcolors.RED, end="" )
       elif s.highLight == HIGHLIGHT_BLUE:
@@ -225,11 +232,13 @@ def getInput ():
   return ret
 
 def saveList ():
-  global setListName, setListExt, setLists, statusString
+  global setListName, setListExt, setLists, statusString, annotation
 
   statusString = "Saved."
 
   fileName = setListName + setListExt
+
+  setLists[ 0 ].annonation = annotation
 
   with open( fileName, 'wb' ) as f:
     pickle.dump( setLists, f )
@@ -239,7 +248,7 @@ def cursorMover( func ):
   def decor( *args, **kwargs ):
     global currentSet, currentSong
 
-    if inputMode == MODE_MOVE:
+    if inputMode == MODE_MOVE_SONG:
       tmpSet = currentSet
       tmpSong = currentSong
       temp = setLists[ tmpSet ].songList[ tmpSong ]
@@ -319,21 +328,18 @@ def alphabetize():
 
   setLists[ currentSet ].songList.sort( key = getKey )
 
-def addSet():
-  global currentSet, setLists
-  newSet = Set()
-  setLists.insert( currentSet, newSet )
-  currentSet += 1
-
 def deleteSet():
   # move all songs to unassigned
   global currentSet, currentSong
 
   l = len( setLists )
   if l > 1 and currentSet < l - 1:
-    u = getSetByName( unassignedSetName ).songList
-    for s in setLists[ currentSet ].songList:
-      u.append( s )
+    # Can add these to unassigned, or can just Scan to put them there.
+    # Since we can copy songs / sets now it's a bit cleaner not to add back to unassigned.
+
+    # u = getSetByName( unassignedSetName ).songList
+    # for s in setLists[ currentSet ].songList:
+    #   u.append( s )
     del setLists[ currentSet ]
     l = len( setLists[ currentSet ].songList )
     currentSong = 0 if l else None
@@ -379,7 +385,7 @@ def pasteClipboard():
 tabMode = False
 
 def exportSet():
-  global statusString, setLists
+  global statusString, setLists, annotation
 
   fname = setListName + ".html"
   f = open( fname, "w" )
@@ -420,6 +426,9 @@ def exportSet():
            "<body>\n" )
 
   f.write( "<h1>%s</h1>\n" % ( setListName ) )
+  if annotation and annotation != "":
+    f.write( annotation )
+    f.write( "\n" )
 
   # Songs
   setNumber = 0
@@ -635,12 +644,26 @@ displayUI()
 while True:
   ch = getInput()
   if ch == "DOWN":
-    songFwd( SONG_COLUMNS )
-  elif ch == "RIGHT":
-    songFwd( 1 )
+    if inputMode == MODE_MOVE_SET:
+      if currentSet < len( setLists ) - 2: # Don't move to unassigned.
+        s = setLists[ currentSet + 1 ]
+        setLists[ currentSet + 1 ] = setLists[ currentSet ]
+        setLists[ currentSet ] = s
+        currentSet += 1
+    else:
+      songFwd( SONG_COLUMNS )
   elif ch == "UP":
-    songBack( SONG_COLUMNS )
-  elif ch == "LEFT":
+    if inputMode == MODE_MOVE_SET:
+      if currentSet > 0:
+        s = setLists[ currentSet - 1 ]
+        setLists[ currentSet - 1 ] = setLists[ currentSet ]
+        setLists[ currentSet ] = s
+        currentSet -= 1
+    else:
+      songBack( SONG_COLUMNS )
+  elif ch == "RIGHT" and inputMode != MODE_MOVE_SET:
+    songFwd( 1 )
+  elif ch == "LEFT" and inputMode != MODE_MOVE_SET:
     songBack( 1 )
   elif ch == 'A':
     alphabetize()
@@ -656,18 +679,24 @@ while True:
   elif ch == 'm':
     if currentSong == None:
       statusString = "No song selected."
-    elif inputMode == MODE_MOVE:
-      inputMode = MODE_NORMAL
+    elif inputMode == MODE_MOVE_NORMAL:
+      inputMode = MODE_MOVE_SONG
+      statusString = "Song move mode."
+    elif inputMode == MODE_MOVE_SONG:
+      inputMode = MODE_MOVE_SET
+      statusString = "Set move mode."
     else:
-      inputMode = MODE_MOVE
+      inputMode = MODE_MOVE_NORMAL
+      statusString = "Cursor move mode."
   elif ch == 'a':
     if currentSet == MAX_SETS:
       statusString = "Max sets exceeded."
     else:
-      addSet()
+      setLists.insert( currentSet, Set() )
+      currentSet += 1
   elif ch == 'd':
     deleteSet()
-  elif ch == 'c' and inputMode == MODE_NORMAL:
+  elif ch == 'c' and inputMode == MODE_MOVE_NORMAL:
     cutSongToClipboard()
   elif ch == 'p':
     pasteClipboard()
@@ -677,6 +706,12 @@ while True:
     exportSet()
   elif ch == 'R':
     cutSong()
+  elif ch == 'C': # Clone or copy a song.
+    s = setLists[ currentSet ].songList[ currentSong ]
+    setLists[ currentSet ].songList.insert( currentSong, s )
+  elif ch == 'L':  # Clone a set
+    newSet = copy.deepcopy( setLists[ currentSet ] )
+    setLists.insert( currentSet, newSet )
   elif ch == 'n':
     if currentSet == len( setLists ) - 1:
       statusString = "Can't rename Unassigned group."
@@ -698,6 +733,8 @@ while True:
       s.highLight = HIGHLIGHT_BLUE
     elif s.highLight == HIGHLIGHT_BLUE:
       s.highLight = HIGHLIGHT_RED
+  elif ch == 'N':
+    annotation = raw_input( 'Enter annotation:' )
   elif ch == ' ':
     s = setLists[ currentSet ].songList[ currentSong ]
     s.highLight = HIGHLIGHT_NONE

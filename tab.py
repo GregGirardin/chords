@@ -27,6 +27,11 @@ OFFSET_MODE_OCTAVE = 2
 INST_GUITAR = 1
 INST_BASS = 2
 
+NOTE_NORMAL = 0
+NOTE_HAMMER = 1
+NOTE_PULLOFF = 2
+NOTE_SLIDE = 3
+
 offsetMode = OFFSET_MODE_NORMAL
 instrument = INST_GUITAR
 
@@ -42,7 +47,7 @@ MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32
 DISPLAY_BEATS = 32 # number of beats we can display on a line
 '''
- Wrapper around a list. This api is 1 based
+ Wrapper around a list. This API is 1 based
 '''
 class pytabContainer( object ):
 
@@ -90,7 +95,7 @@ class pytabContainer( object ):
     return True
 
   def clr( self, index ):
-    return( self.set ( None, index ) )
+    return( self.set( None, index ) )
 
   def get( self, index = None ):
     # get an object or entire list.
@@ -108,17 +113,17 @@ class pytabContainer( object ):
 
 class pytabNote( object ):
 
-  def __init__( self, string, fret, hLight = None ):
+  def __init__( self, string, fret, noteType ):
     self.string = string
     self.fret = fret
-    self.hLight = hLight # highlight (indicate melody)
+    self.noteType = noteType
 
 class pytabBeat( pytabContainer ):
 
-  def addNote( self, string, fret, hLight = None ):
+  def addNote( self, string, fret, noteType ):
     assert string >= 1 and string <= 6, "Valid strings are 1-6"
     assert fret >= 0 and fret <= 24, "Valid frets are 0-24"
-    return self.set( pytabNote( string, fret, hLight), string )
+    return self.set( pytabNote( string, fret, noteType ), string )
 
 class pytabMeasure( pytabContainer ):
 
@@ -188,9 +193,7 @@ def annotate( o, h, ANN_IX, curOff, html ):
         curOff[ 1 ] += len( o.annotation )
 
 def export( song, html ):
-  '''
-  Save in human readable format. Could probably refactor with displayUI()
-  '''
+  ''' Save in human readable format. Could probably refactor with displayUI() '''
   lstatusString = None # local status string.
   global instrument
   fileName = song.songName + ( ".html" if html else ".txt" )
@@ -215,8 +218,6 @@ def export( song, html ):
   curOff = [ 3, 0 ] # current, where the space is
 
   twoSp = '&nbsp&nbsp'
-  highLightOn = "<font style=\"color:red;\"><b>"
-  highLightOff = "</b></font>"
 
   while measure <= song.count():
     headerLines = [ '&nbsp', '' ] if html else [ ' ', '' ] # [ measures, annotations ]
@@ -231,7 +232,6 @@ def export( song, html ):
       fretboardLines[ 3 ] += ch
 
       headerLines[ MEAS_IX ] += ( '&nbsp' if html else ' ' )
-      # headerLines[ ANN_IX ] += ( '&nbsp' if html else ' ' )
 
     disBeats = DISPLAY_BEATS
     repeat = False
@@ -260,16 +260,18 @@ def export( song, html ):
                 fieldString += "--"
               else:
                 if note.fret > 9:
-                  if note.hLight and html:
-                    fieldString += highLightOn
                   fieldString += "%2d" % ( note.fret )
                 else:
-                  fieldString += "-"
-                  if note.hLight and html:
-                    fieldString += highLightOn
+                  if note.noteType == NOTE_NORMAL:
+                    prefix = "-"
+                  elif note.noteType == NOTE_HAMMER:
+                    prefix = "h"
+                  elif note.noteType == NOTE_SLIDE:
+                    prefix = "\\"
+                  else:
+                    prefix = "p"
+                  fieldString += prefix
                   fieldString += "%d" % ( note.fret )
-                if note.hLight and html:
-                  fieldString += highLightOff
               fieldString += "-"
               fretboardLines[ curString - 1 ] += fieldString
 
@@ -346,7 +348,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
                    'S   Offset          a/i Add/Insert beat',
                    'd   Delete beat     sp  Clear note',
                    'm   Add measure     c/p Copy/Paste',
-                   'n   Annotate        h   Highlight',
+                   'n   Annotate        h   hammer/pulloff/normal',
                    'r   Rename song     b   Page break',
                    'R   Repeat          s   Save',
                    'o/O open/reOpen     x/X Export (txt / html)',
@@ -368,12 +370,9 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
 
   def endOfMeasure( pageBreak = False, repeat = False ):
     global instrument
-    if pageBreak:
-      bc = '/'
-    else:
-      bc = '|'
+    bc = '/' if pageBreak else '|'
 
-    strs = ( 0, 1, 4, 5 ) if instrument == INST_GUITAR else ( 2, 5 )
+    strs = ( 0, 1, 4, 5 ) if instrument == INST_GUITAR else( 2, 5 )
 
     for s in strs:
       fretboardLines[ s ] += bc
@@ -385,13 +384,13 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
     else:
       bc = "|"
 
-    strs = ( 2, 3 ) if instrument == INST_GUITAR else ( 3, 4 )
+    strs = ( 2, 3 ) if instrument == INST_GUITAR else( 3, 4 )
 
     for s in strs:
       fretboardLines[ s ] += bc
 
-    headerLines[ MEAS_IX ] += ' ' # Measures
-    headerLines[ BEAT_IX ] += ' ' # Beats
+    headerLines[ MEAS_IX ] += ' '
+    headerLines[ BEAT_IX ] += ' '
 
   # Display measures
   disBeats = DISPLAY_BEATS
@@ -424,16 +423,18 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
               fieldString += "<->" if cursorPos else "---"
             else:
               if note.fret > 9:
-                if note.hLight:
-                  fieldString += bcolors.FAIL
                 fieldString += "%2d" % ( note.fret )
               else:
-                fieldString += "<" if cursorPos else "-"
-                if note.hLight:
-                  fieldString += bcolors.FAIL
+                if note.noteType == NOTE_NORMAL:
+                  prefix = "-"
+                elif note.noteType == NOTE_HAMMER:
+                  prefix = "h"
+                elif note.noteType == NOTE_SLIDE:
+                  prefix = "\\"
+                else:
+                  prefix = "p"
+                fieldString += "<" if cursorPos else prefix
                 fieldString += "%d" % ( note.fret )
-              if note.hLight:
-                fieldString += bcolors.ENDC
               fieldString += ">" if cursorPos else "-"
 
             fretboardLines[ curString - 1 ] += fieldString
@@ -522,7 +523,7 @@ def findNextBeat( song, curMeasure, curBeat ):
       curMeasure += 1
       curBeat = 1
       m = song.addMeasure()
-      m.addBeat ()
+      m.addBeat()
 
   return curMeasure, curBeat
 
@@ -542,7 +543,7 @@ def findNextMeasure( song, curMeasure, curBeat ):
 
   return curMeasure, curBeat
 
-def findSong ():
+def findSong():
   global statusString, selectedfileIx
   re = "./*" + songExt
 
@@ -621,7 +622,6 @@ def handleCopy( song, measure, beat ):
   return bList
 
 def measureEmpty( song, measure ):
-
   empty = False
 
   m = song.get( measure )
@@ -711,7 +711,7 @@ unsavedChange = False
 
 cpBuf = []
 
-def getNote ():
+def getNote():
   m = currentSong.get( cursorMeasure )
   if not m:
     return None
@@ -733,7 +733,7 @@ def setNote( fret ):
   if not m.get( cursorBeat ):
     m.addBeat( cursorBeat )
   b = m.get( cursorBeat )
-  b.addNote( cursorString, fret )
+  b.addNote( cursorString, fret, NOTE_NORMAL )
   unsavedChange = True
 
 while True:
@@ -749,7 +749,7 @@ while True:
       exit()
   elif ch == 'RIGHT': # go to the next beat if one exists
     cursorMeasure, cursorBeat = findNextBeat( currentSong, cursorMeasure, cursorBeat )
-  elif ch == 'LEFT': # go to the previous beat if possible
+  elif ch == 'LEFT':  # go to the previous beat if possible
     cursorMeasure, cursorBeat = findPrevBeat( currentSong, cursorMeasure, cursorBeat )
   elif ch == 'UP':
     if cursorString > ( 1 if instrument == INST_GUITAR else 3 ):
@@ -762,14 +762,12 @@ while True:
   elif ch == '.':
     cursorMeasure, cursorBeat = findNextMeasure( currentSong, cursorMeasure, cursorBeat )
   elif ch == 'a' or ch == 'i': # add/insert beat
-    if ch == 'a':
-      offset = 1
-    else:
-      offset = 0
+    offset = 1 if ch == 'a' else 0
     m = currentSong.get( cursorMeasure )
 
     if not m:
       m = currentSong.addMeasure( cursorMeasure )
+
     if m.count() == MAX_BEATS_PER_MEAS:
       statusString = "Max beats reached."
     elif cursorBeat == m.count() and ch == 'a':
@@ -780,17 +778,11 @@ while True:
   elif ch == 'b': # toggle page break
     m = currentSong.get( cursorMeasure )
     if m:
-      if m.pageBreak == True:
-        m.pageBreak = False
-      else:
-        m.pageBreak = True
+      m.pageBreak = False if m.pageBreak == True else True
   elif ch == 'R': # toggle repeat
     m = currentSong.get( cursorMeasure )
     if m:
-      if m.repeat == True:
-        m.repeat = False
-      else:
-        m.repeat = True
+      m.repeat = False if m.repeat == True else False
   elif ch == 'd': # delete beat.
     m = currentSong.get( cursorMeasure )
     if currentSong.count() > 1 or m.count() > 1:
@@ -815,20 +807,27 @@ while True:
     else:
       m = currentSong.addMeasure( cursorMeasure + 1, insert = True )
     # Create as many beats as exist in the current measure
-    for _ in range( currentSong.get( cursorMeasure ).count() ):
-      m.addBeat ()
+    for _ in range( currentSong.get( cursorMeasure ).count( ) ):
+      m.addBeat()
     unsavedChange = True
-  elif ch == 'r': # rename song
+  elif ch == 'r': # Rename
     songName = raw_input( 'Enter song name:' )
     currentSong.songName = songName
     unsavedChange = True
   elif ch == 'h': # Highlight
     n = getNote()
     if n:
-      if n.hLight is True:
-        n.hLight = False
+      if n.noteType == NOTE_NORMAL:
+        n.noteType = NOTE_HAMMER
+        statusString = "Hammmer"
+      elif n.noteType == NOTE_HAMMER:
+        n.noteType = NOTE_PULLOFF
+        statusString = "PullOff"
+      elif n.noteType == NOTE_PULLOFF:
+        n.noteType = NOTE_SLIDE
+        statusString = "Slide"
       else:
-        n.hLight = True
+        n.noteType = NOTE_NORMAL
   elif ch == 'n': # Annotate beat
     annotation = raw_input( "Enter beat annotation:" )
     if len( annotation ) == 0: # clear
@@ -837,11 +836,11 @@ while True:
     if not m:
       m = currentSong.addMeasure( cursorMeasure )
     if m:
-        b = m.get( cursorBeat )
-        if b:
-          b.annotation = annotation
-        else:
-          statusString = "Invalid beat."
+      b = m.get( cursorBeat )
+      if b:
+        b.annotation = annotation
+      else:
+        statusString = "Invalid beat."
     else:
       statusString = "Invalid measure."
   elif ch == 'N': # Annotate measure
@@ -852,7 +851,7 @@ while True:
     if not m:
       m = currentSong.addMeasure( cursorMeasure )
     if m:
-        m.annotation = annotation
+      m.annotation = annotation
     else:
       statusString = "Invalid measure."
 
@@ -867,13 +866,9 @@ while True:
     setNote( 11 )
   elif ch == '=':
     setNote( 12 )
-
   elif ch == 'S': # Toggle 0-12, 7-16 or 12-24
-    if offsetMode == OFFSET_MODE_OCTAVE:
-      offsetMode = OFFSET_MODE_NORMAL
-    else:
-      offsetMode += 1
-  elif ch == 's': # save
+    offsetMode = OFFSET_MODE_NORMAL if offsetMode == OFFSET_MODE_OCTAVE else offsetMode + 1
+  elif ch == 's': # Save
     save( currentSong )
     unsavedChange = False
   elif ch == 'x':
