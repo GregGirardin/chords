@@ -337,9 +337,9 @@ def deleteSet():
     # Can add these to unassigned, or can just Scan to put them there.
     # Since we can copy songs / sets now it's a bit cleaner not to add back to unassigned.
 
-    # u = getSetByName( unassignedSetName ).songList
-    # for s in setLists[ currentSet ].songList:
-    #   u.append( s )
+    u = getSetByName( unassignedSetName ).songList
+    for s in setLists[ currentSet ].songList:
+      u.append( s )
     del setLists[ currentSet ]
     l = len( setLists[ currentSet ].songList )
     currentSong = 0 if l else None
@@ -654,7 +654,7 @@ while True:
       songFwd( SONG_COLUMNS )
   elif ch == "UP":
     if inputMode == MODE_MOVE_SET:
-      if currentSet > 0:
+      if currentSet > 0 and currentSet < len( setLists ) - 1:
         s = setLists[ currentSet - 1 ]
         setLists[ currentSet - 1 ] = setLists[ currentSet ]
         setLists[ currentSet ] = s
@@ -682,7 +682,7 @@ while True:
     elif inputMode == MODE_MOVE_NORMAL:
       inputMode = MODE_MOVE_SONG
       statusString = "Song move mode."
-    elif inputMode == MODE_MOVE_SONG:
+    elif inputMode == MODE_MOVE_SONG and currentSet < len( setLists ) - 1: # Can't move Unassigned
       inputMode = MODE_MOVE_SET
       statusString = "Set move mode."
     else:
