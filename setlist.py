@@ -707,7 +707,7 @@ while True:
   elif ch == 'R':
     cutSong()
   elif ch == 'C': # Clone or copy a song.
-    s = setLists[ currentSet ].songList[ currentSong ]
+    s = copy.deepcopy( setLists[ currentSet ].songList[ currentSong ] )
     setLists[ currentSet ].songList.insert( currentSong, s )
   elif ch == 'L':  # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
