@@ -12,25 +12,22 @@ class bcolors:
   UNDERLINE = '\033[4m'
   ENDC = '\033[0m'
 
-helpString = bcolors.WARNING +   \
-  "\nArrow to navigate.\n"       \
-  "m   - Move modes.\n"          \
-  "o,s - Open/Save setlist.\n"   \
-  "r   - Rename the list.\n"     \
-  "a,d - Add/Delete a set.\n"    \
-  "c,p - Cut/Paste clipboard.\n" \
-  "x,X - Export.\n"              \
-  "n   - Name the set.\n"        \
-  "N   - Add Note.\n"            \
-  "R   - Remove song.\n"         \
-  "S   - Scan for new songs.\n"  \
-  "1-9 - Jump to set.\n"         \
-  "A   - Alphabetize set.\n"     \
-  "h   - RGB highlight.\n"       \
-  "sp  - Remove highlight.\n"    \
-  "C   - Clone song.\n"          \
-  "L   - Clone set.\n"           \
-  "q   - quit." + bcolors.ENDC
+helpString = bcolors.WARNING +    \
+  "\nArrow to navigate.\n"        \
+  "m    - Move modes.\n"          \
+  "o,s  - Open/Save setlist.\n"   \
+  "r,n  - Rename the list/set.\n" \
+  "a,d  - Add/Delete a set.\n"    \
+  "c,p  - Cut/Paste clipboard.\n" \
+  "x,X  - Export.\n"              \
+  "N    - Add Note.\n"            \
+  "R    - Remove song.\n"         \
+  "S    - Scan for new songs.\n"  \
+  "1-9  - Jump to set.\n"         \
+  "A    - Alphabetize set.\n"     \
+  "h,sb - RGB highlight/remove\n" \
+  "C,L  - Clone song/set.\n"     \
+  "q    - quit." + bcolors.ENDC
 
 class Set( object ):
   def __init__( self, name=None ):
@@ -49,7 +46,8 @@ clipboard = []
 unassignedSetName = "Unassigned Songs"
 statusString = None
 setListName = "SetList"
-currentSet = 0 # these represent the 'cursor'
+# Cursor location
+currentSet = 0
 currentSong = 0
 setListExt = ".set"
 annotation = None
