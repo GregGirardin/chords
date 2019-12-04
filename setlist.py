@@ -10,6 +10,7 @@ class bcolors:
   WARNING = '\033[93m'
   BOLD = '\033[1m'
   UNDERLINE = '\033[4m'
+  REVERSE = '\033[7m'
   ENDC = '\033[0m'
 
 helpString = bcolors.WARNING +    \
@@ -146,8 +147,9 @@ def displayUI():
   setNumber = 0
 
   for l in setLists:
-    if setNumber == currentSet and not len( setLists[ currentSet ].songList ):
-      print( bcolors.BLUE, end = "" ) # This set is empty, highlight the name
+    if setNumber == currentSet and inputMode == MODE_MOVE_SET:
+      print( bcolors.REVERSE, end="" )
+
     if l.name:
       print( "\n-", l.name, "-", "/", len( l.songList ) )
     else:
@@ -162,7 +164,7 @@ def displayUI():
 
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
-        print( bcolors.UNDERLINE if inputMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
+        print( bcolors.REVERSE if inputMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
       if s.highLight == HIGHLIGHT_RED:
         print( bcolors.RED, end="" )
       elif s.highLight == HIGHLIGHT_BLUE:
@@ -298,7 +300,7 @@ def songBack( count ):
     if currentSet:
       currentSet -= 1
       l = len( setLists[ currentSet ].songList )
-      currentSong = l - 1 if l else None
+      currentSong = l if l else None
   elif currentSong > count:
     currentSong -= count
   else:
