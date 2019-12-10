@@ -147,8 +147,11 @@ def displayUI():
   setNumber = 0
 
   for l in setLists:
-    if setNumber == currentSet and inputMode == MODE_MOVE_SET:
-      print( bcolors.REVERSE, end="" )
+    if setNumber == currentSet:
+      if inputMode == MODE_MOVE_SET:
+        print( bcolors.REVERSE, end="" )
+      else:
+        print( bcolors.UNDERLINE, end="" )
 
     if l.name:
       print( "\n-", l.name, "-", "/", len( l.songList ) )
@@ -158,6 +161,7 @@ def displayUI():
     if setNumber == currentSet:
       print( bcolors.ENDC, end="" )
     songIx = 0
+
     for s in l.songList:
       if songIx and songIx % SONG_COLUMNS == 0:
         print()
@@ -300,7 +304,7 @@ def songBack( count ):
     if currentSet:
       currentSet -= 1
       l = len( setLists[ currentSet ].songList )
-      currentSong = l if l else None
+      currentSong = l - 1 if l > 0 else None
   elif currentSong > count:
     currentSong -= count
   else:
