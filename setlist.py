@@ -15,17 +15,17 @@ class bcolors:
 
 helpString = bcolors.WARNING +    \
   "\nArrow to navigate.\n"        \
-  "m    - Move modes.\n"          \
-  "o,s  - Open/Save setlist.\n"   \
+  "m/M  - Song/Set move.\n"          \
+  "o,s  - Open/Save.\n"   \
   "r,n  - Rename the list/set.\n" \
   "a,d  - Add/Delete a set.\n"    \
   "c,p  - Cut/Paste clipboard.\n" \
   "x,X  - Export.\n"              \
-  "N    - Add Note.\n"            \
+  "N    - Add note.\n"            \
   "R    - Remove song.\n"         \
   "S    - Scan for new songs.\n"  \
   "1-9  - Jump to set.\n"         \
-  "A    - Alphabetize set.\n"     \
+  "A    - Alphabetize.\n"     \
   "h,sb - RGB highlight/remove\n" \
   "C,L  - Clone song/set.\n"     \
   "q    - quit." + bcolors.ENDC
@@ -683,10 +683,14 @@ while True:
   elif ch == 'm':
     if currentSong == None:
       statusString = "No song selected."
-    elif inputMode == MODE_MOVE_NORMAL:
+    elif inputMode != MODE_MOVE_SONG:
       inputMode = MODE_MOVE_SONG
       statusString = "Song move mode."
-    elif inputMode == MODE_MOVE_SONG and currentSet < len( setLists ) - 1: # Can't move Unassigned
+    else:
+      inputMode = MODE_MOVE_NORMAL
+      statusString = "Cursor move mode."
+  elif ch == 'M':
+    if inputMode != MODE_MOVE_SET and currentSet < len( setLists ) - 1:  # Can't move Unassigned
       inputMode = MODE_MOVE_SET
       statusString = "Set move mode."
     else:
