@@ -4,31 +4,29 @@ import os, sys, glob, copy, pickle
 # Cat a list of .txt files into html
 
 class bcolors:
-  BLUE = '\033[94m'
-  RED = '\033[91m'
-  GREEN = '\033[92m'
-  WARNING = '\033[93m'
-  BOLD = '\033[1m'
+  BLUE      = '\033[94m'
+  RED       = '\033[91m'
+  GREEN     = '\033[92m'
+  WARNING   = '\033[93m'
+  BOLD      = '\033[1m'
   UNDERLINE = '\033[4m'
-  REVERSE = '\033[7m'
-  ENDC = '\033[0m'
+  REVERSE   = '\033[7m'
+  ENDC      = '\033[0m'
 
-helpString = bcolors.WARNING +    \
-  "\nArrow to navigate.\n"        \
-  "m/M  - Song/Set move.\n"          \
-  "o,s  - Open/Save.\n"   \
-  "r,n  - Rename the list/set.\n" \
-  "a,d  - Add/Delete a set.\n"    \
-  "c,p  - Cut/Paste clipboard.\n" \
-  "x,X  - Export.\n"              \
-  "N    - Add note.\n"            \
-  "R    - Remove song.\n"         \
-  "S    - Scan for new songs.\n"  \
-  "1-9  - Jump to set.\n"         \
-  "A    - Alphabetize.\n"     \
-  "h,sb - RGB highlight/remove\n" \
-  "C,L  - Clone song/set.\n"     \
-  "q    - quit." + bcolors.ENDC
+helpString = bcolors.WARNING +     \
+  "\n"                             \
+  "mM    - Song/Set move.\n"       \
+  "os    - Open/Save.\n"           \
+  "rn    - Rename the list/set.\n" \
+  "ad    - Add/Delete a set.\n"    \
+  "cCp   - Cut/Paste/Clr clip.\n"  \
+  "x,X   - Export.\n"              \
+  "N     - Add note.\n"            \
+  "R     - Remove song.\n"         \
+  "~1234 - Jump to library/set.\n"         \
+  "h     - Highlight song\n"       \
+  "S     - Clone set.\n"           \
+  "q     - Quit." + bcolors.ENDC
 
 class Set( object ):
   def __init__( self, name=None ):
@@ -39,38 +37,38 @@ class Song( object ):
   # Song is just a name for now but may add attributes later
   def __init__( self, name ):
     self.name = name # file name
+    self.count = 0 # Highlight dup songs with count
     self.highLight = HIGHLIGHT_NONE
 
 setLists = []
 clipboard = []
+songLibrary = []
 
-unassignedSetName = "Unassigned Songs"
 statusString = None
 setListName = "SetList"
+
 # Cursor location
-currentSet = 0
+LIBRARY_SET = -1 # if currentSet == LIBRARY_SET, you're in the library
+
+currentSet = LIBRARY_SET
 currentSong = 0
+librarySong = 0
 setListExt = ".set"
 annotation = None
 
 SONG_COLUMNS = 4
-MAX_SETS = 10
+LIBRARY_ROWS = 10
+MAX_SETS = 8
 
-# input modes
+# Input modes
 MODE_MOVE_NORMAL  = 0
 MODE_MOVE_SONG    = 1
 MODE_MOVE_SET     = 2
 
-# highlihht colors
 HIGHLIGHT_NONE = 0
-HIGHLIGHT_RED = 1
-HIGHLIGHT_BLUE = 2
-HIGHLIGHT_GREEN = 3
+HIGHLIGHT_ON = 1
 
 inputMode = MODE_MOVE_NORMAL
-
-unassignedSet = Set( unassignedSetName )
-setLists.append( unassignedSet )
 
 def loadSetList():
   global statusString, setLists, setListName, annotation
@@ -125,6 +123,20 @@ def getSetByName( name ):
       return s
   return None
 
+# Calculate how many instances of a song are in all sets so
+# we can indicate which songs are duplicates
+def calcSongCounts():
+  for l in setLists:
+    for s in l.songList:
+      s.count = 0 # Note that we compare against self below, so we'll get at least 1.
+
+  for l in setLists:
+    for s in l.songList: # For every song
+      for l2 in setLists:
+        for s2 in l2.songList:
+          if s.name == s2.name:
+            s.count += 1
+
 def getLocalSongs():
   songList = []
   re = "*.txt"
@@ -133,6 +145,9 @@ def getLocalSongs():
     song = Song( s )
     songList.append( song )
 
+  def getKey( item ):
+    return item.name
+  songList.sort( key=getKey )
   return songList
 
 def displayUI():
@@ -147,7 +162,7 @@ def displayUI():
   setNumber = 0
 
   for l in setLists:
-    if setNumber == currentSet:
+    if setNumber == currentSet: # Highlight the current set
       if inputMode == MODE_MOVE_SET:
         print( bcolors.REVERSE, end="" )
       else:
@@ -160,6 +175,7 @@ def displayUI():
 
     if setNumber == currentSet:
       print( bcolors.ENDC, end="" )
+
     songIx = 0
 
     for s in l.songList:
@@ -169,27 +185,54 @@ def displayUI():
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
         print( bcolors.REVERSE if inputMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
-      if s.highLight == HIGHLIGHT_RED:
+      if s.highLight == HIGHLIGHT_ON:
         print( bcolors.RED, end="" )
-      elif s.highLight == HIGHLIGHT_BLUE:
+      elif s.count > 1:
         print( bcolors.BLUE, end="" )
-      elif s.highLight == HIGHLIGHT_GREEN:
-        print( bcolors.GREEN, end="" )
 
       print( "%-24s" % ( s.name[ : -4 ] ), end = "" )
-      if cursor or s.highLight != HIGHLIGHT_NONE:
+      if cursor or s.highLight == HIGHLIGHT_ON or s.count > 1:
         print( bcolors.ENDC, end="" )
       songIx += 1
     print()
     setNumber += 1
 
+  # Display library
+  print( "\n-- Library --" )
+  song_row = librarySong / SONG_COLUMNS
+  first_row = song_row - LIBRARY_ROWS / 2
+  last_row = song_row + LIBRARY_ROWS / 2
+  if( first_row < 0 ):
+    last_row -= first_row
+    first_row = 0
+  if( last_row >= len( songLibrary ) / SONG_COLUMNS ):
+    diff = last_row - len( songLibrary ) / SONG_COLUMNS
+    last_row -= diff
+    first_row -= diff
+    if( first_row < 0 ):
+      first_row = 0
+
+  for songIx in range( first_row * SONG_COLUMNS, ( last_row + 1 ) * SONG_COLUMNS ):
+    if( songIx >= len( songLibrary ) ):
+      break
+    if songIx != ( first_row * 4) and songIx % SONG_COLUMNS == 0:
+      print()
+    cursor = True if currentSet == LIBRARY_SET and songIx == librarySong else False
+    if cursor:
+      print( bcolors.BOLD, end="" )
+    print( "%-24s" % ( songLibrary[ songIx ].name[ : -4 ] ), end="" )
+    if cursor:
+      print( bcolors.ENDC, end="" )
+    songIx += 1
+
+  # Clipboard
   if clipboard:
-    print( "\n- Clipboard -" )
+    print( "\n\n- Clipboard -" )
     songIx = 0
     for s in clipboard:
       print( "%-24s " % ( s.name[ : -4 ] ), end = "" )
-      if ( songIx + 1 ) % SONG_COLUMNS == 0:
-        print( "" )
+      if( songIx + 1 ) % SONG_COLUMNS == 0:
+        print()
       songIx += 1
 
   if statusString:
@@ -198,6 +241,8 @@ def displayUI():
     print( bcolors.ENDC, end = "" )
 
     statusString = None
+
+  print()
 
 def getInput ():
   # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
@@ -239,9 +284,7 @@ def saveList ():
   global setListName, setListExt, setLists, statusString, annotation
 
   statusString = "Saved."
-
   fileName = setListName + setListExt
-
   setLists[ 0 ].annonation = annotation
 
   with open( fileName, 'wb' ) as f:
@@ -252,63 +295,79 @@ def cursorMover( func ):
   def decor( *args, **kwargs ):
     global currentSet, currentSong
 
-    if inputMode == MODE_MOVE_SONG:
+    if currentSet != LIBRARY_SET and inputMode == MODE_MOVE_SONG:
       tmpSet = currentSet
       tmpSong = currentSong
       temp = setLists[ tmpSet ].songList[ tmpSong ]
 
       func( *args, **kwargs )
 
-      if tmpSet == currentSet:
-        del setLists[ tmpSet ].songList[ tmpSong ]
-        setLists[ currentSet ].songList.insert( currentSong, temp )
-      else:
-        if currentSong is None: # moved to empty set
-          currentSong = 0
-        del setLists[ tmpSet ].songList[ tmpSong ]
-        setLists[ currentSet ].songList.insert( currentSong, temp )
+      if currentSet != LIBRARY_SET:
+        if tmpSet == currentSet:
+          del setLists[ tmpSet ].songList[ tmpSong ]
+          setLists[ currentSet ].songList.insert( currentSong, temp )
+        else:
+          if currentSong is None: # moved to empty set
+            currentSong = 0
+          del setLists[ tmpSet ].songList[ tmpSong ]
+          setLists[ currentSet ].songList.insert( currentSong, temp )
     else:
       func( *args, **kwargs )
 
   return decor
 
 @cursorMover
-def songFwd (count):
-  global currentSong, currentSet
+def songFwd( count ):
+  global currentSong, librarySong, currentSet, statusString
 
-  if currentSet == len( setLists ) - 1 and \
-    ( ( currentSong == len( setLists[ currentSet ].songList ) - 1 ) or currentSong == None ):
-    return
+  if( ( inputMode == MODE_MOVE_SONG ) and
+      ( currentSet == len( setLists ) - 1 ) and
+      ( currentSong == len( setLists[ currentSet ].songList ) - 1 ) ):
+    return # Can't move a song into the library
 
-  if currentSong == None:
-    if currentSet < len( setLists ):
-      currentSet += 1
-      if len( setLists[ currentSet ].songList ):
-        currentSong = 0
+  if currentSet == LIBRARY_SET:
+    librarySong += count
+    if librarySong > len( songLibrary ) - 1:
+      librarySong = len( songLibrary ) - 1
   else:
-    l = len( setLists[ currentSet ].songList )
-    if currentSong == l - 1: # at the end of the set
-      if currentSet < len( setLists ) - 1:
+    if not currentSong:
+      currentSong = 0
+    currentSong += count
+    if( currentSong >= len( setLists[ currentSet ].songList ) ):
+      if currentSet == len( setLists ) - 1:
+        currentSet = LIBRARY_SET
+        librarySong = 0
+      else:
         currentSet += 1
-        currentSong = 0 if len( setLists[ currentSet ].songList ) else None
-    elif currentSong + count < l:
-      currentSong += count
-    else:
-      currentSong = l - 1
+        currentSong = 0
 
 @cursorMover
 def songBack( count ):
-  global currentSong, currentSet
+  global currentSong, librarySong, currentSet
 
-  if not currentSong:
-    if currentSet:
-      currentSet -= 1
-      l = len( setLists[ currentSet ].songList )
-      currentSong = l - 1 if l > 0 else None
-  elif currentSong > count:
-    currentSong -= count
+  if currentSet == LIBRARY_SET:
+    if librarySong >= count:
+      librarySong -= count
+    elif librarySong > 0:
+      librarySong = 0
+    else:
+      librarySong = 0
+      l = len( setLists )
+      if l > 0:
+        currentSet = l - 1  # jump to the last one
+        l = len( setLists[ currentSet ].songList )
+        currentSong = l - 1 if l > 0 else None
   else:
-    currentSong = 0
+    if not currentSong:
+      currentSong = 0
+    currentSong -= count
+    if currentSong < 0:
+      if currentSet == 0: # Already in the first set
+        currentSong = 0
+      else:
+        currentSet -= 1
+        l = len( setLists[ currentSet ].songList )
+        currentSong = l - 1 if l > 0 else 0
 
 @cursorMover
 def moveToSet( set ):
@@ -326,65 +385,58 @@ def moveToSet( set ):
     elif currentSong == None:
       currentSong = 0
 
-def alphabetize():
-  def getKey( item ):
-    return item.name
-
-  setLists[ currentSet ].songList.sort( key = getKey )
-
 def deleteSet():
-  # move all songs to unassigned
   global currentSet, currentSong
 
   l = len( setLists )
-  if l > 1 and currentSet < l - 1:
-    # Can add these to unassigned, or can just Scan to put them there.
-    # Since we can copy songs / sets now it's a bit cleaner not to add back to unassigned.
-
-    u = getSetByName( unassignedSetName ).songList
-    for s in setLists[ currentSet ].songList:
-      u.append( s )
+  if l > 0:
     del setLists[ currentSet ]
-    l = len( setLists[ currentSet ].songList )
-    currentSong = 0 if l else None
+    currentSet = LIBRARY_SET
+    currentSong = 0
 
-def cutSong():
-  # Delete the current song and return it
+def deleteSong():
   global currentSet, currentSong
 
-  s = None
-  if currentSong is not None:
-    s = setLists[ currentSet ].songList[ currentSong ]
-    del( setLists[ currentSet ].songList[ currentSong ] )
-    l = len( setLists[ currentSet ].songList )
-    if l == 0:
-      currentSong = None
-    elif currentSong == l:
-      currentSong -= 1
-  return s
+  if currentSet != LIBRARY_SET:
+    if currentSong is not None:
+      del( setLists[ currentSet ].songList[ currentSong ] )
+      l = len( setLists[ currentSet ].songList )
+      if l == 0:
+        currentSong = None
+      elif currentSong == l:
+        currentSong -= 1
+      calcSongCounts()
 
-def cutSongToClipboard():
-  global clipboard, statusString
+def copyToClipboard():
+  global clipboard, librarySong, statusString
 
-  s = cutSong()
-  if s:
+  if currentSet == LIBRARY_SET:
+    for s in clipboard:
+      if s.name == songLibrary[ librarySong ].name:
+        statusString = "Already in clipboard."
+        return
+    s = copy.deepcopy( songLibrary[ librarySong ] )
     clipboard.append(s)
   else:
-    statusString = "No song."
+    statusString = "Not in library."
 
 def pasteClipboard():
-  global currentSong, clipboard
+  global currentSet, currentSong, clipboard, statusString
 
-  if currentSong == None:
-    currentSong = 0
+  if currentSet != LIBRARY_SET:
+    if currentSong == None:
+      currentSong = 0
+    else:
+      currentSong += 1
+
+    for s in clipboard:
+      setLists[ currentSet ].songList.insert( currentSong, s )
+      currentSong += 1
+
+    clipboard = []
+    calcSongCounts()
   else:
-    currentSong += 1
-
-  for s in clipboard:
-    setLists[ currentSet ].songList.insert( currentSong, s )
-    currentSong += 1
-
-  clipboard = []
+    statusString = "In Library"
 
 tabMode = False
 
@@ -435,12 +487,11 @@ def exportSet():
     f.write( "\n" )
 
   # Songs
-  setNumber = 0
-  numSets = len( setLists ) - 1
-  for l in setLists[ 0 : -1 ]: # Don't include the Unassigned set
+  setNumber = 1
+  for l in setLists[ 0 : len( setLists ) ]:
     numSongs = len( l.songList )
 
-    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber + 1 ) )
+    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber ) )
     songNumber = 1
     for s in l.songList:
       try:
@@ -462,12 +513,8 @@ def exportSet():
         for line in fLines:
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
-            if s.highLight == HIGHLIGHT_RED:
+            if s.highLight == HIGHLIGHT_ON:
               f.write( "%s) <font color=\"red\">%s</font>\n" % (songNumber, line.rstrip()) )
-            elif s.highLight == HIGHLIGHT_BLUE:
-              f.write( "%s) <font color=\"blue\">%s</font>\n" % (songNumber, line.rstrip()) )
-            elif s.highLight == HIGHLIGHT_GREEN:
-              f.write( "%s) <font color=\"green\">%s</font>\n" % (songNumber, line.rstrip()) )
             else:
               f.write( "%s) %s</button>\n" % (songNumber, line.rstrip()) )
             f.write( "</button> <div class=\"panel\">\n" )
@@ -521,7 +568,6 @@ def exportSet():
            "}\n"
            "</script>\n"
            "</body></html>\n" )
-
   f.close()
   statusString = "Export complete."
 
@@ -539,10 +585,10 @@ def exportSetFlat():
            "<body>\n"
            "<h1>%s</h1>\n" % ( setListName ) )
   # setlist summary
-  setNumber = 0
-  for l in setLists[0 : -1 ]:
+  setNumber = 1
+  for l in setLists[0 : len( setLists ) ]:
     songNumber = 0
-    f.write( "<h2>%s</h2><font size=\"5\">\n" % ( l.name if l.name else setNumber + 1 ) )
+    f.write( "<h2>%s</h2><font size=\"5\">\n" % ( l.name if l.name else setNumber ) )
     for s in l.songList:
       f.write( "<a id=\"t%dt%d\" href=\"#s%ds%d\">%s</a><br>\n" %
               ( setNumber, songNumber, setNumber, songNumber, s.name[ 0 : -4 ] ) )
@@ -550,12 +596,11 @@ def exportSetFlat():
     f.write( "</font></br>\n" )
     setNumber += 1
   # songs
-  setNumber = 0
-  numSets = len( setLists ) - 1
-  for l in setLists[ 0 : -1 ]: # Don't include the Unassigned set
+  setNumber = 1
+  for l in setLists[ 0 : len( setLists ) ]:
     numSongs = len( l.songList )
 
-    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber + 1 ) )
+    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber ) )
     songNumber = 0
     for s in l.songList:
       try:
@@ -610,39 +655,12 @@ def exportSetFlat():
   f.close()
   statusString = "Flat HTML export complete."
 
-def scanForNew():
-  # scan the current directory and add any songs to Unassigned
-  global statusString
-
-  def songIsPresent( s ):
-    for l in setLists:
-      for sng in l.songList:
-        if sng.name == s.name:
-          return True
-    for c in clipboard:
-      if c.name == s.name:
-        return True
-    return False
-
-  added = 0
-
-  u = getSetByName( unassignedSetName ).songList
-  l = getLocalSongs()
-  # see if songs are not present
-  for s in l:
-    if songIsPresent( s ) == False:
-      u.append( s )
-      added += 1
-
-  statusString = "Scan complete"
-  if added:
-    statusString += ", %d added" % ( added )
-  else:
-    statusString += "."
-
-# start with all the local txt files.
-s = getSetByName( unassignedSetName )
-s.songList = getLocalSongs()
+# Start of main loop.
+# Populate library
+songLibrary = getLocalSongs()
+if len( songLibrary ) == 0:
+  print("No songs in local directory.")
+  exit()
 
 displayUI()
 while True:
@@ -669,13 +687,17 @@ while True:
     songFwd( 1 )
   elif ch == "LEFT" and inputMode != MODE_MOVE_SET:
     songBack( 1 )
-  elif ch == 'A':
-    alphabetize()
+  elif ch == '[' and inputMode != MODE_MOVE_SET:
+    songBack( SONG_COLUMNS * 5 )
+  elif ch == ']' and inputMode != MODE_MOVE_SET:
+    songFwd( SONG_COLUMNS * 5 )
+#  elif ch == 'A':
+#    def getKey( item ):
+#      return item.name
+#    if currentSet != LIBRARY_SET:
+#      setLists[ currentSet ].songList.sort( key=getKey )
   elif ch == 's':
-    if len( clipboard ):
-      statusString = "Can't save with songs in clipboard."
-    else:
-      saveList()
+    saveList()
   elif ch == 'o':
     loadSetList()
   elif ch == 'r':
@@ -690,7 +712,7 @@ while True:
       inputMode = MODE_MOVE_NORMAL
       statusString = "Cursor move mode."
   elif ch == 'M':
-    if inputMode != MODE_MOVE_SET and currentSet < len( setLists ) - 1:  # Can't move Unassigned
+    if inputMode != MODE_MOVE_SET and currentSet < len( setLists ) - 1:  # Can't move Library
       inputMode = MODE_MOVE_SET
       statusString = "Set move mode."
     else:
@@ -705,7 +727,9 @@ while True:
   elif ch == 'd':
     deleteSet()
   elif ch == 'c' and inputMode == MODE_MOVE_NORMAL:
-    cutSongToClipboard()
+    copyToClipboard()
+  elif ch == 'C':
+    clipboard = []
   elif ch == 'p':
     pasteClipboard()
   elif ch == 'X':
@@ -713,41 +737,31 @@ while True:
   elif ch == 'x':
     exportSet()
   elif ch == 'R':
-    cutSong()
-  elif ch == 'C': # Clone or copy a song.
-    s = copy.deepcopy( setLists[ currentSet ].songList[ currentSong ] )
-    setLists[ currentSet ].songList.insert( currentSong, s )
-  elif ch == 'L':  # Clone a set
+    deleteSong()
+  elif ch == 'S': # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
     setLists.insert( currentSet, newSet )
   elif ch == 'n':
-    if currentSet == len( setLists ) - 1:
-      statusString = "Can't rename Unassigned group."
-    else:
+    if currentSet != LIBRARY_SET:
       sName = raw_input( 'Enter set name:' )
       setLists[ currentSet ].name = sName
-  elif ch == 'S':
-    scanForNew()
   elif ch == 'q':
     exit()
   elif ch == 'h':
-    s = setLists[ currentSet ].songList[ currentSong ]
-
-    if s.highLight == HIGHLIGHT_NONE:
-      s.highLight = HIGHLIGHT_RED
-    elif s.highLight == HIGHLIGHT_RED:
-      s.highLight = HIGHLIGHT_GREEN
-    elif s.highLight == HIGHLIGHT_GREEN:
-      s.highLight = HIGHLIGHT_BLUE
-    elif s.highLight == HIGHLIGHT_BLUE:
-      s.highLight = HIGHLIGHT_RED
+    if currentSet != LIBRARY_SET:
+      s = setLists[ currentSet ].songList[ currentSong ]
+      if s.highLight == HIGHLIGHT_NONE:
+        s.highLight = HIGHLIGHT_ON
+      else:
+        s.highLight = HIGHLIGHT_NONE
+    else:
+      statusString = "In Library."
   elif ch == 'N':
     annotation = raw_input( 'Enter annotation:' )
-  elif ch == ' ':
-    s = setLists[ currentSet ].songList[ currentSong ]
-    s.highLight = HIGHLIGHT_NONE
   elif ch >= '1' and ch <= '9':
     moveToSet( int( ch ) - 1 )
+  elif ch == '`':
+    currentSet = LIBRARY_SET
   elif ch == '?' or ch == 'h':
     print( helpString )
     foo = getInput()
