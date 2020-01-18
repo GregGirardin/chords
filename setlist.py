@@ -15,6 +15,7 @@ class bcolors:
 
 helpString = bcolors.WARNING +     \
   "\n"                             \
+  "[]    - back/forward multiple\n" \
   "mM    - Song/Set move.\n"       \
   "os    - Open/Save.\n"           \
   "rn    - Rename the list/set.\n" \
@@ -23,7 +24,7 @@ helpString = bcolors.WARNING +     \
   "x,X   - Export.\n"              \
   "N     - Add note.\n"            \
   "R     - Remove song.\n"         \
-  "~1234 - Jump to library/set.\n"         \
+  "~1234 - Jump to library/set.\n"  \
   "h     - Highlight song\n"       \
   "S     - Clone set.\n"           \
   "q     - Quit." + bcolors.ENDC
@@ -199,6 +200,7 @@ def displayUI():
 
   # Display library
   print( "\n-- Library --" )
+
   song_row = librarySong / SONG_COLUMNS
   first_row = song_row - LIBRARY_ROWS / 2
   last_row = song_row + LIBRARY_ROWS / 2
@@ -227,7 +229,7 @@ def displayUI():
 
   # Clipboard
   if clipboard:
-    print( "\n\n- Clipboard -" )
+    print( "\n\n-- Clipboard --" )
     songIx = 0
     for s in clipboard:
       print( "%-24s " % ( s.name[ : -4 ] ), end = "" )
@@ -236,9 +238,8 @@ def displayUI():
       songIx += 1
 
   if statusString:
-    print( bcolors.WARNING )
-    print( statusString )
-    print( bcolors.ENDC, end = "" )
+    print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
+    #print( bcolors.ENDC, end = "" )
 
     statusString = None
 
@@ -667,7 +668,7 @@ while True:
   ch = getInput()
   if ch == "DOWN":
     if inputMode == MODE_MOVE_SET:
-      if currentSet < len( setLists ) - 2: # Don't move to unassigned.
+      if currentSet < len( setLists ) - 1:
         s = setLists[ currentSet + 1 ]
         setLists[ currentSet + 1 ] = setLists[ currentSet ]
         setLists[ currentSet ] = s
@@ -676,7 +677,7 @@ while True:
       songFwd( SONG_COLUMNS )
   elif ch == "UP":
     if inputMode == MODE_MOVE_SET:
-      if currentSet > 0 and currentSet < len( setLists ) - 1:
+      if currentSet > 0 and currentSet < len( setLists ):
         s = setLists[ currentSet - 1 ]
         setLists[ currentSet - 1 ] = setLists[ currentSet ]
         setLists[ currentSet ] = s
@@ -712,7 +713,7 @@ while True:
       inputMode = MODE_MOVE_NORMAL
       statusString = "Cursor move mode."
   elif ch == 'M':
-    if inputMode != MODE_MOVE_SET and currentSet < len( setLists ) - 1:  # Can't move Library
+    if inputMode != MODE_MOVE_SET and currentSet != LIBRARY_SET:
       inputMode = MODE_MOVE_SET
       statusString = "Set move mode."
     else:
@@ -741,6 +742,7 @@ while True:
   elif ch == 'S': # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
     setLists.insert( currentSet, newSet )
+    calcSongCounts()
   elif ch == 'n':
     if currentSet != LIBRARY_SET:
       sName = raw_input( 'Enter set name:' )
