@@ -15,7 +15,7 @@ class bcolors:
 
 helpString = bcolors.WARNING +     \
   "\n"                             \
-  "[]    - back/forward multiple\n" \
+  "df    - back/forward multiple\n" \
   "mM    - Song/Set move.\n"       \
   "os    - Open/Save.\n"           \
   "rn    - Rename the list/set.\n" \
@@ -162,6 +162,11 @@ def displayUI():
 
   setNumber = 0
 
+  libSongName = None
+
+  if( currentSet == LIBRARY_SET):
+    libSongName = songLibrary[ librarySong ].name
+
   for l in setLists:
     if setNumber == currentSet: # Highlight the current set
       if inputMode == MODE_MOVE_SET:
@@ -186,14 +191,15 @@ def displayUI():
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
         print( bcolors.REVERSE if inputMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
-      if s.highLight == HIGHLIGHT_ON:
+      if s.name == libSongName:
+        print( bcolors.REVERSE, end="" )
+      elif s.highLight == HIGHLIGHT_ON:
         print( bcolors.RED, end="" )
       elif s.count > 1:
         print( bcolors.BLUE, end="" )
 
       print( "%-24s" % ( s.name[ : -4 ] ), end = "" )
-      if cursor or s.highLight == HIGHLIGHT_ON or s.count > 1:
-        print( bcolors.ENDC, end="" )
+      print( bcolors.ENDC, end="" )
       songIx += 1
     print()
     setNumber += 1
@@ -688,15 +694,10 @@ while True:
     songFwd( 1 )
   elif ch == "LEFT" and inputMode != MODE_MOVE_SET:
     songBack( 1 )
-  elif ch == '[' and inputMode != MODE_MOVE_SET:
+  elif ch == 'd' and inputMode != MODE_MOVE_SET:
     songBack( SONG_COLUMNS * 5 )
-  elif ch == ']' and inputMode != MODE_MOVE_SET:
+  elif ch == 'f' and inputMode != MODE_MOVE_SET:
     songFwd( SONG_COLUMNS * 5 )
-#  elif ch == 'A':
-#    def getKey( item ):
-#      return item.name
-#    if currentSet != LIBRARY_SET:
-#      setLists[ currentSet ].songList.sort( key=getKey )
   elif ch == 's':
     saveList()
   elif ch == 'o':
