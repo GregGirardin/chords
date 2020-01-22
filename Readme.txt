@@ -19,6 +19,7 @@ These scripts use Python 2.7.16
     Name your setlist by pressing 'r'.
 
     Add sets with "a". Navigate to the Library with the up/down/left/right/d/f
+    Remove sets with "A"
 
     You can jump to a specific set by pressing '12345..'. You can jump back to the
     library by pressing '`'

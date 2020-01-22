@@ -16,17 +16,18 @@ class bcolors:
 helpString = bcolors.WARNING +     \
   "\n"                             \
   "df    - back/forward multiple\n" \
-  "mM    - Song/Set move.\n"       \
-  "os    - Open/Save.\n"           \
-  "rn    - Rename the list/set.\n" \
-  "ad    - Add/Delete a set.\n"    \
-  "cCp   - Cut/Paste/Clr clip.\n"  \
+  "mM    - Move song or set.\n"       \
+  "os    - Open/save.\n"           \
+  "nN    - Name the list/set.\n" \
+  "aA    - Add/delete a set.\n"    \
+  "cCp   - Copy to/Clear/Paste clipboard.\n"  \
   "x,X   - Export.\n"              \
-  "N     - Add note.\n"            \
+  "t     - aNnotation.\n"          \
   "R     - Remove song.\n"         \
-  "~1234 - Jump to library/set.\n"  \
-  "h     - Highlight song\n"       \
-  "S     - Clone set.\n"           \
+  "~1234 - Jump to library/set.\n" \
+  "h     - Highlight song in red.\n"       \
+  "S     - Clone Set.\n"           \
+  "/     - Search.\n"              \
   "q     - Quit." + bcolors.ENDC
 
 class Set( object ):
@@ -702,8 +703,6 @@ while True:
     saveList()
   elif ch == 'o':
     loadSetList()
-  elif ch == 'r':
-    setListName = raw_input( 'Enter set list name:' )
   elif ch == 'm':
     if currentSong == None:
       statusString = "No song selected."
@@ -726,7 +725,7 @@ while True:
     else:
       setLists.insert( currentSet, Set() )
       currentSet += 1
-  elif ch == 'd':
+  elif ch == 'A':
     deleteSet()
   elif ch == 'c' and inputMode == MODE_MOVE_NORMAL:
     copyToClipboard()
@@ -748,6 +747,8 @@ while True:
     if currentSet != LIBRARY_SET:
       sName = raw_input( 'Enter set name:' )
       setLists[ currentSet ].name = sName
+  elif ch == 'N':
+    setListName = raw_input( 'Enter set list name:' )
   elif ch == 'q':
     exit()
   elif ch == 'h':
@@ -759,13 +760,22 @@ while True:
         s.highLight = HIGHLIGHT_NONE
     else:
       statusString = "In Library."
-  elif ch == 'N':
+  elif ch == 't':
     annotation = raw_input( 'Enter annotation:' )
   elif ch >= '1' and ch <= '9':
     moveToSet( int( ch ) - 1 )
   elif ch == '`':
     currentSet = LIBRARY_SET
-  elif ch == '?' or ch == 'h':
+  elif ch == '/':
+    searchFor = raw_input( 'Search:' )
+    newLibIndex = 0
+    for s in songLibrary:
+      if s.name.lower()[ 0 : len( searchFor ) ] == searchFor:
+        librarySong = newLibIndex
+        break
+      newLibIndex += 1
+
+  elif ch == '?':
     print( helpString )
     foo = getInput()
 
