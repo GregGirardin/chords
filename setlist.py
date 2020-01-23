@@ -14,19 +14,19 @@ class bcolors:
   ENDC      = '\033[0m'
 
 helpString = bcolors.WARNING +     \
-  "\n"                             \
-  "df    - back/forward multiple\n" \
-  "mM    - Move song or set.\n"       \
-  "os    - Open/save.\n"           \
-  "nN    - Name the list/set.\n" \
+  "\n" \
   "aA    - Add/delete a set.\n"    \
-  "cCp   - Copy to/Clear/Paste clipboard.\n"  \
-  "x,X   - Export.\n"              \
-  "t     - aNnotation.\n"          \
+  "os    - Open/save.\n"           \
+  "mM    - Move song/set.\n"       \
+  "nN    - Name the set/list.\n"   \
+  "cCp   - Copy to/Clear/Paste from Library.\n" \
   "R     - Remove song.\n"         \
+  "x,X   - Export.\n"              \
+  "df    - back/fwd multiple.\n"   \
+  "t     - aNnotation.\n"          \
   "~1234 - Jump to library/set.\n" \
-  "h     - Highlight song in red.\n"       \
-  "S     - Clone Set.\n"           \
+  "h     - Toggle highlight.\n"    \
+  "S     - Clone set.\n"           \
   "/     - Search.\n"              \
   "q     - Quit." + bcolors.ENDC
 
@@ -207,7 +207,6 @@ def displayUI():
 
   # Display library
   print( "\n-- Library --" )
-
   song_row = librarySong / SONG_COLUMNS
   first_row = song_row - LIBRARY_ROWS / 2
   last_row = song_row + LIBRARY_ROWS / 2
@@ -246,8 +245,6 @@ def displayUI():
 
   if statusString:
     print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
-    #print( bcolors.ENDC, end = "" )
-
     statusString = None
 
   print()
@@ -303,7 +300,8 @@ def cursorMover( func ):
   def decor( *args, **kwargs ):
     global currentSet, currentSong
 
-    if currentSet != LIBRARY_SET and inputMode == MODE_MOVE_SONG:
+    if currentSet != LIBRARY_SET and inputMode == MODE_MOVE_SONG and\
+        currentSong is not None:
       tmpSet = currentSet
       tmpSong = currentSong
       temp = setLists[ tmpSet ].songList[ tmpSong ]
@@ -421,12 +419,12 @@ def copyToClipboard():
   if currentSet == LIBRARY_SET:
     for s in clipboard:
       if s.name == songLibrary[ librarySong ].name:
-        statusString = "Already in clipboard."
+        statusString = "Song is already in the clipboard."
         return
     s = copy.deepcopy( songLibrary[ librarySong ] )
     clipboard.append(s)
   else:
-    statusString = "Not in library."
+    statusString = "Not in Library."
 
 def pasteClipboard():
   global currentSet, currentSong, clipboard, statusString
@@ -444,7 +442,7 @@ def pasteClipboard():
     clipboard = []
     calcSongCounts()
   else:
-    statusString = "In Library"
+    statusString = "Can't paste to Library."
 
 tabMode = False
 
@@ -522,9 +520,9 @@ def exportSet():
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
             if s.highLight == HIGHLIGHT_ON:
-              f.write( "%s) <font color=\"red\">%s</font>\n" % (songNumber, line.rstrip()) )
+              f.write( "%s) <font color=\"red\">%s</font>\n" % ( songNumber, line.rstrip() ) )
             else:
-              f.write( "%s) %s</button>\n" % (songNumber, line.rstrip()) )
+              f.write( "%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
             f.write( "</button> <div class=\"panel\">\n" )
 
           # Shortcuts that can be put in the lyric text,
@@ -770,11 +768,11 @@ while True:
     searchFor = raw_input( 'Search:' )
     newLibIndex = 0
     for s in songLibrary:
-      if s.name.lower()[ 0 : len( searchFor ) ] == searchFor:
+      if s.name.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
         librarySong = newLibIndex
+        currentSet = LIBRARY_SET
         break
       newLibIndex += 1
-
   elif ch == '?':
     print( helpString )
     foo = getInput()
