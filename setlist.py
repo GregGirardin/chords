@@ -20,7 +20,7 @@ helpString = bcolors.WARNING +     \
   "mM    - Move song/set.\n"       \
   "nN    - Name the set/list.\n"   \
   "cCp   - Copy to/Clear/Paste from Library.\n" \
-  "R     - Remove song.\n"         \
+  "D     - Remove song.\n"         \
   "x,X   - Export.\n"              \
   "df    - back/fwd multiple.\n"   \
   "t     - aNnotation.\n"          \
@@ -53,7 +53,7 @@ setListName = "SetList"
 LIBRARY_SET = -1 # if currentSet == LIBRARY_SET, you're in the library
 
 currentSet = LIBRARY_SET
-currentSong = 0
+currentSong = None
 librarySong = 0
 setListExt = ".set"
 annotation = None
@@ -207,14 +207,14 @@ def displayUI():
 
   # Display library
   print( "\n-- Library --" )
-  song_row = librarySong / SONG_COLUMNS
-  first_row = song_row - LIBRARY_ROWS / 2
-  last_row = song_row + LIBRARY_ROWS / 2
+  song_row = int( librarySong / SONG_COLUMNS )
+  first_row = int(song_row - LIBRARY_ROWS / 2 )
+  last_row = int(song_row + LIBRARY_ROWS / 2 )
   if( first_row < 0 ):
     last_row -= first_row
     first_row = 0
   if( last_row >= len( songLibrary ) / SONG_COLUMNS ):
-    diff = last_row - len( songLibrary ) / SONG_COLUMNS
+    diff = int( last_row - len( songLibrary ) / SONG_COLUMNS )
     last_row -= diff
     first_row -= diff
     if( first_row < 0 ):
@@ -300,8 +300,7 @@ def cursorMover( func ):
   def decor( *args, **kwargs ):
     global currentSet, currentSong
 
-    if currentSet != LIBRARY_SET and inputMode == MODE_MOVE_SONG and\
-        currentSong is not None:
+    if currentSet != LIBRARY_SET and inputMode == MODE_MOVE_SONG and currentSong is not None:
       tmpSet = currentSet
       tmpSong = currentSong
       temp = setLists[ tmpSet ].songList[ tmpSong ]
@@ -309,13 +308,14 @@ def cursorMover( func ):
       func( *args, **kwargs )
 
       if currentSet != LIBRARY_SET:
+        del setLists[ tmpSet ].songList[ tmpSong ]
         if tmpSet == currentSet:
-          del setLists[ tmpSet ].songList[ tmpSong ]
           setLists[ currentSet ].songList.insert( currentSong, temp )
         else:
-          if currentSong is None: # moved to empty set
+          if currentSong is None:
             currentSong = 0
-          del setLists[ tmpSet ].songList[ tmpSong ]
+          if( currentSong == len( setLists[ currentSet ].songList ) - 1 ):
+            currentSong += 1
           setLists[ currentSet ].songList.insert( currentSong, temp )
     else:
       func( *args, **kwargs )
@@ -328,6 +328,7 @@ def songFwd( count ):
 
   if( ( inputMode == MODE_MOVE_SONG ) and
       ( currentSet == len( setLists ) - 1 ) and
+      ( currentSong is not None ) and
       ( currentSong == len( setLists[ currentSet ].songList ) - 1 ) ):
     return # Can't move a song into the library
 
@@ -336,16 +337,19 @@ def songFwd( count ):
     if librarySong > len( songLibrary ) - 1:
       librarySong = len( songLibrary ) - 1
   else:
-    if not currentSong:
-      currentSong = 0
-    currentSong += count
-    if( currentSong >= len( setLists[ currentSet ].songList ) ):
+    if currentSong is not None:
+      currentSong += count
+    if( currentSong is None ) or \
+      ( currentSong >= len( setLists[ currentSet ].songList ) ):
       if currentSet == len( setLists ) - 1:
         currentSet = LIBRARY_SET
         librarySong = 0
       else:
         currentSet += 1
-        currentSong = 0
+        if len( setLists[ currentSet ].songList ):
+          currentSong = 0
+        else:
+          currentSong = None
 
 @cursorMover
 def songBack( count ):
@@ -357,23 +361,24 @@ def songBack( count ):
     elif librarySong > 0:
       librarySong = 0
     else:
-      librarySong = 0
       l = len( setLists )
       if l > 0:
-        currentSet = l - 1  # jump to the last one
+        currentSet = l - 1 # jump to the last one
         l = len( setLists[ currentSet ].songList )
         currentSong = l - 1 if l > 0 else None
   else:
-    if not currentSong:
-      currentSong = 0
-    currentSong -= count
-    if currentSong < 0:
+    if currentSong is not None:
+      currentSong -= count
+    if currentSong is None or currentSong < 0: # Need to go back a set.
       if currentSet == 0: # Already in the first set
-        currentSong = 0
+        if( len( setLists[ currentSet ].songList ) ):
+          currentSong = 0
+        else:
+          currentSong = None
       else:
         currentSet -= 1
         l = len( setLists[ currentSet ].songList )
-        currentSong = l - 1 if l > 0 else 0
+        currentSong = l - 1 if l > 0 else None
 
 @cursorMover
 def moveToSet( set ):
@@ -386,10 +391,8 @@ def moveToSet( set ):
     l = len( setLists[ currentSet ].songList )
     if l == 0:
       currentSong = None
-    elif currentSong >= l:
+    else:
       currentSong = l - 1
-    elif currentSong == None:
-      currentSong = 0
 
 def deleteSet():
   global currentSet, currentSong
@@ -398,7 +401,7 @@ def deleteSet():
   if l > 0:
     del setLists[ currentSet ]
     currentSet = LIBRARY_SET
-    currentSong = 0
+    currentSong = None
 
 def deleteSong():
   global currentSet, currentSong
@@ -735,7 +738,7 @@ while True:
     exportSetFlat()
   elif ch == 'x':
     exportSet()
-  elif ch == 'R':
+  elif ch == 'D':
     deleteSong()
   elif ch == 'S': # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
