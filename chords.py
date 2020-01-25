@@ -1,23 +1,23 @@
 #!/usr/bin/python
 
 '''
-Chord Utility
-by Greg Girardin
-   Nashua NH
-   girardin1972@hotmail.com
+Chords
+Greg Girardin
+Nashua NH
+girardin1972@hotmail.com
 
-   I wrote everything except for the getInput function.
-
-   These chord generators have existed for many years,
-   but I wanted one I could easily configure the way I wanted.
+but I wanted one I could easily configure the way I wanted.
 '''
 
 from __future__ import print_function
-import os
-import sys
-from  Tkinter import *
+import os, sys
 from functools import partial
-import tkFont
+if sys.version_info.major == 2:
+  from Tkinter import *
+  import tkFont
+else:
+  from tkinter import *
+  import tkinter.font as tkFont
 
 instrumentMap = \
   {
@@ -78,7 +78,7 @@ spellingMap = \
 
 # pick the spelligs you care about
 spellings = ( 'M',  'm',
-              '2', '4', '6', 'm6',
+              '2',  '4', '6', 'm6',
               '7',  'm7',  'M7',
               '9',  'm9',  'M9', '11', 'm11', 'M11', '13', 'm13', 'M13',
               'dim',
@@ -92,7 +92,6 @@ NUM_FRETS = 15
 
 disFont = { 0 : ( "TkFixedFont", 18, "bold italic" ),
             1 : ( "TkFixedFont", 14, "" ) }
-
 
 def showWithSharps( key, spelling ):
   # return True if we should show this key/spelling as having sharps (vs flats)
@@ -113,7 +112,6 @@ def showWithSharps( key, spelling ):
 
   return key not in bKeys
 
-
 def calcNote( root, fret ):
   rootNum = dispKeyList.index( root )
   rootNum += fret
@@ -121,14 +119,12 @@ def calcNote( root, fret ):
 
   return dispKeyList[ rootNum ]
 
-
 def calcInterval( note, key ):
   noteNum = dispKeyList.index( note ) + 12 # C = 12, C# = 13, etc
   keyNum = dispKeyList.index ( key )       # C = 0, C# = 1
   intNum = ( noteNum - keyNum ) % 12       # (if C) C = 0, C# = 1
 
   return intNum
-
 
 def fretInfoGen( root, fret, fretOffset, key, spelling ):
   '''
@@ -158,7 +154,6 @@ def fretInfoGen( root, fret, fretOffset, key, spelling ):
   fretInfo[ 'note' ] = curKeyList[ dispKeyList.index( fretInfo[ 'note' ] ) ]
 
   return fretInfo
-
 
 def generateFretboard( inst, key, spelling ):
   '''
@@ -191,7 +186,6 @@ def generateFretboard( inst, key, spelling ):
     fretBoard [string] = stringList
 
   return fretBoard
-
 
 def displayFretboard( fretboard, interval = False ):
   numStrings = fretboard[ 'numStrings' ]
@@ -229,7 +223,6 @@ def displayFretboard( fretboard, interval = False ):
         print( "----%s" % fretChar, end = "" )
     print ()
 
-
 def displayInfo( instrument, key, spelling ):
   os.system( 'clear' )
 
@@ -247,11 +240,10 @@ def displayInfo( instrument, key, spelling ):
   print()
   print( "mr7[] : Spellings: ", end="" )
   for spel in spellings:
-    print(spel, "", end="" )
+    print( spel, "", end="" )
   print()
   print( "a..g -= : Key" )
   print( "q : quit" )
-
 
 def getInput ():
   """
@@ -278,7 +270,6 @@ def getInput ():
     termios.tcsetattr( fd, termios.TCSAFLUSH, attrs_save )
     fcntl.fcntl( fd, fcntl.F_SETFL, flags_save )
   return ret
-
 
 def runCli ():
   keyIx = 0
@@ -318,7 +309,6 @@ def runCli ():
       spellingIx = spellings.index( '7' )
     elif ch.upper() in dispKeyList:
       keyIx = dispKeyList.index( ch.upper() )
-
 
 class runGui ():
   '''
@@ -370,9 +360,6 @@ class runGui ():
       b.pack( side=LEFT )
 
   def displaySpace( self, frame ):
-    #sp = Label( frame, text="--" )
-    #sp.pack ( side=BOTTOM )
-
     actionAndArg = partial( self.handleFret )
 
     b = Button( frame, text="Frets/Notes", font=disFont[ 1 ], command=actionAndArg )
@@ -493,7 +480,6 @@ class runGui ():
     self.displaySpellings( self.spellingsFrames )
     self.displayKeys( self.keysFrame )
     self.displayFretboards( self.fretboardFrame )
-
 
     root.mainloop()
 

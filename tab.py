@@ -460,12 +460,12 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
 
   os.system( 'clear' )
   for line in headerLines:
-    print line
+    print( line )
   fl = fretboardLines if instrument == INST_GUITAR else fretboardLines[ 2: ]
   for line in fl:
-    print line
+    print( line )
   for line in instructions:
-    print line
+    print( line )
 
 def getInput():
   # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
@@ -558,7 +558,7 @@ def findSong():
 
   while True:
     os.system( 'clear' )
-    print "Use arrow keys to select or exit.\n"
+    print( "Use arrow keys to select or exit.\n" )
     index = 0
     for s in matchList:
       line = "  "
@@ -567,7 +567,7 @@ def findSong():
       line += s[ 2: ].split( "." )[ 0 ]
       index += 1
 
-      print line
+      print( line )
 
     c = getInput()
     if c == "LEFT":
@@ -584,7 +584,7 @@ def findSong():
 def handleCopy( song, measure, beat ):
   global statusString
   bList = []
-  print "Beats to copy? (1-9,c,m)"
+  print( "Beats to copy? (1-9,c,m)" )
   numBeats = 0
   beatsCopied = 0
 
