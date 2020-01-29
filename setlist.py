@@ -15,19 +15,19 @@ class bcolors:
 
 helpString = bcolors.WARNING +     \
   "\n" \
-  "aA    - Add/delete a set.\n"    \
-  "os    - Open/save.\n"           \
-  "mM    - Move song/set.\n"       \
-  "nN    - Name the set/list.\n"   \
+  "aA    - Add/delete a set.\n" \
+  "os    - Open/save.\n" \
+  "mM    - Move song/set.\n" \
+  "nN    - Name the set/list.\n" \
   "cCp   - Copy to/Clear/Paste from Library.\n" \
-  "D     - Remove song.\n"         \
-  "x,X   - Export.\n"              \
-  "df    - back/fwd multiple.\n"   \
-  "t     - aNnotation.\n"          \
-  "~1234 - Jump to library/set.\n" \
-  "h     - Toggle highlight.\n"    \
-  "S     - Clone set.\n"           \
-  "/     - Search.\n"              \
+  "D     - Remove song.\n" \
+  "x,X   - Export.\n" \
+  "df    - Back/forward multiple.\n" \
+  "t     - Annotation.\n" \
+  "~1234 - Go to library/set.\n" \
+  "h     - Toggle highlight.\n" \
+  "S     - Clone set.\n" \
+  "/     - Search.\n" \
   "q     - Quit." + bcolors.ENDC
 
 class Set( object ):
@@ -39,7 +39,7 @@ class Song( object ):
   # Song is just a name for now but may add attributes later
   def __init__( self, name ):
     self.name = name # file name
-    self.count = 0 # Highlight dup songs with count
+    self.count = 0 # Highlight duplicate songs with count
     self.highLight = HIGHLIGHT_NONE
 
 setLists = []
@@ -54,7 +54,7 @@ LIBRARY_SET = -1 # if currentSet == LIBRARY_SET, you're in the library
 
 currentSet = LIBRARY_SET
 currentSong = None
-librarySong = 0
+librarySong = 0 # Library always has at least 1 song or program will exit.
 setListExt = ".set"
 annotation = None
 
@@ -117,8 +117,6 @@ def loadSetList():
       if selectedfileIx > 0:
         selectedfileIx -= 1
 
-    # add any local songs not in the list to unassigned
-
 def getSetByName( name ):
   for s in setLists:
     if s.name == name:
@@ -165,7 +163,7 @@ def displayUI():
 
   libSongName = None
 
-  if( currentSet == LIBRARY_SET):
+  if( currentSet == LIBRARY_SET ):
     libSongName = songLibrary[ librarySong ].name
 
   for l in setLists:
@@ -184,7 +182,6 @@ def displayUI():
       print( bcolors.ENDC, end="" )
 
     songIx = 0
-
     for s in l.songList:
       if songIx and songIx % SONG_COLUMNS == 0:
         print()
@@ -202,6 +199,7 @@ def displayUI():
       print( "%-24s" % ( s.name[ : -4 ] ), end = "" )
       print( bcolors.ENDC, end="" )
       songIx += 1
+
     print()
     setNumber += 1
 
@@ -223,7 +221,7 @@ def displayUI():
   for songIx in range( first_row * SONG_COLUMNS, ( last_row + 1 ) * SONG_COLUMNS ):
     if( songIx >= len( songLibrary ) ):
       break
-    if songIx != ( first_row * 4) and songIx % SONG_COLUMNS == 0:
+    if songIx != ( first_row * 4 ) and songIx % SONG_COLUMNS == 0:
       print()
     cursor = True if currentSet == LIBRARY_SET and songIx == librarySong else False
     if cursor:
@@ -668,7 +666,7 @@ def exportSetFlat():
 # Populate library
 songLibrary = getLocalSongs()
 if len( songLibrary ) == 0:
-  print("No songs in local directory.")
+  print( "No songs in local directory." )
   exit()
 
 displayUI()
@@ -724,8 +722,7 @@ while True:
     if currentSet == MAX_SETS:
       statusString = "Max sets exceeded."
     else:
-      setLists.insert( currentSet, Set() )
-      currentSet += 1
+      setLists.insert( currentSet + 1, Set() )
   elif ch == 'A':
     deleteSet()
   elif ch == 'c' and inputMode == MODE_MOVE_NORMAL:
