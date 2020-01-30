@@ -725,6 +725,7 @@ while True:
       setLists.insert( currentSet + 1, Set() )
   elif ch == 'A':
     deleteSet()
+    calcSongCounts()
   elif ch == 'c' and inputMode == MODE_MOVE_NORMAL:
     copyToClipboard()
   elif ch == 'C':
