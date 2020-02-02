@@ -1,4 +1,4 @@
-These scripts use Python 2.7.16
+Python music utilities. See Readme.odt for documentation.
 
 1.  chords.py - A python fretboard display utility. Uses tkinter.
 
