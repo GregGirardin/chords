@@ -98,7 +98,6 @@ def loadSetList():
         selSong = s
       line += s[ 2 : ].split( "." )[ 0 ]
       index += 1
-
       print( line )
 
     c = getInput()
@@ -160,7 +159,6 @@ def displayUI():
     print( annotation )
 
   setNumber = 0
-
   libSongName = None
 
   if( currentSet == LIBRARY_SET ):
@@ -206,8 +204,8 @@ def displayUI():
   # Display library
   print( "\n-- Library --" )
   song_row = int( librarySong / SONG_COLUMNS )
-  first_row = int(song_row - LIBRARY_ROWS / 2 )
-  last_row = int(song_row + LIBRARY_ROWS / 2 )
+  first_row = int( song_row - LIBRARY_ROWS / 2 )
+  last_row = int( song_row + LIBRARY_ROWS / 2 )
   if( first_row < 0 ):
     last_row -= first_row
     first_row = 0
@@ -244,7 +242,6 @@ def displayUI():
   if statusString:
     print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
     statusString = None
-
   print()
 
 def getInput ():
@@ -337,8 +334,7 @@ def songFwd( count ):
   else:
     if currentSong is not None:
       currentSong += count
-    if( currentSong is None ) or \
-      ( currentSong >= len( setLists[ currentSet ].songList ) ):
+    if( currentSong is None ) or ( currentSong >= len( setLists[ currentSet ].songList ) ):
       if currentSet == len( setLists ) - 1:
         currentSet = LIBRARY_SET
         librarySong = 0
@@ -412,7 +408,6 @@ def deleteSong():
         currentSong = None
       elif currentSong == l:
         currentSong -= 1
-      calcSongCounts()
 
 def copyToClipboard():
   global clipboard, librarySong, statusString
@@ -441,7 +436,6 @@ def pasteClipboard():
       currentSong += 1
 
     clipboard = []
-    calcSongCounts()
   else:
     statusString = "Can't paste to Library."
 
@@ -725,7 +719,6 @@ while True:
       setLists.insert( currentSet + 1, Set() )
   elif ch == 'A':
     deleteSet()
-    calcSongCounts()
   elif ch == 'c' and inputMode == MODE_MOVE_NORMAL:
     copyToClipboard()
   elif ch == 'C':
@@ -741,15 +734,12 @@ while True:
   elif ch == 'S': # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
     setLists.insert( currentSet, newSet )
-    calcSongCounts()
   elif ch == 'n':
     if currentSet != LIBRARY_SET:
       sName = raw_input( 'Enter set name:' )
       setLists[ currentSet ].name = sName
   elif ch == 'N':
     setListName = raw_input( 'Enter set list name:' )
-  elif ch == 'q':
-    exit()
   elif ch == 'h':
     if currentSet != LIBRARY_SET:
       s = setLists[ currentSet ].songList[ currentSong ]
@@ -761,10 +751,10 @@ while True:
       statusString = "In Library."
   elif ch == 't':
     annotation = raw_input( 'Enter annotation:' )
-  elif ch >= '1' and ch <= '9':
-    moveToSet( int( ch ) - 1 )
   elif ch == '`':
     currentSet = LIBRARY_SET
+  elif ch >= '1' and ch <= '9':
+    moveToSet( int( ch ) - 1 )
   elif ch == '/':
     searchFor = raw_input( 'Search:' )
     newLibIndex = 0
@@ -777,5 +767,9 @@ while True:
   elif ch == '?':
     print( helpString )
     foo = getInput()
+  elif ch == 'q':
+    exit()
+
+  calcSongCounts()
 
   displayUI()

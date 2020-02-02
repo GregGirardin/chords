@@ -216,7 +216,6 @@ def export( song, html ):
 
   measure = 1
   curOff = [ 3, 0 ] # current, where the space is
-
   twoSp = '&nbsp&nbsp'
 
   while measure <= song.count():
@@ -660,7 +659,6 @@ def handlePaste( song, beats, measure, beat ):
   emptyMeasure = measureEmpty( song, measure )
 
   # Normally paste after current beat but if the measure is empty we'll handle it differently.
-
   if not emptyMeasure:
     beat += 1
   else:
@@ -764,10 +762,8 @@ while True:
   elif ch == 'a' or ch == 'i': # add/insert beat
     offset = 1 if ch == 'a' else 0
     m = currentSong.get( cursorMeasure )
-
     if not m:
       m = currentSong.addMeasure( cursorMeasure )
-
     if m.count() == MAX_BEATS_PER_MEAS:
       statusString = "Max beats reached."
     elif cursorBeat == m.count() and ch == 'a':
