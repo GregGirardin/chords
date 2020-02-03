@@ -15,6 +15,8 @@ class bcolors:
 
 helpString = bcolors.WARNING +     \
   "\n" \
+  "hjkl  - Navigate (or use arrows).\n" \
+  "df    - Back/forward multiple.\n" \
   "aA    - Add/delete a set.\n" \
   "os    - Open/save.\n" \
   "mM    - Move song/set.\n" \
@@ -22,10 +24,9 @@ helpString = bcolors.WARNING +     \
   "cCp   - Copy to/Clear/Paste from Library.\n" \
   "D     - Remove song.\n" \
   "x,X   - Export.\n" \
-  "df    - Back/forward multiple.\n" \
   "t     - Annotation.\n" \
   "~1234 - Go to library/set.\n" \
-  "h     - Toggle highlight.\n" \
+  "H     - Toggle highlight.\n" \
   "S     - Clone set.\n" \
   "/     - Search.\n" \
   "q     - Quit." + bcolors.ENDC
@@ -666,7 +667,7 @@ if len( songLibrary ) == 0:
 displayUI()
 while True:
   ch = getInput()
-  if ch == "DOWN":
+  if( ch == "DOWN" or ch == "j" ):
     if inputMode == MODE_MOVE_SET:
       if currentSet < len( setLists ) - 1:
         s = setLists[ currentSet + 1 ]
@@ -675,7 +676,7 @@ while True:
         currentSet += 1
     else:
       songFwd( SONG_COLUMNS )
-  elif ch == "UP":
+  elif( ch == "UP" or ch == "k" ):
     if inputMode == MODE_MOVE_SET:
       if currentSet > 0 and currentSet < len( setLists ):
         s = setLists[ currentSet - 1 ]
@@ -684,9 +685,9 @@ while True:
         currentSet -= 1
     else:
       songBack( SONG_COLUMNS )
-  elif ch == "RIGHT" and inputMode != MODE_MOVE_SET:
+  elif( ch == "RIGHT" or ch == "l" ) and inputMode != MODE_MOVE_SET:
     songFwd( 1 )
-  elif ch == "LEFT" and inputMode != MODE_MOVE_SET:
+  elif( ch == "LEFT" or ch == "h" ) and inputMode != MODE_MOVE_SET:
     songBack( 1 )
   elif ch == 'd' and inputMode != MODE_MOVE_SET:
     songBack( SONG_COLUMNS * 5 )
@@ -740,7 +741,7 @@ while True:
       setLists[ currentSet ].name = sName
   elif ch == 'N':
     setListName = raw_input( 'Enter set list name:' )
-  elif ch == 'h':
+  elif ch == 'H':
     if currentSet != LIBRARY_SET:
       s = setLists[ currentSet ].songList[ currentSong ]
       if s.highLight == HIGHLIGHT_NONE:
