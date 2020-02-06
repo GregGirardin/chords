@@ -25,13 +25,13 @@ instrumentMap = \
   'Guitar' :     { "t": ( "E", "B", "G", "D", "A", "E" ), "f" : ( 0, 0, 0, 0, 0, 0 ) },
   'Dropped D' :  { "t": ( "E", "B", "G", "D", "A", "D" ), "f" : ( 0, 0, 0, 0, 0, 0 ) },
   'Bass' :       { "t": ( "G", "D", "A", "E" ),           "f" : ( 0, 0, 0, 0 ) },
-  '5Bass' :      { "t": ( "G", "D", "A", "E", "B" ),      "f" : ( 0, 0, 0, 0, 0 ) },
+  '5StringBass' :{ "t": ( "G", "D", "A", "E", "B" ),      "f" : ( 0, 0, 0, 0, 0 ) },
   'Uke' :        { "t": ( "A", "E", "C", "G" ),           "f" : ( 0, 0, 0, 0 ) },
   'Banjo' :      { "t": ( "D", "B", "G", "D", "G" ),      "f" : ( 0, 0, 0, 0, 5 ) }
   }
 
 # pick the instruments you care about
-instruments = ('Guitar', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5Bass' )
+instruments = ( 'Guitar', 'Dropped D', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5StringBass' )
 
 intervals = \
   {
@@ -49,41 +49,41 @@ bKeys          = ( 'F', 'Bb', 'Eb','Ab', 'Db' ) # keys to be displayed as having
 # if you add an entry, also add it to spellings tuple below.
 spellingMap = \
   {
-  "M" :     ( 'R',  '3', '5' ),
-  "m" :     ( 'R', 'b3', '5' ),
-  "2" :     ( 'R',  '2', '5' ),
-  "4" :     ( 'R',  '4', '5' ),
-  "6" :     ( 'R',  '3', '5', '6' ),
-  "m6" :    ( 'R',  'b3', '5', '6' ),
-  "7" :     ( 'R',  '3', '5', 'b7' ),
-  "m7" :    ( 'R', 'b3', '5', 'b7' ),
-  "M7" :    ( 'R',  '3', '5',  '7' ),
-  "9" :     ( 'R',  '3', '5', 'b7', '9' ),
-  "m9" :    ( 'R', 'b3', '5', 'b7', '9' ),
-  "M9" :    ( 'R',  '3', '5',  '7', '9' ),
-  "11" :    ( 'R',  '3', '5', 'b7', '9', '11' ),
-  "m11" :   ( 'R', 'b3', '5', 'b7', '9', '11' ),
-  "M11" :   ( 'R',  '3', '5',  '7', '9', '11' ),
-  "13" :    ( 'R',  '3', '5', 'b7', '9', '11', '13' ),
-  "m13" :   ( 'R', 'b3', '5', 'b7', '9', '11', '13' ),
-  "M13" :   ( 'R',  '3', '5',  '7', '9', '11', '13' ),
-  "dim" :   ( 'R', 'b3', 'b5', '6' ),
-  "M-Key" : ( 'R',  '2', '3',  '4', '5',  '6', '7' ),
-  "m-Key" : ( 'R',  '2', 'b3', '4', '5', 'b6', 'b7' ),
-  "P-Min" : ( 'R',  'b3', '4', '5', 'b7' ),
-  "P-Maj" : ( 'R',  '2',  '3', '5', '6' ),
-  "mBlues" : ( 'R', 'b3', '4', 'b5', '5', 'b7' ),
-  "MBlues" : ( 'R', '2', 'b3', '3', '5', '6' )
+  "major" :  ( 'R',  '3',  '5' ),
+  "minor" :  ( 'R', 'b3',  '5' ),
+  "sus2" :   ( 'R',  '2',  '5' ),
+  "sus4" :   ( 'R',  '4',  '5' ),
+  "6" :      ( 'R',  '3',  '5',  '6' ),
+  "m6" :     ( 'R', 'b3',  '5',  '6' ),
+  "7" :      ( 'R',  '3',  '5', 'b7' ),
+  "m7" :     ( 'R', 'b3',  '5', 'b7' ),
+  "M7" :     ( 'R',  '3',  '5',  '7' ),
+  "9" :      ( 'R',  '3',  '5', 'b7',  '9' ),
+  "m9" :     ( 'R', 'b3',  '5', 'b7',  '9' ),
+  "M9" :     ( 'R',  '3',  '5',  '7',  '9' ),
+  "11" :     ( 'R',  '3',  '5', 'b7',  '9', '11' ),
+  "m11" :    ( 'R', 'b3',  '5', 'b7',  '9', '11' ),
+  "M11" :    ( 'R',  '3',  '5',  '7',  '9', '11' ),
+  "13" :     ( 'R',  '3',  '5', 'b7',  '9', '11', '13' ),
+  "m13" :    ( 'R', 'b3',  '5', 'b7',  '9', '11', '13' ),
+  "M13" :    ( 'R',  '3',  '5',  '7',  '9', '11', '13' ),
+  "dim" :    ( 'R', 'b3', 'b5',  '6' ),
+  "m7-5" :   ( 'R', 'b3', 'b5',  'b7' ),
+  "Maj-Key" :( 'R',  '2',  '3',  '4',  '5',  '6',  '7' ),
+  "Min-Key" :( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
+  "Pent-Min" :  ( 'R', 'b3',  '4',  '5', 'b7' ),
+  "Pent-Maj" :  ( 'R',  '2',  '3',  '5',  '6' ),
+  "mBlues" : ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
+  "MBlues" : ( 'R',  '2', 'b3',  '3',  '5',  '6' )
   }
 
-# pick the spelligs you care about
-spellings = ( 'M',  'm',
-              '2',  '4', '6', 'm6',
+# pick the spellings you care about
+spellings = ( 'major', 'minor', 'sus2',  'sus4', '6', 'm6',
               '7',  'm7',  'M7',
               '9',  'm9',  'M9', '11', 'm11', 'M11', '13', 'm13', 'M13',
-              'dim',
-              'M-Key', 'm-Key',
-              'P-Min', 'P-Maj',
+              'dim', 'm7-5',
+              'Maj-Key', 'Min-Key',
+              'Pent-Min', 'Pent-Maj',
               'mBlues', 'MBlues' )
 extChords = ( '9', 'm9', 'M9','11', 'm11', 'M11', '13', 'm13', 'M13' )
 extIntervals = ( '9', '11', '13' )
@@ -245,7 +245,7 @@ def displayInfo( instrument, key, spelling ):
   print( "a..g -= : Key" )
   print( "q : quit" )
 
-def getInput ():
+def getInput():
   """
   Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
   """
@@ -271,7 +271,7 @@ def getInput ():
     fcntl.fcntl( fd, fcntl.F_SETFL, flags_save )
   return ret
 
-def runCli ():
+def runCli():
   keyIx = 0
   instrumentIx = 0
   spellingIx = 0
@@ -310,86 +310,7 @@ def runCli ():
     elif ch.upper() in dispKeyList:
       keyIx = dispKeyList.index( ch.upper() )
 
-class runGui ():
-  '''
-    Spellings and Keys will be clickable
-
-    ------------------------------
-        Title
-    -----------------------------
-    Spelling1 Spelling2 Spelling3
-    -----------------------------
-    A A# B C.....
-    -----------------------------
-
-    Fretboard1
-
-    Fretboard2
-
-    ------------------------------
-  '''
-
-  def handleInstrument( self, newInstrument ):
-    self.instrument = newInstrument
-    self.displayInstruments( self.instrumentsFrame )
-    self.displayFretboards( self.fretboardFrame )
-
-  def handleSpelling( self, newSpelling ):
-    self.spelling = newSpelling
-    self.displaySpellings( self.spellingsFrames )
-    self.displayFretboards( self.fretboardFrame )
-
-  def handleKey( self, newKey ):
-    self.key = newKey
-    self.displayKeys( self.keysFrame )
-    self.displayFretboards( self.fretboardFrame )
-
-  def handleFret( self ):
-    self.fretsNotes = not self.fretsNotes
-    self.displayFretboards( self.fretboardFrame )
-
-  def displayInstruments( self, frame ):
-    for widget in frame.winfo_children():
-      widget.destroy()
-
-    for inst in instruments:
-      f = 0 if inst == self.instrument else 1
-      actionAndArg = partial( self.handleInstrument, inst )
-
-      b = Button( frame, text=inst, font=disFont[ f ], command=actionAndArg )
-      b.pack( side=LEFT )
-
-  def displaySpace( self, frame ):
-    actionAndArg = partial( self.handleFret )
-
-    b = Button( frame, text="Frets/Notes", font=disFont[ 1 ], command=actionAndArg )
-    b.pack( side=TOP )
-
-  def displaySpellings( self, frames ):
-    for frame in frames:
-      for widget in frame.winfo_children():
-        widget.destroy()
-
-    frame = frames[ 0 ]
-    for spelling in spellings:
-      if spelling == '11':
-        frame = frames[ 1 ]
-      f = 0 if spelling == self.spelling else 1
-      actionAndArg = partial( self.handleSpelling, spelling )
-
-      b = Button( frame, text=spelling, font=disFont[ f ], command=actionAndArg )
-      b.pack( side = LEFT )
-
-  def displayKeys( self, frame ):
-    for widget in frame.winfo_children():
-      widget.destroy()
-
-    for key in dispKeyList:
-      f = 0 if key == self.key else 1
-      actionAndArg = partial( self.handleKey, key )
-
-      b = Button( frame, text=key, font=disFont[ f ], command=actionAndArg )
-      b.pack( side=LEFT )
+class runGui():
 
   def displayFretboards( self, frame ):
     dFont = tkFont.Font( family = 'Courier', size = 16 )
@@ -431,10 +352,6 @@ class runGui ():
 
     fretboard = generateFretboard( self.instrument, self.key, self.spelling )
 
-    dispLine = "%s: %s %s" % ( self.instrument, self.key, self.spelling )
-    s = Label( frame, text=dispLine )
-    s.pack( side = TOP )
-
     numStrings = fretboard[ 'numStrings' ]
 
     dispLine = " "
@@ -451,6 +368,22 @@ class runGui ():
     s.pack( side=TOP )
     generateFB( 'interval' )
 
+  def instrumentChange( self, *args ):
+    self.instrument = self.inst.get()
+    self.displayFretboards( self.fretboardFrame )
+
+  def keyChange( self, *args ):
+    self.key = self.keysVar.get()
+    self.displayFretboards( self.fretboardFrame )
+
+  def spellingChange( self, *args ):
+    self.spelling = self.spellingVar.get()
+    self.displayFretboards( self.fretboardFrame )
+
+  def fnToggle( self ):
+    self.fretsNotes = not self.fretsNotes
+    self.displayFretboards( self.fretboardFrame )
+
   def __init__( self ):
     self.instrument = instruments[ 0 ]
     self.key = dispKeyList[ 0 ]
@@ -460,25 +393,35 @@ class runGui ():
     root = Tk()
     root.title( "Chords" )
 
-    self.instrumentsFrame = Frame( root )
-    self.spellingsFrames = [ Frame( root ), Frame( root ) ]
-    self.keysFrame = Frame( root )
+    self.mainFrame = Frame( root )
+    self.mainFrame.pack( side=TOP )
+
+    self.inst = StringVar()
+    self.inst.set( instruments[ 0 ] )
+    self.inst.trace( 'w', self.instrumentChange )
+    self.instMenu = OptionMenu( self.mainFrame, self.inst, *instruments )
+    self.instMenu.pack( side=LEFT )
+
+    self.keysVar = StringVar()
+    self.keysVar.set( dispKeyList[ 0 ] )
+    self.keysVar.trace( 'w', self.keyChange )
+    self.keysMenu = OptionMenu( self.mainFrame, self.keysVar, *dispKeyList )
+    self.keysMenu.pack( side=LEFT )
+
+    self.spellingVar = StringVar()
+    self.spellingVar.set( spellings[ 0 ] )
+    self.spellingVar.trace( 'w', self.spellingChange )
+    self.spelMenu = OptionMenu( self.mainFrame, self.spellingVar, *spellings )
+    self.spelMenu.pack( side=LEFT )
+
+    self.fn = Button( self.mainFrame, text="Frets/Notes", font=disFont[ 1 ], command=self.fnToggle )
+    self.fn.pack( side=LEFT )
+
     self.fretsFrame = Frame( root )
-
     self.fretboardFrame = Frame( root )
+    self.fretsFrame.pack( side=TOP )
+    self.fretboardFrame.pack( side=TOP )
 
-    self.instrumentsFrame.pack( side=TOP )
-    self.keysFrame.pack( side=TOP )
-    self.spellingsFrames[ 0 ].pack( side=TOP )
-    self.spellingsFrames[ 1 ].pack( side=TOP )
-    self.fretsFrame.pack(side = TOP )
-
-    self.fretboardFrame.pack( side=TOP)
-
-    self.displayInstruments( self.instrumentsFrame )
-    self.displaySpace( self.fretsFrame )
-    self.displaySpellings( self.spellingsFrames )
-    self.displayKeys( self.keysFrame )
     self.displayFretboards( self.fretboardFrame )
 
     root.mainloop()
