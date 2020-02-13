@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os, sys, glob, copy, pickle
-# Cat a list of .txt files into html
 
 class bcolors:
   BLUE      = '\033[94m'
@@ -13,6 +12,8 @@ class bcolors:
   REVERSE   = '\033[7m'
   ENDC      = '\033[0m'
 
+DEFAULT_SETLIST_NAME = "setList"
+
 helpString = bcolors.WARNING +     \
   "\n" \
   "hjkl  - Navigate (or use arrows).\n" \
@@ -21,9 +22,9 @@ helpString = bcolors.WARNING +     \
   "os    - Open/save.\n" \
   "mM    - Move song/set.\n" \
   "nN    - Name the set/list.\n" \
-  "cCp   - Copy to/Clear/Paste from Library.\n" \
+  "cCp   - Copy To/Clear/Paste from Library.\n" \
   "D     - Remove song.\n" \
-  "x,X   - Export.\n" \
+  "x     - Export.\n" \
   "t     - Annotation.\n" \
   "~1234 - Go to library/set.\n" \
   "H     - Toggle highlight.\n" \
@@ -31,28 +32,37 @@ helpString = bcolors.WARNING +     \
   "/     - Search.\n" \
   "q     - Quit." + bcolors.ENDC
 
-class Set( object ):
+class SetClass( object ):
   def __init__( self, name=None ):
     self.name = name
+    self.length = None
     self.songList = []
 
 class Song( object ):
   # Song is just a name for now but may add attributes later
-  def __init__( self, name ):
-    self.name = name # file name
+  def __init__( self, fileName, songName ):
+    self.fileName = fileName
+    self.songName = songName
+
+    # To limit mangling the song text with too may tags, we'll get these
+    # additional attributes from a json file
+    self.artist = None
+    self.key = None
+    self.length = None
+    self.tempo = None
+
     self.count = 0 # Highlight duplicate songs with count
     self.highLight = HIGHLIGHT_NONE
 
 setLists = []
 clipboard = []
 songLibrary = []
-
 statusString = None
-setListName = "SetList"
+setListName = DEFAULT_SETLIST_NAME
 
-# Cursor location
 LIBRARY_SET = -1 # if currentSet == LIBRARY_SET, you're in the library
 
+# Cursor location
 currentSet = LIBRARY_SET
 currentSong = None
 librarySong = 0 # Library always has at least 1 song or program will exit.
@@ -71,10 +81,11 @@ MODE_MOVE_SET     = 2
 HIGHLIGHT_NONE = 0
 HIGHLIGHT_ON = 1
 
-inputMode = MODE_MOVE_NORMAL
+operMode = MODE_MOVE_NORMAL
 
 def loadSetList():
-  global statusString, setLists, setListName, annotation
+  global statusString, setLists, setListName, annotation, currentSong, currentSet
+
   selectedfileIx = 0
   re = "./*" + setListExt
 
@@ -86,6 +97,9 @@ def loadSetList():
 
   if selectedfileIx >= len( matchList ):
     selectedfileIx = len( matchList ) - 1
+
+  currentSong = 0
+  currentSet = LIBRARY_SET
 
   while True:
     selSong = None
@@ -123,8 +137,7 @@ def getSetByName( name ):
       return s
   return None
 
-# Calculate how many instances of a song are in all sets so
-# we can indicate which songs are duplicates
+# Count instances of all songs to display duplicates
 def calcSongCounts():
   for l in setLists:
     for s in l.songList:
@@ -134,40 +147,59 @@ def calcSongCounts():
     for s in l.songList: # For every song
       for l2 in setLists:
         for s2 in l2.songList:
-          if s.name == s2.name:
+          if s.fileName == s2.fileName:
             s.count += 1
 
 def getLocalSongs():
   songList = []
   re = "*.txt"
   matchList = glob.glob( re )
-  for s in matchList:
-    song = Song( s )
-    songList.append( song )
+
+  for fName in matchList:
+    # Parse song txts for Name.
+    sf = open( fName, "r" )
+    fLines = sf.readlines()
+    sf.close()
+
+    if len( fLines ) > 0:
+      songName = fLines[ 0 ]
+      songList.append( Song( fName, songName ) )
 
   def getKey( item ):
-    return item.name
+    return item.fileName
+
   songList.sort( key=getKey )
   return songList
 
 def displayUI():
-  global songIx, setListName, setLists, statusString, annotation
+  global statusString, setLists
 
   os.system( 'clear' )
 
-  print( "Setlist:%s" % ( setListName ) )
-  if annotation and annotation != "":
+  song = None
+  if currentSet == LIBRARY_SET:
+    song = songLibrary[ librarySong ]
+  elif currentSong is not None:
+    song = setLists[ currentSet ].songList[ currentSong ]
+
+  print( "File:" + setListName )
+  if song:
+    print( "Song:\"" + song.songName.strip() + "\"", end="" )
+    if song.artist:
+      print( " - " + song.artist.strip(), end="" )
+  print()
+  if annotation:
     print( annotation )
 
   setNumber = 0
   libSongName = None
 
-  if( currentSet == LIBRARY_SET ):
-    libSongName = songLibrary[ librarySong ].name
+  if currentSet == LIBRARY_SET:
+    libSongName = songLibrary[ librarySong ].fileName
 
   for l in setLists:
     if setNumber == currentSet: # Highlight the current set
-      if inputMode == MODE_MOVE_SET:
+      if operMode == MODE_MOVE_SET:
         print( bcolors.REVERSE, end="" )
       else:
         print( bcolors.UNDERLINE, end="" )
@@ -187,15 +219,15 @@ def displayUI():
 
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
-        print( bcolors.REVERSE if inputMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
-      if s.name == libSongName:
+        print( bcolors.REVERSE if operMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
+      if s.fileName == libSongName:
         print( bcolors.REVERSE, end="" )
       elif s.highLight == HIGHLIGHT_ON:
         print( bcolors.RED, end="" )
       elif s.count > 1:
         print( bcolors.BLUE, end="" )
 
-      print( "%-24s" % ( s.name[ : -4 ] ), end = "" )
+      print( "%-24s" % ( s.fileName[ : -4 ] ), end = "" )
       print( bcolors.ENDC, end="" )
       songIx += 1
 
@@ -203,14 +235,14 @@ def displayUI():
     setNumber += 1
 
   # Display library
-  print( "\n-- Library --" )
+  print( "\n---- Library ----" )
   song_row = int( librarySong / SONG_COLUMNS )
   first_row = int( song_row - LIBRARY_ROWS / 2 )
   last_row = int( song_row + LIBRARY_ROWS / 2 )
-  if( first_row < 0 ):
+  if first_row < 0:
     last_row -= first_row
     first_row = 0
-  if( last_row >= len( songLibrary ) / SONG_COLUMNS ):
+  if last_row >= len( songLibrary ) / SONG_COLUMNS:
     diff = int( last_row - len( songLibrary ) / SONG_COLUMNS )
     last_row -= diff
     first_row -= diff
@@ -218,14 +250,14 @@ def displayUI():
       first_row = 0
 
   for songIx in range( first_row * SONG_COLUMNS, ( last_row + 1 ) * SONG_COLUMNS ):
-    if( songIx >= len( songLibrary ) ):
+    if songIx >= len( songLibrary ):
       break
     if songIx != ( first_row * 4 ) and songIx % SONG_COLUMNS == 0:
       print()
     cursor = True if currentSet == LIBRARY_SET and songIx == librarySong else False
     if cursor:
       print( bcolors.BOLD, end="" )
-    print( "%-24s" % ( songLibrary[ songIx ].name[ : -4 ] ), end="" )
+    print( "%-24s" % ( songLibrary[ songIx ].fileName[ : -4 ] ), end="" )
     if cursor:
       print( bcolors.ENDC, end="" )
     songIx += 1
@@ -235,7 +267,7 @@ def displayUI():
     print( "\n\n-- Clipboard --" )
     songIx = 0
     for s in clipboard:
-      print( "%-24s " % ( s.name[ : -4 ] ), end = "" )
+      print( "%-24s " % ( s.fileName[ : -4 ] ), end = "" )
       if( songIx + 1 ) % SONG_COLUMNS == 0:
         print()
       songIx += 1
@@ -296,7 +328,7 @@ def cursorMover( func ):
   def decor( *args, **kwargs ):
     global currentSet, currentSong
 
-    if currentSet != LIBRARY_SET and inputMode == MODE_MOVE_SONG and currentSong is not None:
+    if currentSet != LIBRARY_SET and operMode == MODE_MOVE_SONG and currentSong is not None:
       tmpSet = currentSet
       tmpSong = currentSong
       temp = setLists[ tmpSet ].songList[ tmpSong ]
@@ -322,7 +354,7 @@ def cursorMover( func ):
 def songFwd( count ):
   global currentSong, librarySong, currentSet, statusString
 
-  if( ( inputMode == MODE_MOVE_SONG ) and
+  if( ( operMode == MODE_MOVE_SONG ) and
       ( currentSet == len( setLists ) - 1 ) and
       ( currentSong is not None ) and
       ( currentSong == len( setLists[ currentSet ].songList ) - 1 ) ):
@@ -415,7 +447,7 @@ def copyToClipboard():
 
   if currentSet == LIBRARY_SET:
     for s in clipboard:
-      if s.name == songLibrary[ librarySong ].name:
+      if s.fileName == songLibrary[ librarySong ].fileName:
         statusString = "Song is already in the clipboard."
         return
     s = copy.deepcopy( songLibrary[ librarySong ] )
@@ -425,6 +457,10 @@ def copyToClipboard():
 
 def pasteClipboard():
   global currentSet, currentSong, clipboard, statusString
+
+  if len( clipboard ) == 0:
+    statusString = "Clipboard empty."
+    return
 
   if currentSet != LIBRARY_SET:
     if currentSong == None:
@@ -436,14 +472,16 @@ def pasteClipboard():
       setLists[ currentSet ].songList.insert( currentSong, s )
       currentSong += 1
 
+    if currentSong == len( setLists[ currentSet ].songList ):
+      currentSong -= 1
+
     clipboard = []
   else:
     statusString = "Can't paste to Library."
 
-tabMode = False
-
 def exportSet():
   global statusString, setLists, annotation
+  tabMode = False
 
   fname = setListName + ".html"
   f = open( fname, "w" )
@@ -484,35 +522,25 @@ def exportSet():
            "<body>\n" )
 
   f.write( "<h1>%s</h1>\n" % ( setListName ) )
-  if annotation and annotation != "":
+  if annotation:
     f.write( annotation )
     f.write( "\n" )
 
   # Songs
   setNumber = 1
   for l in setLists[ 0 : len( setLists ) ]:
-    numSongs = len( l.songList )
-
     f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber ) )
     songNumber = 1
     for s in l.songList:
       try:
-        sName = s.name
+        sName = s.fileName
         sf = open( sName, "r" )
         fLines = sf.readlines()
         sf.close()
         fileLine = 0
 
-        def toggleTab( f ):
-          global tabMode
-          if tabMode == True:
-            f.write( "</font>\n" )
-            tabMode = False
-          else:
-            f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
-            tabMode = True
-
         for line in fLines:
+          pf = line[ : 2 ] # prefix
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
             if s.highLight == HIGHLIGHT_ON:
@@ -521,21 +549,27 @@ def exportSet():
               f.write( "%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
             f.write( "</button> <div class=\"panel\">\n" )
 
-          # Shortcuts that can be put in the lyric text,
-          # or you can also just put in html in the txt since we paste it directly.
-          elif line[ : 2 ] == "t!": # Tab, use fixed font
-            toggleTab( f )
-          elif line[ : 2 ] == "s!": # Solo
+          # Shortcuts that can be embedded in the lyric text
+          # You can also just put in html in the txt since it's pasted directly.
+          elif pf == "t!": # Tab, use fixed font
+            if tabMode == True:
+              f.write( "</font>\n" )
+              tabMode = False
+            else:
+              f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
+              tabMode = True
+          elif( pf == "T!" or pf == "k!" or pf == "l!" or pf == "a!" ):
+            pass # These will be added to the top of the song.
+          elif pf == "s!": # Solo
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
-          elif line[ : 2 ] == "c!": # Chorus
+          elif pf == "c!": # Chorus
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
-          elif line[ : 2 ] == "h!": # Harmonica
+          elif pf == "h!": # Harmonica
             f.write( "<b><font style=\"font-family:courier;\" size=\"3\" color=\"red\" >&nbsp Harmonica : " )
-            f.write( line [ 2 : ] )
+            f.write( line[ 2 : ] )
             f.write( "</font></b><br>\n" )
-          # ignore 2nd line if empty. It's unnecessary space in the html
-          elif fileLine > 1 or line != "\n":
-            # add spaces
+          # Ignore 2nd line if empty. It's unnecessary space in the html
+          elif fileLine > 1 or line != "\n": # add spaces
             while line[ 0 ] == " ":
               line = line[ 1 : ]
               f.write( "&nbsp" )
@@ -552,18 +586,14 @@ def exportSet():
            "var acc = document.getElementsByClassName(\"accordion\");\n"
            "var i;\n"
            "\n"
-           "for( i = 0;i < acc.length;i++ )\n"
-           "{\n"
-           "  acc[ i ].addEventListener(\"click\", function()\n"
-           "  {\n"
+           "for( i = 0;i < acc.length;i++ ) {\n"
+           "  acc[ i ].addEventListener(\"click\", function() {\n"
            "    this.classList.toggle(\"active\");\n"
            "    var panel = this.nextElementSibling;\n"
-           "    if( panel.style.display === \"block\" )\n"
-           "    {\n"
+           "    if( panel.style.display === \"block\" ) {\n"
            "      panel.style.display = \"none\";\n"
            "    }\n"
-           "    else\n"
-           "    {\n"
+           "    else {\n"
            "      panel.style.display = \"block\";\n"
            "    }\n"
            "  } );\n"
@@ -573,92 +603,7 @@ def exportSet():
   f.close()
   statusString = "Export complete."
 
-def exportSetFlat():
-  global statusString, setLists
-
-  fname = setListName + ".html"
-  f = open( fname, "w" )
-
-  f.write( "<!DOCTYPE html>\n"
-           "<html>\n"
-           "<head>\n"
-           "<style type=\"text/css\">a {text-decoration: none}</style>\n"
-           "</head>\n"
-           "<body>\n"
-           "<h1>%s</h1>\n" % ( setListName ) )
-  # setlist summary
-  setNumber = 1
-  for l in setLists[0 : len( setLists ) ]:
-    songNumber = 0
-    f.write( "<h2>%s</h2><font size=\"5\">\n" % ( l.name if l.name else setNumber ) )
-    for s in l.songList:
-      f.write( "<a id=\"t%dt%d\" href=\"#s%ds%d\">%s</a><br>\n" %
-              ( setNumber, songNumber, setNumber, songNumber, s.name[ 0 : -4 ] ) )
-      songNumber += 1
-    f.write( "</font></br>\n" )
-    setNumber += 1
-  # songs
-  setNumber = 1
-  for l in setLists[ 0 : len( setLists ) ]:
-    numSongs = len( l.songList )
-
-    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber ) )
-    songNumber = 0
-    for s in l.songList:
-      try:
-        sName = s.name
-        sf = open( sName, "r" )
-        fLines = sf.readlines()
-        sf.close()
-        fileLine = 0
-
-        def toggleTab( f ):
-          global tabMode
-          if tabMode == True:
-            f.write( "</font>\n" )
-            tabMode = False
-          else:
-            f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
-            tabMode = True
-
-        for line in fLines:
-          if fileLine == 0: # Assume first line is song title
-            f.write( "<h4 id=\"s%ds%d\">" % ( setNumber, songNumber ) )
-            # Song name is link back to location in setlist
-            f.write( "<a href=\"#t%dt%d\"> %s </a>\n" % ( setNumber, songNumber, line.rstrip() ) )
-            f.write ("</h4>\n")
-
-          # Shortcuts that can be put in the lyric text,
-          # or you can also just put in html in the txt since we paste it directly.
-          elif line[ : 2 ] == "t!": # Tab, use fixed font
-            toggleTab( f )
-          elif line[ : 2 ] == "s!": # Solo
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
-          elif line[ : 2 ] == "c!": # Chorus
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
-          elif line[ : 2 ] == "h!": # Harmonica
-            f.write( "<b><font style=\"font-family:courier;\" size=\"3\" color=\"red\" >&nbsp Harmonica : " )
-            f.write( line [ 2 : ] )
-            f.write( "</font></b><br>\n" )
-          # ignore 2nd line if empty. It's unnecessary space in the html
-          elif fileLine > 1 or line != "\n":
-            # add spaces
-            while line[ 0 ] == " ":
-              line = line[ 1 : ]
-              f.write( "&nbsp" )
-            f.write( "%s<br>\n" % ( line.rstrip() ) )
-
-          fileLine += 1
-      except:
-        print( "Exception.." )
-      songNumber += 1
-    setNumber += 1
-  f.write( "</body></html>\n" )
-  f.close()
-  statusString = "Flat HTML export complete."
-
 # Start of main loop.
-# Populate library
 songLibrary = getLocalSongs()
 if len( songLibrary ) == 0:
   print( "No songs in local directory." )
@@ -668,7 +613,7 @@ displayUI()
 while True:
   ch = getInput()
   if( ch == "DOWN" or ch == "j" ):
-    if inputMode == MODE_MOVE_SET:
+    if operMode == MODE_MOVE_SET:
       if currentSet < len( setLists ) - 1:
         s = setLists[ currentSet + 1 ]
         setLists[ currentSet + 1 ] = setLists[ currentSet ]
@@ -677,7 +622,7 @@ while True:
     else:
       songFwd( SONG_COLUMNS )
   elif( ch == "UP" or ch == "k" ):
-    if inputMode == MODE_MOVE_SET:
+    if operMode == MODE_MOVE_SET:
       if currentSet > 0 and currentSet < len( setLists ):
         s = setLists[ currentSet - 1 ]
         setLists[ currentSet - 1 ] = setLists[ currentSet ]
@@ -685,13 +630,13 @@ while True:
         currentSet -= 1
     else:
       songBack( SONG_COLUMNS )
-  elif( ch == "RIGHT" or ch == "l" ) and inputMode != MODE_MOVE_SET:
+  elif( ch == "RIGHT" or ch == "l" ) and operMode != MODE_MOVE_SET:
     songFwd( 1 )
-  elif( ch == "LEFT" or ch == "h" ) and inputMode != MODE_MOVE_SET:
+  elif( ch == "LEFT" or ch == "h" ) and operMode != MODE_MOVE_SET:
     songBack( 1 )
-  elif ch == 'd' and inputMode != MODE_MOVE_SET:
+  elif ch == 'd' and operMode != MODE_MOVE_SET:
     songBack( SONG_COLUMNS * 5 )
-  elif ch == 'f' and inputMode != MODE_MOVE_SET:
+  elif ch == 'f' and operMode != MODE_MOVE_SET:
     songFwd( SONG_COLUMNS * 5 )
   elif ch == 's':
     saveList()
@@ -700,34 +645,32 @@ while True:
   elif ch == 'm':
     if currentSong == None:
       statusString = "No song selected."
-    elif inputMode != MODE_MOVE_SONG:
-      inputMode = MODE_MOVE_SONG
+    elif operMode != MODE_MOVE_SONG:
+      operMode = MODE_MOVE_SONG
       statusString = "Song move mode."
     else:
-      inputMode = MODE_MOVE_NORMAL
+      operMode = MODE_MOVE_NORMAL
       statusString = "Cursor move mode."
   elif ch == 'M':
-    if inputMode != MODE_MOVE_SET and currentSet != LIBRARY_SET:
-      inputMode = MODE_MOVE_SET
+    if operMode != MODE_MOVE_SET and currentSet != LIBRARY_SET:
+      operMode = MODE_MOVE_SET
       statusString = "Set move mode."
     else:
-      inputMode = MODE_MOVE_NORMAL
+      operMode = MODE_MOVE_NORMAL
       statusString = "Cursor move mode."
   elif ch == 'a':
     if currentSet == MAX_SETS:
       statusString = "Max sets exceeded."
     else:
-      setLists.insert( currentSet + 1, Set() )
+      setLists.insert( currentSet + 1, SetClass() )
   elif ch == 'A':
     deleteSet()
-  elif ch == 'c' and inputMode == MODE_MOVE_NORMAL:
+  elif ch == 'c' and operMode == MODE_MOVE_NORMAL:
     copyToClipboard()
   elif ch == 'C':
     clipboard = []
   elif ch == 'p':
     pasteClipboard()
-  elif ch == 'X':
-    exportSetFlat()
   elif ch == 'x':
     exportSet()
   elif ch == 'D':
@@ -738,9 +681,11 @@ while True:
   elif ch == 'n':
     if currentSet != LIBRARY_SET:
       sName = raw_input( 'Enter set name:' )
-      setLists[ currentSet ].name = sName
+      setLists[ currentSet ].name = sName if sName else None
   elif ch == 'N':
     setListName = raw_input( 'Enter set list name:' )
+    if setListName == "":
+      setListName = DEFAULT_SETLIST_NAME
   elif ch == 'H':
     if currentSet != LIBRARY_SET:
       s = setLists[ currentSet ].songList[ currentSong ]
@@ -752,6 +697,8 @@ while True:
       statusString = "In Library."
   elif ch == 't':
     annotation = raw_input( 'Enter annotation:' )
+    if annotation == "":
+      annotation = None
   elif ch == '`':
     currentSet = LIBRARY_SET
   elif ch >= '1' and ch <= '9':
@@ -760,7 +707,7 @@ while True:
     searchFor = raw_input( 'Search:' )
     newLibIndex = 0
     for s in songLibrary:
-      if s.name.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
+      if s.fileName.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
         librarySong = newLibIndex
         currentSet = LIBRARY_SET
         break
