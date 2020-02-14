@@ -129,6 +129,9 @@ def getInput():
         ret = 'RIGHT'
       elif ret == 'D':
         ret = 'LEFT'
+      else:
+        print( int( ret ) )
+        exit()
 
   except KeyboardInterrupt:
     ret = 0
@@ -141,24 +144,53 @@ def getInput():
 displayUI()
 while True:
   ch = getInput()
+
   if( ch == "DOWN" or ch == "j" ):
-    if len( entryList ) == 0:
-      continue
-
-    cursorParam = 0 if cursorParam == None else cursorParam + 1
-
-    if cursorParam >= len( entryList[ cursorElement ].elements ):
-      cursorElement += 1
+    if len( entryList ) == 0: # List is empty
+      assert( cursorElement == None )
+      assert( cursorParam == None )
+    elif cursorElement == None: # Go to first element
+      cursorElement = 0
       cursorParam = None
+      cursorPos = 0
+    else: # Go to next param
+      cursorParam = 0 if cursorParam is None else cursorParam + 1
 
+      numParams = len( entryList[ cursorElement ].elements )
+
+      if cursorParam == numParams:
+        cursorElement += 1
+        cursorParam = None
+
+      if cursorElement == len( entryList ): # Go back to the end.
+        cursorElement = len( entryList ) - 1
+        cursorParam = len( entryList[ cursorElement ].elements ) - 1
   elif( ch == "UP" or ch == "k" ):
-    if len( entryList ) == 0:
-      continue
-    pass
+    if cursorParam > 0:
+      cursorParam -= 1
+    elif cursorParam == 0:
+      cursorParam = None
+    elif cursorElement > 0:
+      cursorElement -= 1
+      cursorParam = len( entryList[ cursorElement ].elements ) - 1
+  elif( ch == "RIGHT" or ch == "l" ):
+    cursorPos = 1
+  elif( ch == "LEFT" or ch == "h" ):
+    cursorPos = 0
   elif ch == 'n':
     fileName = raw_input( 'Enter file name:' )
     if fileName == "":
       fileName = DEFAULT_FILE_NAME
+  elif ch == 'e':
+    if cursorElement is not None:
+      newVal = raw_input( 'Enter new value:' )
+      if cursorParam == None:
+        entryList[ cursorElement ].name = newVal
+      elif cursorPos == 0:
+        entryList[ cursorElement ].elements[ cursorParam ].param = newVal
+      else:
+        entryList[ cursorElement ].elements[ cursorParam ].value = newVal
+
   elif ch == '/':
     searchFor = raw_input( 'Search:' )
 
