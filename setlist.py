@@ -95,9 +95,6 @@ def loadSetList():
     statusString = "No setlists."
     return None
 
-  if selectedfileIx >= len( matchList ):
-    selectedfileIx = len( matchList ) - 1
-
   currentSong = 0
   currentSet = LIBRARY_SET
 
