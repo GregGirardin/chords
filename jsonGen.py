@@ -32,40 +32,24 @@ DEFAULT_FILE_NAME = "jsonData.json"
 
 helpString = bcolors.WARNING + \
   "\n" \
-  "ad    - Add/Delete entry.\n" \
-  "e     - Edit value\n" \
-  "os    - Open/save.\n" \
-  "n     - Name the file.\n" \
-  "/     - Search for entry.\n" \
-  "q     - Quit." + bcolors.ENDC
+  "ad - Add/Delete entry.\n" \
+  "e  - Edit value\n" \
+  "os - Open/save.\n" \
+  "n  - Name the file.\n" \
+  "/  - Search for entry.\n" \
+  "q  - Quit." + bcolors.ENDC
 
 '''
   List of entry.
   Not using a dictionary so we can sort the order more easily.
 '''
 entryList = [
-            entry( "Entry1", [ pV( "param1", "value1" ),
-                               pV( "param2", "value2" ),
-                               pV( "param3", "value3" ) ] ),
-            entry( "Entry2", [ pV( "param1", "value1" ),
-                               pV( "param2", "value2" ),
-                               pV( "param3", "value3" ) ] ),
+              entry( "Entry1", [ pV( "param1", "value1" ), pV( "param2", "value2" ) ] ),
+              entry( "Entry2", [ pV( "param1", "value1" ), pV( "param2", "value2" ) ] ),
             ]
 
 statusString = None
 fileName = DEFAULT_FILE_NAME
-
-# Cursor location
-# Return a list of files that we want to associate metadata with
-def getLocalFiles():
-  re = "*.txt" # For now we'll only work with .txt files. TBD, do all files except the meta data file
-  matchList = glob.glob( re )
-
-  def getKey( item ):
-    return item.fileName
-
-  matchList.sort( key=getKey )
-  return matchList
 
 def displayUI():
   global statusString

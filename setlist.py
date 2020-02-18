@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
-import os, sys, glob, copy, pickle
+import os, glob, copy, pickle, json
 
 class bcolors:
   BLUE      = '\033[94m'
@@ -44,8 +44,7 @@ class Song( object ):
     self.fileName = fileName
     self.songName = songName
 
-    # To limit mangling the song text with too may tags, we'll get these
-    # additional attributes from a json file
+    # To limit mangling the song text with tags, we'll get these attributes from a json file
     self.artist = None
     self.key = None
     self.length = None
@@ -60,7 +59,7 @@ songLibrary = []
 statusString = None
 setListName = DEFAULT_SETLIST_NAME
 
-LIBRARY_SET = -1 # if currentSet == LIBRARY_SET, you're in the library
+LIBRARY_SET = -1 # if currentSet == LIBRARY_SET then you're in the library
 
 # Cursor location
 currentSet = LIBRARY_SET
