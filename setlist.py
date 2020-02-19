@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os, glob, copy, pickle, json
+import songInfoGen
 
 class bcolors:
   BLUE      = '\033[94m'
@@ -26,6 +27,7 @@ helpString = bcolors.WARNING +     \
   "D     - Remove song.\n" \
   "x     - Export.\n" \
   "t     - Annotation.\n" \
+  "e     - Edit song data.\n" \
   "~1234 - Go to library/set.\n" \
   "H     - Toggle highlight.\n" \
   "S     - Clone set.\n" \
@@ -45,10 +47,10 @@ class Song( object ):
     self.songName = songName
 
     # To limit mangling the song text with tags, we'll get these attributes from a json file
-    self.artist = None
-    self.key = None
-    self.length = None
-    self.tempo = None
+    #self.artist = None
+    #self.key = None
+    #self.length = None
+    #self.tempo = None
 
     self.count = 0 # Highlight duplicate songs with count
     self.highLight = HIGHLIGHT_NONE
@@ -67,6 +69,9 @@ currentSong = None
 librarySong = 0 # Library always has at least 1 song or program will exit.
 setListExt = ".set"
 annotation = None
+
+# Cursor for Song Info editor
+
 
 SONG_COLUMNS = 4
 LIBRARY_ROWS = 10
@@ -111,7 +116,7 @@ def loadSetList():
       index += 1
       print( line )
 
-    c = getInput()
+    c = songInfoGen.getInput()
     if c == "LEFT" or c == "h":
       return None
     if c == "RIGHT" or c == "l":
@@ -181,8 +186,7 @@ def displayUI():
   print( "File:" + setListName )
   if song:
     print( "Song:\"" + song.songName.strip() + "\"", end="" )
-    if song.artist:
-      print( " - " + song.artist.strip(), end="" )
+    # TBD. show metadata
   print()
   if annotation:
     print( annotation )
@@ -235,6 +239,7 @@ def displayUI():
   song_row = int( librarySong / SONG_COLUMNS )
   first_row = int( song_row - LIBRARY_ROWS / 2 )
   last_row = int( song_row + LIBRARY_ROWS / 2 )
+
   if first_row < 0:
     last_row -= first_row
     first_row = 0
@@ -272,42 +277,6 @@ def displayUI():
     print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
     statusString = None
   print()
-
-def getInput ():
-  # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
-  import termios, fcntl, sys, os
-  fd = sys.stdin.fileno()
-  flags_save = fcntl.fcntl( fd, fcntl.F_GETFL )
-  attrs_save = termios.tcgetattr( fd )
-  attrs = list( attrs_save )
-  attrs[ 0 ] &= ~( termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP |
-                   termios.INLCR  | termios.IGNCR  | termios.ICRNL  | termios.IXON )
-  attrs[ 1 ] &= ~termios.OPOST
-  attrs[ 2 ] &= ~( termios.CSIZE | termios.PARENB )
-  attrs[ 2 ] |= termios.CS8
-  attrs[ 3 ] &= ~( termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN )
-  termios.tcsetattr( fd, termios.TCSANOW, attrs )
-  fcntl.fcntl( fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK )
-  try:
-    ret = sys.stdin.read( 1 )
-    if ord( ret ) == 27: # Escape
-      ret = sys.stdin.read( 1 )
-      ret = sys.stdin.read( 1 )
-      if ret == 'A':
-        ret = 'UP'
-      elif ret == 'B':
-        ret = 'DOWN'
-      elif ret == 'C':
-        ret = 'RIGHT'
-      elif ret == 'D':
-        ret = 'LEFT'
-
-  except KeyboardInterrupt:
-    ret = 0
-  finally:
-    termios.tcsetattr( fd, termios.TCSAFLUSH, attrs_save )
-    fcntl.fcntl( fd, fcntl.F_SETFL, flags_save )
-  return ret
 
 def saveList ():
   global setListName, setListExt, setLists, statusString, annotation
@@ -545,17 +514,17 @@ def exportSet():
               f.write( "%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
             f.write( "</button> <div class=\"panel\">\n" )
 
+          # Add song meta data if present (artist / key / tempo / year)
+
           # Shortcuts that can be embedded in the lyric text
           # You can also just put in html in the txt since it's pasted directly.
-          elif pf == "t!": # Tab, use fixed font
+          elif pf == "t!": # Toggle 'tab mode', use fixed font
             if tabMode == True:
               f.write( "</font>\n" )
               tabMode = False
             else:
               f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
               tabMode = True
-          elif( pf == "T!" or pf == "k!" or pf == "l!" or pf == "a!" ):
-            pass # These will be added to the top of the song.
           elif pf == "s!": # Solo
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
           elif pf == "c!": # Chorus
@@ -607,7 +576,7 @@ if len( songLibrary ) == 0:
 
 displayUI()
 while True:
-  ch = getInput()
+  ch = songInfoGen.getInput()
   if( ch == "DOWN" or ch == "j" ):
     if operMode == MODE_MOVE_SET:
       if currentSet < len( setLists ) - 1:
@@ -671,6 +640,8 @@ while True:
     exportSet()
   elif ch == 'D':
     deleteSong()
+  elif ch == 'e':
+    songInfoGen.sigMain()
   elif ch == 'S': # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
     setLists.insert( currentSet, newSet )
@@ -710,7 +681,7 @@ while True:
       newLibIndex += 1
   elif ch == '?':
     print( helpString )
-    foo = getInput()
+    foo = songInfoGen.getInput()
   elif ch == 'q':
     exit()
 

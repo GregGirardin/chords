@@ -14,27 +14,25 @@ class bcolors:
 
 cursorSong = 0
 cursorParam = 0
-
 lastSearch = None
-
 songParams = ( "artist", "key", "tempo", "year" )
 
 class songEntry( object ):
   def __init__( self, name, elements ):
-    self.name = name # filename
+    self.name = name # tbd, change to filename
     if elements:
       self.elements = elements # dict of song songParams
     else:
       e = {}
       for p in songParams:
-        e[ p ] = "N/A"
-
+        e[ p ] = "---"
       self.elements = e
 
 helpString = bcolors.WARNING + \
   "\n" \
-  "e     - Edit value\n" \
+  "space - Edit value\n" \
   "s     - save.\n" \
+  "e     - exit, return to set list.\n" \
   "/     - Search for song.\n" \
   "q     - Quit." + bcolors.ENDC
 
@@ -43,14 +41,14 @@ songInfoList = [] # A list of songEntry
 statusString = None
 fileName = "lyricMetadata.json"
 
-def displayUI():
+def displaySigUI():
   global statusString
 
   os.system( 'clear' )
-  print( "Song info editor." )
-  print( "----------------------------------------------------" )
-  print( "File                 Artist           Key Tempo Year" )
-  print( "-------------------- ---------------- --- ----- ----" )
+  print( "Additional Song data." )
+  print( "-------------------------------------------------------------" )
+  print( "File                 Artist                Key   Tempo Year" )
+  print( "-------------------- --------------------- ----- ----- ------" )
 
   first = cursorSong - 10
   if first < 0:
@@ -69,36 +67,39 @@ def displayUI():
           tmpStr = "?"
 
         if ix == cursorSong and songParams[ cursorParam ] == param:
-          #tmpStr = bcolors.BOLD + tmpStr + bcolors.ENDC # highlight
-          tmpStr = tmpStr + '+' # highlight
+          # tmpStr = bcolors.BOLD + tmpStr + bcolors.ENDC # highlight
+          tmpStr = '>' + tmpStr + '<' # highlight
+        else:
+          tmpStr = ' ' + tmpStr + ' '
 
         di[ param ] = tmpStr
 
-    print( "%-20s %-16s %-3s %-5s %-4s" % ( songInfoList[ ix ].name.split( "." )[ 0 ][ 0 : 19 ],
-           di[ "artist" ], di[ "key" ], di[ "tempo" ], di[ "year" ] ) )
+    print( "%-20s %-21s %-5s %-5s %-6s" % ( songInfoList[ ix ].name.split( "." )[ 0 ][ 0 : 19 ],
+            di[ "artist" ], di[ "key" ], di[ "tempo" ], di[ "year" ] ) )
 
-  print( "-----------------------------------------------------" )
-  print( str( len( songInfoList ) ) + " entries." )
+  print( "-------------------------------------------------------------" )
+  print( str( len( songInfoList ) ) + " files." )
 
   if statusString:
     print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
     statusString = None
 
+def getKey( item ):
+  return item.name
+
 def openJson():
-  global statusString, fileName, songInfoList
+  global fileName, songInfoList
 
   if os.path.isfile( fileName ):
     with open( fileName ) as jFile:
       songInfoList = []
 
       dataDict = json.load( jFile )
-      for k,v in dataDict.iteritems():
+      for k, v in dataDict.iteritems():
         songInfoList.append( songEntry( k, v ) )
 
-      def getKey( item ):
-        return item.name
-
       songInfoList.sort( key=getKey )
+
 def exportJsonDict():
   global statusString, fileName
 
@@ -161,7 +162,7 @@ def rangeCheck( param, newVal ):
         t = 300
       newVal = str( t )
     except:
-      newVal = "N/A"
+      newVal = "---"
   elif param == "year":
     try:
       t = int( newVal )
@@ -171,86 +172,105 @@ def rangeCheck( param, newVal ):
         t = 2100
       newVal = str( t )
     except:
-      newVal = "N/A"
+      newVal = "---"
 
   return newVal
 
-# Open existing data file if present
-openJson()
+firstTime = True
 
-# Add any songs that aren't in songInfoList
-songList = glob.glob( "*.txt" )
-songList.sort()
+def sigMain():
+  global cursorSong, cursorParam, firstTime
 
-added = 0
-for s in songList:
-  found = False
-  for e in songInfoList:
-    if e.name == s:
-      found = True
-      break # present
+  if firstTime:
+    firstTime = False
 
-  if not found:
-    songInfoList.append( songEntry( s, None ) )
-    added += 1
+    openJson() # Open existing data file if present
 
-# Prune songs that aren't present.
-if added:
-  statusString = "Added: " + str( added )
+    # Add any songs that aren't in songInfoList
+    songList = glob.glob( "*.txt" )
+    songList.sort()
 
-# Start of main loop.
-displayUI()
-while True:
-  ch = getInput()
+    added = 0
+    for s in songList:
+      found = False
+      for e in songInfoList:
+        if e.name == s:
+          found = True
+          break # present
 
-  if ch == "DOWN" or ch == "j":
-    if cursorSong == None: # Go to first element
+      if not found:
+        songInfoList.append( songEntry( s, None ) )
+        added += 1
+
+    ''' tbd. Prune songs that aren't present.
+    for e in songInfoList:
+      for s in songList:
+        if e.name == s:
+          continue
+        # If we got here then prune e.
+        del e
+    '''
+  # Start of main loop.
+  displaySigUI()
+  while True:
+    ch = getInput()
+
+    if ch == "DOWN" or ch == "j":
+      if cursorSong == None: # Go to first element
+        cursorSong = 0
+        cursorParam = None
+      else:
+        if cursorSong < len( songInfoList ) - 1: # Go back to the end.
+          cursorSong += 1
+    elif ch == "UP" or ch == "k":
+      if cursorSong > 0:
+        cursorSong -= 1
+    elif ch == "RIGHT":
+      if cursorParam is None: # On an element, jump to next element
+        cursorParam = 1
+      elif cursorParam < len( songParams ) - 1: # Already on the value field, jump to next element
+        cursorParam += 1
+    elif ch == "LEFT":
+      if cursorParam > 0:
+        cursorParam -= 1
+    elif ch == ' ': # Edit
+      if cursorSong is not None:
+        newVal = raw_input( 'Enter new value:' )
+        newVal = rangeCheck( songParams [ cursorParam ], newVal )
+        if newVal == "":
+          newVal = "---"
+        songInfoList[ cursorSong ].elements[ songParams [ cursorParam ] ] = newVal
+    elif ch == 's':
+      exportJsonDict()
+    elif ch == '/':
+      found = False
+      searchFor = raw_input( 'Search:' )
+      if searchFor == "" and lastSearch is not None:
+        searchFor = lastSearch
+      else:
+        lastSearch = searchFor
+      for ix in range( cursorSong + 1, len( songInfoList) ):
+        if songInfoList[ ix ].name.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
+          cursorSong = ix
+          found = True
+          break
+      if not found:
+        for ix in range( 0, cursorSong ):
+          if songInfoList[ ix ].name.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
+            cursorSong = ix
+            found = True
+            break
+        if not found:
+          statusString = "Not Found."
+    elif ch == '0':
       cursorSong = 0
-      cursorParam = None
-    else:
-      if cursorSong < len( songInfoList ) - 1: # Go back to the end.
-        cursorSong += 1
-  elif ch == "UP" or ch == "k":
-    if cursorSong > 0:
-      cursorSong -= 1
-  elif ch == "RIGHT":
-    if cursorParam is None: # On an element, jump to next element
-      cursorParam = 1
-    elif cursorParam < len( songParams ) - 1: # Already on the value field, jump to next element
-      cursorParam += 1
-  elif ch == "LEFT":
-    if cursorParam > 0:
-      cursorParam -= 1
-  elif ch == 'e': # Edit
-    if cursorSong is not None:
-      newVal = raw_input( 'Enter new value:' )
-      newVal = rangeCheck( songParams [ cursorParam ], newVal )
-      songInfoList[ cursorSong ].elements[ songParams [ cursorParam ] ] = newVal
-  elif ch == 's':
-    exportJsonDict()
-  elif ch == '/':
-    found = False
-    searchFor = raw_input( 'Search:' )
-    if searchFor == "" and lastSearch is not None:
-      searchFor = lastSearch
-    else:
-      lastSearch = searchFor
-    for ix in range( cursorSong + 1, len( songInfoList) ):
-      if songInfoList[ ix ].name.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
-        cursorSong = ix
-        found = True
-        break
-    if not found:
-      cursorSong = 0
-      statusString = "Not Found."
-  elif ch == '0':
-    cursorSong = 0
-    cursorParam = None
 
-  elif ch == '?':
-    print( helpString )
-    foo = getInput()
-  elif ch == 'q':
-    exit()
+    elif ch == '?':
+      print( helpString )
+      foo = getInput()
+    elif ch == 'e':
+      return()
+    elif ch == 'q':
+      exit()
 
-  displayUI()
+    displaySigUI()
