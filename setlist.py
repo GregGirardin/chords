@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os, glob, copy, pickle, json
-import songInfoGen
 
 class bcolors:
   BLUE      = '\033[94m'
@@ -14,8 +13,9 @@ class bcolors:
   ENDC      = '\033[0m'
 
 DEFAULT_SETLIST_NAME = "setList"
+songParams = ( "artist", "key", "tempo", "year" )
 
-helpString = bcolors.WARNING +     \
+helpString = bcolors.WARNING + \
   "\n" \
   "hjkl  - Navigate (or use arrows).\n" \
   "df    - Back/forward multiple.\n" \
@@ -23,15 +23,24 @@ helpString = bcolors.WARNING +     \
   "os    - Open/save.\n" \
   "mM    - Move song/set.\n" \
   "nN    - Name the set/list.\n" \
-  "cCp   - Copy To/Clear/Paste from Library.\n" \
-  "D     - Remove song.\n" \
-  "x     - Export.\n" \
+  "cCp   - Copy to/Clear/Paste Clipboard.\n" \
+  "D     - Remove song from setlist.\n" \
+  "x     - Export setlist.\n" \
   "t     - Annotation.\n" \
   "e     - Edit song data.\n" \
   "~1234 - Go to library/set.\n" \
   "H     - Toggle highlight.\n" \
   "S     - Clone set.\n" \
   "/     - Search.\n" \
+  "q     - Quit." + bcolors.ENDC
+
+sigHelpString = bcolors.WARNING + \
+  "\n" \
+  "space - Edit value\n" \
+  "s     - save.\n" \
+  "e     - exit, return to set list.\n" \
+  "/     - Search for song.\n" \
+  "n     - Search again.\n" \
   "q     - Quit." + bcolors.ENDC
 
 class SetClass( object ):
@@ -45,13 +54,10 @@ class Song( object ):
   def __init__( self, fileName, songName ):
     self.fileName = fileName
     self.songName = songName
-
-    # To limit mangling the song text with tags, we'll get these attributes from a json file
-    #self.artist = None
-    #self.key = None
-    #self.length = None
-    #self.tempo = None
-
+    e = { }
+    for p in songParams:
+      e[ p ] = "---"
+    self.elements = e # dict of song songParams
     self.count = 0 # Highlight duplicate songs with count
     self.highLight = HIGHLIGHT_NONE
 
@@ -60,18 +66,19 @@ clipboard = []
 songLibrary = []
 statusString = None
 setListName = DEFAULT_SETLIST_NAME
-
 LIBRARY_SET = -1 # if currentSet == LIBRARY_SET then you're in the library
 
 # Cursor location
 currentSet = LIBRARY_SET
 currentSong = None
 librarySong = 0 # Library always has at least 1 song or program will exit.
-setListExt = ".set"
 annotation = None
 
 # Cursor for Song Info editor
-
+cursorSong = 0
+cursorParam = 0
+searchFor = ""
+sigFileName = "lyricMetadata.json"
 
 SONG_COLUMNS = 4
 LIBRARY_ROWS = 10
@@ -87,11 +94,50 @@ HIGHLIGHT_ON = 1
 
 operMode = MODE_MOVE_NORMAL
 
+def getInput():
+  # Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
+  import termios, fcntl, sys, os
+  fd = sys.stdin.fileno()
+  flags_save = fcntl.fcntl( fd, fcntl.F_GETFL )
+  attrs_save = termios.tcgetattr( fd )
+  attrs = list( attrs_save )
+  attrs[ 0 ] &= ~( termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP |
+                   termios.INLCR  | termios.IGNCR  | termios.ICRNL  | termios.IXON )
+  attrs[ 1 ] &= ~termios.OPOST
+  attrs[ 2 ] &= ~( termios.CSIZE | termios.PARENB )
+  attrs[ 2 ] |= termios.CS8
+  attrs[ 3 ] &= ~( termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN )
+  termios.tcsetattr( fd, termios.TCSANOW, attrs )
+  fcntl.fcntl( fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK )
+  try:
+    ret = sys.stdin.read( 1 )
+    if ord( ret ) == 27: # Escape
+      ret = sys.stdin.read( 1 )
+      ret = sys.stdin.read( 1 )
+      if ret == 'A':
+        ret = 'UP'
+      elif ret == 'B':
+        ret = 'DOWN'
+      elif ret == 'C':
+        ret = 'RIGHT'
+      elif ret == 'D':
+        ret = 'LEFT'
+      else:
+        print( int( ret ) )
+        exit()
+
+  except KeyboardInterrupt:
+    ret = 0
+  finally:
+    termios.tcsetattr( fd, termios.TCSAFLUSH, attrs_save )
+    fcntl.fcntl( fd, fcntl.F_SETFL, flags_save )
+  return ret
+
 def loadSetList():
   global statusString, setLists, setListName, annotation, currentSong, currentSet
 
   selectedfileIx = 0
-  re = "./*" + setListExt
+  re = "./*.set"
 
   matchList = glob.glob( re )
 
@@ -116,7 +162,7 @@ def loadSetList():
       index += 1
       print( line )
 
-    c = songInfoGen.getInput()
+    c = getInput()
     if c == "LEFT" or c == "h":
       return None
     if c == "RIGHT" or c == "l":
@@ -279,14 +325,14 @@ def displayUI():
   print()
 
 def saveList ():
-  global setListName, setListExt, setLists, statusString, annotation
+  global setListName, setLists, statusString, annotation
 
-  statusString = "Saved."
-  fileName = setListName + setListExt
+  fileName = setListName + ".set"
   setLists[ 0 ].annonation = annotation
 
   with open( fileName, 'wb' ) as f:
     pickle.dump( setLists, f )
+    statusString = "Saved."
 
 # A decorator for functions that move the cursor to handle song move
 def cursorMover( func ):
@@ -450,7 +496,6 @@ def exportSet():
 
   fname = setListName + ".html"
   f = open( fname, "w" )
-
   f.write( "<!DOCTYPE html>\n"
            "<html>\n"
            "<head>\n"
@@ -485,7 +530,6 @@ def exportSet():
            "</style>\n"
            "</head>\n"
            "<body>\n" )
-
   f.write( "<h1>%s</h1>\n" % ( setListName ) )
   if annotation:
     f.write( annotation )
@@ -515,8 +559,6 @@ def exportSet():
             f.write( "</button> <div class=\"panel\">\n" )
 
           # Add song meta data if present (artist / key / tempo / year)
-
-          # Shortcuts that can be embedded in the lyric text
           # You can also just put in html in the txt since it's pasted directly.
           elif pf == "t!": # Toggle 'tab mode', use fixed font
             if tabMode == True:
@@ -568,15 +610,186 @@ def exportSet():
   f.close()
   statusString = "Export complete."
 
+# Song info generator stuff
+def getKey( item ):
+  return item.name
+
+def openSigJson():
+  global sigFileName, songLibrary
+
+  if os.path.isfile( sigFileName ):
+    with open( sigFileName ) as jFile:
+      dataDict = json.load( jFile )
+
+      for s in songLibrary:
+        if s.fileName in dataDict:
+          s.elements = dataDict[ s.fileName ]
+
+def exportJsonDict(): # Save song meta data as json
+  global statusString, sigFileName
+
+  dataDict = {} # Copy the songInfoList into this dict of dicts and save. Will lose element order.
+  for e in songLibrary:
+    dataDict[ e.fileName ] = e.elements
+
+  with open( sigFileName, 'w' ) as f:
+    json.dump( dataDict, f )
+
+  statusString = "Saved."
+
+def sigRangeCheck( param, newVal ):
+
+  if param == "tempo":
+    try:
+      t = int( newVal )
+      if t < 10:
+        t = 10
+      elif t > 300:
+        t = 300
+      newVal = str( t )
+    except:
+      newVal = "---"
+  elif param == "year":
+    try:
+      t = int( newVal )
+      if t < 1500:
+        t = 1500
+      elif t > 2100:
+        t = 2100
+      newVal = str( t )
+    except:
+      newVal = "---"
+  elif param == "key":
+    if len( newVal ) > 5:
+      newVal = newVal[ 0 : 5 ]
+
+  return newVal
+
+def sigDisplayUI():
+  global statusString
+
+  os.system( 'clear' )
+  print( "Additional song data." )
+  print( "-------------------- --------------------- ------- ----- ------" )
+  print( "File                 Artist                Key     Tempo Year" )
+  print( "-------------------- --------------------- ------- ----- ------" )
+
+  first = cursorSong - 10
+  if first < 0:
+    first = 0
+
+  for ix in range( first, first + 21 ):
+    if ix == len( songLibrary ):
+      break
+
+    for paramIndex in range( 0, len( songLibrary[ ix ].elements ) ):
+      di = {} # DisplayInfo
+      for param in songParams:
+        if param in songLibrary[ ix ].elements:
+          tmpStr = songLibrary[ ix ].elements[ param ]
+        else:
+          tmpStr = "?"
+
+        if ix == cursorSong and songParams[ cursorParam ] == param:
+          # tmpStr = bcolors.BOLD + tmpStr + bcolors.ENDC # highlight
+          tmpStr = '>' + tmpStr + '<' # highlight
+        else:
+          tmpStr = ' ' + tmpStr + ' '
+
+        di[ param ] = tmpStr
+
+    print( "%-20s %-21s %-7s %-5s %-6s" % ( songLibrary[ ix ].fileName.split( "." )[ 0 ][ 0 : 19 ],
+            di[ "artist" ], di[ "key" ], di[ "tempo" ], di[ "year" ] ) )
+
+  print( "--------------------------------------------------------------" )
+
+  if statusString:
+    print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
+    statusString = None
+
+def sigMain():
+  global cursorSong, cursorParam, searchFor
+
+  # Start of main loop.
+  sigDisplayUI()
+  while True:
+    ch = getInput()
+
+    if ch == "DOWN" or ch == "j":
+      if cursorSong == None: # Go to first element
+        cursorSong = 0
+        cursorParam = None
+      else:
+        if cursorSong < len( songLibrary ) - 1: # Go back to the end.
+          cursorSong += 1
+    elif ch == "UP" or ch == "k":
+      if cursorSong > 0:
+        cursorSong -= 1
+    elif ch == "RIGHT":
+      if cursorParam is None: # On an element, jump to next element
+        cursorParam = 1
+      elif cursorParam < len( songParams ) - 1: # Already on the value field, jump to next element
+        cursorParam += 1
+    elif ch == "LEFT":
+      if cursorParam > 0:
+        cursorParam -= 1
+    elif ch == '0':
+      cursorSong = 0
+    elif ch == 'f':
+      cursorSong += 10
+      if cursorSong >= len( songLibrary ) - 1:  # Go back to the end.
+        cursorSong = len( songLibrary ) - 1
+    elif ch == 'd':
+      cursorSong -= 10
+      if cursorSong < 0:
+        cursorSong = 0
+    elif ch == ' ': # Edit
+      if cursorSong is not None:
+        newVal = raw_input( 'Enter new value:' )
+        newVal = sigRangeCheck( songParams [ cursorParam ], newVal )
+        if newVal == "":
+          newVal = "---"
+        songLibrary[ cursorSong ].elements[ songParams [ cursorParam ] ] = newVal
+    elif ch == 's':
+      exportJsonDict()
+    elif ch == '/' or ch == 'n':
+      found = False
+      if ch == '/':
+        searchFor = raw_input( 'Search:' )
+      for ix in range( cursorSong + 1, len( songLibrary) ):
+        if songLibrary[ ix ].fileName.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
+          cursorSong = ix
+          found = True
+          break
+      if not found:
+        for ix in range( 0, cursorSong ):
+          if songLibrary[ ix ].fileName.lower()[ 0 : len( searchFor ) ] == searchFor.lower():
+            cursorSong = ix
+            found = True
+            break
+        if not found:
+          statusString = "Not Found."
+    elif ch == '?':
+      print( sigHelpString )
+      foo = getInput()
+    elif ch == 'e':
+      return()
+    elif ch == 'q':
+      exit()
+
+    sigDisplayUI()
+
 # Start of main loop.
 songLibrary = getLocalSongs()
 if len( songLibrary ) == 0:
   print( "No songs in local directory." )
   exit()
 
+openSigJson() # Open existing song data file if present
+
 displayUI()
 while True:
-  ch = songInfoGen.getInput()
+  ch = getInput()
   if( ch == "DOWN" or ch == "j" ):
     if operMode == MODE_MOVE_SET:
       if currentSet < len( setLists ) - 1:
@@ -641,7 +854,7 @@ while True:
   elif ch == 'D':
     deleteSong()
   elif ch == 'e':
-    songInfoGen.sigMain()
+    sigMain()
   elif ch == 'S': # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
     setLists.insert( currentSet, newSet )
@@ -656,10 +869,7 @@ while True:
   elif ch == 'H':
     if currentSet != LIBRARY_SET:
       s = setLists[ currentSet ].songList[ currentSong ]
-      if s.highLight == HIGHLIGHT_NONE:
-        s.highLight = HIGHLIGHT_ON
-      else:
-        s.highLight = HIGHLIGHT_NONE
+      s.highLight = HIGHLIGHT_ON if s.highLight == HIGHLIGHT_NONE else HIGHLIGHT_NONE
     else:
       statusString = "In Library."
   elif ch == 't':
@@ -681,10 +891,9 @@ while True:
       newLibIndex += 1
   elif ch == '?':
     print( helpString )
-    foo = songInfoGen.getInput()
+    foo = getInput()
   elif ch == 'q':
     exit()
 
   calcSongCounts()
-
   displayUI()
