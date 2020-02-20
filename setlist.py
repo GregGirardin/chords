@@ -13,36 +13,42 @@ class bcolors:
   ENDC      = '\033[0m'
 
 DEFAULT_SETLIST_NAME = "setList"
-songParams = ( "artist", "key", "tempo", "year" )
+songParams = ( "Artist", "Key", "Tempo", "Year", "Genre", "Length" )
+SP_ARTIST = 0
+SP_KEY = 1
+SP_TEMPO = 2
+SP_YEAR = 3
+SP_GENRE = 4
+SP_LENGTH = 5
 
 helpString = bcolors.WARNING + \
-  "Commands:\n" \
-  "hjkl  - Navigate (or use arrows).\n" \
-  "df    - Back/forward multiple.\n" \
-  "aA    - Add/delete a set.\n" \
-  "os    - Open/save.\n" \
-  "mM    - Move song/set.\n" \
-  "nN    - Name the set/list.\n" \
-  "cCp   - Copy to/Clear/Paste Clipboard.\n" \
-  "D     - Remove song from setlist.\n" \
-  "x     - Export setlist.\n" \
-  "t     - Annotation.\n" \
-  "e     - Edit song data.\n" \
-  "~1234 - Go to library/set.\n" \
-  "H     - Toggle highlight.\n" \
-  "S     - Clone set.\n" \
-  "[]    - Show song by attribute.\n" \
-  "/     - Search.\n" \
-  "q     - Quit." + bcolors.ENDC
+            "Commands:\n" \
+            "hjkl  - Navigate (or use arrows).\n" \
+            "df    - Back/forward multiple.\n" \
+            "aA    - Add/delete a set.\n" \
+            "os    - Open/save.\n" \
+            "mM    - Move song/set.\n" \
+            "nN    - Name the set/list.\n" \
+            "cCp   - Copy to/Clear/Paste Clipboard.\n" \
+            "D     - Remove song from setlist.\n" \
+            "x     - Export setlist.\n" \
+            "t     - Annotation.\n" \
+            "e     - Edit song data.\n" \
+            "~1234 - Go to library/set.\n" \
+            "H     - Toggle highlight.\n" \
+            "S     - Clone set.\n" \
+            "[]    - Show song by attribute.\n" \
+            "/     - Search.\n" \
+            "q     - Quit." + bcolors.ENDC
 
 sieHelpString = bcolors.WARNING + \
-  "Commands:\n" \
-  "space - Edit value\n" \
-  "s     - Save song data.\n" \
-  "e     - Exit to set list editor.\n" \
-  "/     - Search for song.\n" \
-  "n     - Next occurrence of search.\n" \
-  "q     - Quit." + bcolors.ENDC
+                "Commands:\n" \
+                "space - Edit value\n" \
+                "s     - Save song data.\n" \
+                "e     - Exit to set list editor.\n" \
+                "/     - Search for song.\n" \
+                "n     - Next occurrence of search.\n" \
+                "q     - Quit." + bcolors.ENDC
 
 class SetClass( object ):
   def __init__( self, name=None ):
@@ -137,6 +143,27 @@ def getInput():
     fcntl.fcntl( fd, fcntl.F_SETFL, flags_save )
   return ret
 
+# Update song info from library. What's copied in the setlist may have been updated.
+# all we keep from the set file is the fileName and highlight flag
+def updateSongDataFromLibrary():
+  for set in setLists:
+    for song in set.songList:
+      for libSong in songLibrary:
+        if libSong.fileName == song.fileName:
+          song.elements = libSong.elements
+
+# Count instances of all songs to display duplicates
+def calcSongCounts():
+  for l in setLists:
+    for s in l.songList:
+      s.count = 0 # Note that we compare against self below, so we'll get at least 1.
+  for l in setLists:
+    for s in l.songList: # For every song
+      for l2 in setLists:
+        for s2 in l2.songList:
+          if s.fileName == s2.fileName:
+            s.count += 1
+
 def loadSetList():
   global statusString, setLists, setListName, annotation, currentSong, currentSet
 
@@ -174,6 +201,7 @@ def loadSetList():
         setLists = pickle.load( f )
       setListName = selSong[ 2 : ].split( "." )[ 0 ]
       annotation = setLists[ 0 ].annonation
+      updateSongDataFromLibrary()
       return
     if c == "DOWN" or c == "j":
       if selectedfileIx < len( matchList ) - 1:
@@ -181,19 +209,6 @@ def loadSetList():
     if c == "UP" or c == "k":
       if selectedfileIx > 0:
         selectedfileIx -= 1
-
-# Count instances of all songs to display duplicates
-def calcSongCounts():
-  for l in setLists:
-    for s in l.songList:
-      s.count = 0 # Note that we compare against self below, so we'll get at least 1.
-
-  for l in setLists:
-    for s in l.songList: # For every song
-      for l2 in setLists:
-        for s2 in l2.songList:
-          if s.fileName == s2.fileName:
-            s.count += 1
 
 def getLocalSongs():
   songList = []
@@ -227,24 +242,29 @@ def displayUI():
   elif currentSong is not None:
     song = setLists[ currentSet ].songList[ currentSong ]
 
-  '''
-  if song and showBy is not None:
-    showByParam = song.elements[ songParams [ showBy ] ]
-  '''
-
   print( "File:" + setListName )
+
   if song:
     print( "Song:\"" + song.songName.strip() + "\"", end="" )
-    if "artist" in song.elements:
-      if song.elements[ "artist" ]:
-        print( " by " + song.elements[ "artist" ], end="" )
-      if song.elements[ "key" ]:
-        print( " " + song.elements[ "key" ], end="" )
-      if song.elements[ "tempo" ]:
-        print( " " + song.elements[ "tempo" ] + "bpm", end="" )
-      if song.elements[ "year" ]:
-        print( " " + song.elements[ "year" ], end="" )
+    if "Artist" in song.elements:
+      if song.elements[ songParams [ SP_ARTIST ] ]:
+        print( " by " + song.elements[ songParams [ SP_ARTIST ] ], end="" )
+      if song.elements[ songParams [ SP_KEY ] ]:
+        print( " " + song.elements[ songParams [ SP_KEY ] ], end="" )
+      if song.elements[ songParams [ SP_TEMPO ] ]:
+        print( " " + song.elements[ songParams [ SP_TEMPO ] ] + "bpm", end="" )
+      if song.elements[ songParams [ SP_YEAR ] ]:
+        print( " " + song.elements[ songParams [ SP_YEAR ] ], end="" )
+      if song.elements[ songParams [ SP_GENRE ] ]:
+        print( " " + song.elements[ songParams [ SP_GENRE ] ], end="" )
+      if song.elements[ songParams[ SP_LENGTH ] ]:
+        print( " " + song.elements[ songParams[ SP_LENGTH ] ], end="" )
   print()
+  if showBy is not None:
+    print( "Show by " + songParams [ showBy ] )
+  else:
+    print()
+
   if annotation:
     print( annotation )
 
@@ -279,12 +299,20 @@ def displayUI():
         print( bcolors.REVERSE if operMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
       if s.fileName == libSongName:
         print( bcolors.REVERSE, end="" )
-      elif s.highLight == HIGHLIGHT_ON:
+      elif s.highLight == HIGHLIGHT_ON and showBy is None:
         print( bcolors.RED, end="" )
       elif s.count > 1:
         print( bcolors.BLUE, end="" )
 
-      print( "%-24s" % ( s.fileName[ : -4 ] ), end = "" )
+      if showBy is None:
+        print( "%-24s" % ( s.fileName[ : -4 ] ), end="" )
+      else:
+        v = s.elements[ songParams [ showBy ] ]
+        if v is None:
+          v = "---"
+        elif v == song.elements[ songParams [ showBy ] ]:
+          print( bcolors.RED, end="" )
+        print( "%-24s" % ( v ), end="" )
       print( bcolors.ENDC, end="" )
       songIx += 1
 
@@ -304,7 +332,7 @@ def displayUI():
     diff = int( last_row - len( songLibrary ) / SONG_COLUMNS )
     last_row -= diff
     first_row -= diff
-    if( first_row < 0 ):
+    if first_row < 0:
       first_row = 0
 
   for songIx in range( first_row * SONG_COLUMNS, ( last_row + 1 ) * SONG_COLUMNS ):
@@ -315,9 +343,17 @@ def displayUI():
     cursor = True if currentSet == LIBRARY_SET and songIx == librarySong else False
     if cursor:
       print( bcolors.BOLD, end="" )
-    print( "%-24s" % ( songLibrary[ songIx ].fileName[ : -4 ] ), end="" )
-    if cursor:
-      print( bcolors.ENDC, end="" )
+
+    if showBy is None:
+      print( "%-24s" % ( songLibrary[ songIx ].fileName[ : -4 ] ), end="" )
+    else:
+      v = songLibrary[ songIx ].elements[ songParams[ showBy ] ]
+      if v is None:
+        v = "---"
+      elif v == song.elements[ songParams[ showBy ] ]:
+        print( bcolors.RED, end="" )
+      print( "%-24s" % ( v ), end = "" )
+    print( bcolors.ENDC, end="" )
     songIx += 1
 
   # Clipboard
@@ -395,10 +431,7 @@ def songFwd( count ):
         librarySong = 0
       else:
         currentSet += 1
-        if len( setLists[ currentSet ].songList ):
-          currentSong = 0
-        else:
-          currentSong = None
+        currentSong = 0 if len( setLists[ currentSet ].songList ) else None
 
 @cursorMover
 def songBack( count ):
@@ -420,10 +453,7 @@ def songBack( count ):
       currentSong -= count
     if currentSong is None or currentSong < 0: # Need to go back a set.
       if currentSet == 0: # Already in the first set
-        if( len( setLists[ currentSet ].songList ) ):
-          currentSong = 0
-        else:
-          currentSong = None
+        currentSong = 0 if( len( setLists[ currentSet ].songList ) ) else None
       else:
         currentSet -= 1
         l = len( setLists[ currentSet ].songList )
@@ -438,10 +468,7 @@ def moveToSet( set ):
   else:
     currentSet = set
     l = len( setLists[ currentSet ].songList )
-    if l == 0:
-      currentSong = None
-    else:
-      currentSong = l - 1
+    currentSong = None if l == 0 else l - 1
 
 def deleteSet():
   global currentSet, currentSong
@@ -459,10 +486,7 @@ def deleteSong():
     if currentSong is not None:
       del( setLists[ currentSet ].songList[ currentSong ] )
       l = len( setLists[ currentSet ].songList )
-      if l == 0:
-        currentSong = None
-      elif currentSong == l:
-        currentSong -= 1
+      currentSong = None if l == 0 else currentSong - 1
 
 def copyToClipboard():
   global clipboard, librarySong, statusString
@@ -473,7 +497,7 @@ def copyToClipboard():
         statusString = "Song is already in the clipboard."
         return
     s = copy.deepcopy( songLibrary[ librarySong ] )
-    clipboard.append(s)
+    clipboard.append( s )
   else:
     statusString = "Not in Library."
 
@@ -485,10 +509,7 @@ def pasteClipboard():
     return
 
   if currentSet != LIBRARY_SET:
-    if currentSong == None:
-      currentSong = 0
-    else:
-      currentSong += 1
+    currentSong = 0 if currentSong == None else currentSong + 1
 
     for s in clipboard:
       setLists[ currentSet ].songList.insert( currentSong, s )
@@ -543,8 +564,7 @@ def exportSet():
            "<body>\n" )
   f.write( "<h1>%s</h1>\n" % ( setListName ) )
   if annotation:
-    f.write( annotation )
-    f.write( "\n" )
+    f.write( annotation + "\n" )
 
   # Songs
   setNumber = 1
@@ -569,8 +589,25 @@ def exportSet():
               f.write( "%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
             f.write( "</button> <div class=\"panel\">\n" )
 
-          # Add song meta data if present (artist / key / tempo / year)
-          # You can also just put in html in the txt since it's pasted directly.
+            # Add song meta data if present (artist / key / tempo / year)
+            # You can also just put in html in the txt since it's pasted directly.
+            songInfo = ""
+            if s.elements[ songParams[ SP_ARTIST ] ]:
+              songInfo += "by " + s.elements[ songParams[ SP_ARTIST ] ] + ". "
+            if s.elements[ songParams[ SP_KEY ] ]:
+              songInfo += " " + s.elements[ songParams[ SP_KEY ] ]
+            if s.elements[ songParams[ SP_TEMPO ] ]:
+              songInfo += " " + s.elements[ songParams[ SP_TEMPO ] ] + "bpm"
+            if s.elements[ songParams[ SP_YEAR ] ]:
+              songInfo += " " + s.elements[ songParams[ SP_YEAR ] ]
+            if s.elements[ songParams[ SP_GENRE ] ]:
+              songInfo += " " + s.elements[ songParams[ SP_GENRE ] ]
+            if s.elements[ songParams[ SP_LENGTH ] ]:
+              songInfo += " " + s.elements[ songParams[ SP_LENGTH ] ]
+
+            if songInfo != "":
+              f.write( "<i><font style=\"font-family:courier;\" size=\"2\">&nbsp" + songInfo + "</font></i><br><br>\n" )
+
           elif pf == "t!": # Toggle 'tab mode', use fixed font
             if tabMode == True:
               f.write( "</font>\n" )
@@ -677,13 +714,13 @@ def sieRangeCheck( param, newVal ):
   return newVal
 
 def sieDisplayUI():
-  global statusString
+  global statusString, songParams
 
   os.system( 'clear' )
   print( "Additional song data." )
-  print( "-------------------- --------------------- ------- ----- ------" )
-  print( "File                 Artist                Key     Tempo Year" )
-  print( "-------------------- --------------------- ------- ----- ------" )
+  print( "-------------------- ------------------ ------- ----- ------ -------- ------" )
+  print( "File                 Artist             Key     Tempo Year   Genre    Length" )
+  print( "-------------------- ------------------ ------- ----- ------ -------- ------" )
 
   first = cursorSong - 10
   if first < 0:
@@ -701,20 +738,24 @@ def sieDisplayUI():
           if tmpStr == None:
             tmpStr = "---"
         else:
-          tmpStr = "???" # added a new param or possibly mangled JSON file
+          tmpStr = "???" # Added a new param or possibly mangled JSON file
 
         if ix == cursorSong and songParams[ cursorParam ] == param:
-          # tmpStr = bcolors.BOLD + tmpStr + bcolors.ENDC # highlight
           tmpStr = '>' + tmpStr + '<'
         else:
           tmpStr = ' ' + tmpStr + ' '
 
         di[ param ] = tmpStr
 
-    print( "%-20s %-21s %-7s %-5s %-6s" % ( songLibrary[ ix ].fileName.split( "." )[ 0 ][ 0 : 19 ],
-            di[ "artist" ], di[ "key" ], di[ "tempo" ], di[ "year" ] ) )
+    print( "%-20s %-18s %-7s %-5s %-6s %-8s %-6s" % ( songLibrary[ ix ].fileName.split( "." )[ 0 ][ 0 : 19 ],
+           di[ songParams[ SP_ARTIST ] ][ 0 : 18 ],
+           di[ songParams[ SP_KEY ] ][ 0 : 7 ],
+           di[ songParams[ SP_TEMPO ] ],
+           di[ songParams[ SP_YEAR ] ],
+           di[ songParams[ SP_GENRE ] ][0 : 8 ],
+           di[ songParams[ SP_LENGTH ][ 0 : 6 ] ] ) )
 
-  print( "--------------------------------------------------------------" )
+  print( "----------------------------------------------------------------------------" )
 
   if statusString:
     print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
@@ -724,6 +765,7 @@ def sieMain():
   global cursorSong, cursorParam, searchFor, statusString
 
   sieEdited = False
+
   # Start of main loop.
   sieDisplayUI()
   while True:
@@ -761,10 +803,10 @@ def sieMain():
       if cursorSong is not None:
         sieEdited = True
         newVal = raw_input( 'Enter new value:' )
-        newVal = sieRangeCheck( songParams [ cursorParam ], newVal )
+        newVal = sieRangeCheck( songParams[ cursorParam ], newVal )
         if newVal == "":
           newVal = None
-        songLibrary[ cursorSong ].elements[ songParams [ cursorParam ] ] = newVal
+        songLibrary[ cursorSong ].elements[ songParams[ cursorParam ] ] = newVal
     elif ch == 's':
       sieEdited = False
       exportJsonDict()
@@ -791,6 +833,7 @@ def sieMain():
     elif ch == 'e':
       if sieEdited:
         statusString = "Song data not saved."
+        updateSongDataFromLibrary()
       return()
     elif ch == 'q':
       exit()
@@ -808,7 +851,7 @@ openSieJson()
 displayUI()
 while True:
   ch = getInput()
-  if( ch == "DOWN" or ch == "j" ):
+  if ch == "DOWN" or ch == "j":
     if operMode == MODE_MOVE_SET:
       if currentSet < len( setLists ) - 1:
         s = setLists[ currentSet + 1 ]
@@ -817,7 +860,7 @@ while True:
         currentSet += 1
     else:
       songFwd( SONG_COLUMNS )
-  elif( ch == "UP" or ch == "k" ):
+  elif ch == "UP" or ch == "k":
     if operMode == MODE_MOVE_SET:
       if currentSet > 0 and currentSet < len( setLists ):
         s = setLists[ currentSet - 1 ]
@@ -909,13 +952,13 @@ while True:
       newLibIndex += 1
   elif ch == '[':
     if showBy is not None:
-      if showBy > 1:
+      if showBy > 0:
         showBy -= 1
       else:
         showBy = None
   elif ch == ']':
     if showBy is None:
-      showBy = 1
+      showBy = 0
     elif showBy < len( songParams ) - 1:
       showBy += 1
   elif ch == '?':
