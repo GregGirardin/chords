@@ -16,7 +16,7 @@ DEFAULT_SETLIST_NAME = "setList"
 songParams = ( "artist", "key", "tempo", "year" )
 
 helpString = bcolors.WARNING + \
-  "\n" \
+  "Commands:\n" \
   "hjkl  - Navigate (or use arrows).\n" \
   "df    - Back/forward multiple.\n" \
   "aA    - Add/delete a set.\n" \
@@ -31,16 +31,17 @@ helpString = bcolors.WARNING + \
   "~1234 - Go to library/set.\n" \
   "H     - Toggle highlight.\n" \
   "S     - Clone set.\n" \
+  "[]    - Show song by attribute.\n" \
   "/     - Search.\n" \
   "q     - Quit." + bcolors.ENDC
 
-sigHelpString = bcolors.WARNING + \
-  "\n" \
+sieHelpString = bcolors.WARNING + \
+  "Commands:\n" \
   "space - Edit value\n" \
-  "s     - save.\n" \
-  "e     - exit, return to set list.\n" \
+  "s     - Save song data.\n" \
+  "e     - Exit to set list editor.\n" \
   "/     - Search for song.\n" \
-  "n     - Search again.\n" \
+  "n     - Next occurrence of search.\n" \
   "q     - Quit." + bcolors.ENDC
 
 class SetClass( object ):
@@ -54,16 +55,18 @@ class Song( object ):
   def __init__( self, fileName, songName ):
     self.fileName = fileName
     self.songName = songName
+
     e = { }
     for p in songParams:
-      e[ p ] = "---"
-    self.elements = e # dict of song songParams
+      e[ p ] = None
+    self.elements = e # dict of songParams
     self.count = 0 # Highlight duplicate songs with count
     self.highLight = HIGHLIGHT_NONE
 
 setLists = []
 clipboard = []
 songLibrary = []
+
 statusString = None
 setListName = DEFAULT_SETLIST_NAME
 LIBRARY_SET = -1 # if currentSet == LIBRARY_SET then you're in the library
@@ -73,16 +76,17 @@ currentSet = LIBRARY_SET
 currentSong = None
 librarySong = 0 # Library always has at least 1 song or program will exit.
 annotation = None
-
-# Cursor for Song Info editor
-cursorSong = 0
-cursorParam = 0
-searchFor = ""
-sigFileName = "lyricMetadata.json"
+showBy = None
 
 SONG_COLUMNS = 4
 LIBRARY_ROWS = 10
 MAX_SETS = 8
+
+# Song Info Editor
+cursorSong = 0
+cursorParam = 0
+searchFor = ""
+sieFileName = "lyricMetadata.json"
 
 # Input modes
 MODE_MOVE_NORMAL  = 0
@@ -178,12 +182,6 @@ def loadSetList():
       if selectedfileIx > 0:
         selectedfileIx -= 1
 
-def getSetByName( name ):
-  for s in setLists:
-    if s.name == name:
-      return s
-  return None
-
 # Count instances of all songs to display duplicates
 def calcSongCounts():
   for l in setLists:
@@ -219,7 +217,7 @@ def getLocalSongs():
   return songList
 
 def displayUI():
-  global statusString, setLists
+  global statusString, setLists, showBy
 
   os.system( 'clear' )
 
@@ -229,10 +227,23 @@ def displayUI():
   elif currentSong is not None:
     song = setLists[ currentSet ].songList[ currentSong ]
 
+  '''
+  if song and showBy is not None:
+    showByParam = song.elements[ songParams [ showBy ] ]
+  '''
+
   print( "File:" + setListName )
   if song:
     print( "Song:\"" + song.songName.strip() + "\"", end="" )
-    # TBD. show metadata
+    if "artist" in song.elements:
+      if song.elements[ "artist" ]:
+        print( " by " + song.elements[ "artist" ], end="" )
+      if song.elements[ "key" ]:
+        print( " " + song.elements[ "key" ], end="" )
+      if song.elements[ "tempo" ]:
+        print( " " + song.elements[ "tempo" ] + "bpm", end="" )
+      if song.elements[ "year" ]:
+        print( " " + song.elements[ "year" ], end="" )
   print()
   if annotation:
     print( annotation )
@@ -610,15 +621,15 @@ def exportSet():
   f.close()
   statusString = "Export complete."
 
-# Song info generator stuff
-def getKey( item ):
-  return item.name
+# Song info editor functions
 
-def openSigJson():
-  global sigFileName, songLibrary
+# Additional song info not contained in the .txt file is saved as json.
+# Open the file and add the information to the song data
+def openSieJson():
+  global sieFileName, songLibrary
 
-  if os.path.isfile( sigFileName ):
-    with open( sigFileName ) as jFile:
+  if os.path.isfile( sieFileName ):
+    with open( sieFileName ) as jFile:
       dataDict = json.load( jFile )
 
       for s in songLibrary:
@@ -626,18 +637,18 @@ def openSigJson():
           s.elements = dataDict[ s.fileName ]
 
 def exportJsonDict(): # Save song meta data as json
-  global statusString, sigFileName
+  global statusString, sieFileName
 
   dataDict = {} # Copy the songInfoList into this dict of dicts and save. Will lose element order.
   for e in songLibrary:
     dataDict[ e.fileName ] = e.elements
 
-  with open( sigFileName, 'w' ) as f:
+  with open( sieFileName, 'w' ) as f:
     json.dump( dataDict, f )
 
   statusString = "Saved."
 
-def sigRangeCheck( param, newVal ):
+def sieRangeCheck( param, newVal ):
 
   if param == "tempo":
     try:
@@ -648,7 +659,7 @@ def sigRangeCheck( param, newVal ):
         t = 300
       newVal = str( t )
     except:
-      newVal = "---"
+      newVal = ""
   elif param == "year":
     try:
       t = int( newVal )
@@ -658,14 +669,14 @@ def sigRangeCheck( param, newVal ):
         t = 2100
       newVal = str( t )
     except:
-      newVal = "---"
+      newVal = ""
   elif param == "key":
     if len( newVal ) > 5:
       newVal = newVal[ 0 : 5 ]
 
   return newVal
 
-def sigDisplayUI():
+def sieDisplayUI():
   global statusString
 
   os.system( 'clear' )
@@ -687,12 +698,14 @@ def sigDisplayUI():
       for param in songParams:
         if param in songLibrary[ ix ].elements:
           tmpStr = songLibrary[ ix ].elements[ param ]
+          if tmpStr == None:
+            tmpStr = "---"
         else:
-          tmpStr = "?"
+          tmpStr = "???" # added a new param or possibly mangled JSON file
 
         if ix == cursorSong and songParams[ cursorParam ] == param:
           # tmpStr = bcolors.BOLD + tmpStr + bcolors.ENDC # highlight
-          tmpStr = '>' + tmpStr + '<' # highlight
+          tmpStr = '>' + tmpStr + '<'
         else:
           tmpStr = ' ' + tmpStr + ' '
 
@@ -707,11 +720,12 @@ def sigDisplayUI():
     print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
     statusString = None
 
-def sigMain():
-  global cursorSong, cursorParam, searchFor
+def sieMain():
+  global cursorSong, cursorParam, searchFor, statusString
 
+  sieEdited = False
   # Start of main loop.
-  sigDisplayUI()
+  sieDisplayUI()
   while True:
     ch = getInput()
 
@@ -745,12 +759,14 @@ def sigMain():
         cursorSong = 0
     elif ch == ' ': # Edit
       if cursorSong is not None:
+        sieEdited = True
         newVal = raw_input( 'Enter new value:' )
-        newVal = sigRangeCheck( songParams [ cursorParam ], newVal )
+        newVal = sieRangeCheck( songParams [ cursorParam ], newVal )
         if newVal == "":
-          newVal = "---"
+          newVal = None
         songLibrary[ cursorSong ].elements[ songParams [ cursorParam ] ] = newVal
     elif ch == 's':
+      sieEdited = False
       exportJsonDict()
     elif ch == '/' or ch == 'n':
       found = False
@@ -770,14 +786,16 @@ def sigMain():
         if not found:
           statusString = "Not Found."
     elif ch == '?':
-      print( sigHelpString )
+      print( sieHelpString )
       foo = getInput()
     elif ch == 'e':
+      if sieEdited:
+        statusString = "Song data not saved."
       return()
     elif ch == 'q':
       exit()
 
-    sigDisplayUI()
+    sieDisplayUI()
 
 # Start of main loop.
 songLibrary = getLocalSongs()
@@ -785,7 +803,7 @@ if len( songLibrary ) == 0:
   print( "No songs in local directory." )
   exit()
 
-openSigJson() # Open existing song data file if present
+openSieJson()
 
 displayUI()
 while True:
@@ -854,7 +872,7 @@ while True:
   elif ch == 'D':
     deleteSong()
   elif ch == 'e':
-    sigMain()
+    sieMain()
   elif ch == 'S': # Clone a set
     newSet = copy.deepcopy( setLists[ currentSet ] )
     setLists.insert( currentSet, newSet )
@@ -889,7 +907,19 @@ while True:
         currentSet = LIBRARY_SET
         break
       newLibIndex += 1
+  elif ch == '[':
+    if showBy is not None:
+      if showBy > 1:
+        showBy -= 1
+      else:
+        showBy = None
+  elif ch == ']':
+    if showBy is None:
+      showBy = 1
+    elif showBy < len( songParams ) - 1:
+      showBy += 1
   elif ch == '?':
+    os.system( 'clear' )
     print( helpString )
     foo = getInput()
   elif ch == 'q':
