@@ -606,7 +606,7 @@ def exportSet():
               songInfo += " " + s.elements[ songParams[ SP_LENGTH ] ]
 
             if songInfo != "":
-              f.write( "<i><font style=\"font-family:courier;\" size=\"2\">&nbsp" + songInfo + "</font></i><br><br>\n" )
+              f.write( "<i><font style=\"font-family:courier;\" size=\"1\">&nbsp" + songInfo + "</font></i><br><br>\n" )
 
           elif pf == "t!": # Toggle 'tab mode', use fixed font
             if tabMode == True:
