@@ -29,13 +29,16 @@ instrumentMap = \
   'Uke' :        { "t": ( "A", "E", "C", "G" ),           "f" : ( 0, 0, 0, 0 ) },
   'Stick' :      { "t": ( "D", "A", "E", "B", "F#", "C", "G", "D", "A", "E" ),
                    "f": ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) }, # Classic tuning
+  'Stick-4ths': { "t": ("C", "G", "D", "A", "E", "B", "E", "A", "D", "G", "C", "F" ),
+                  "f": ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) }, # Classic tuning
   'Banjo' :      { "t": ( "D", "B", "G", "D", "G" ),      "f" : ( 0, 0, 0, 0, 5 ) }
   }
 
-# pick the instruments you care about
-instruments = ( 'Guitar', 'Dropped D', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5StringBass', 'Stick' )
+# Pick the instruments you care about
+instruments = ( 'Guitar', 'Dropped D', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5StringBass',
+                'Stick', 'Stick-4ths' )
 
-intervals = { 0 : ( 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5', 'b6',  '6', 'b7', '7' ),
+intervals = { 0 : ( 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5',  'b6',  '6', 'b7', '7' ),
               1 : ( 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ) }
 
 # display with a #/b if that's how we'd display the major key.
@@ -46,32 +49,32 @@ bKeys          = ( 'F', 'Bb', 'Eb','Ab', 'Db' ) # keys to be displayed as having
 
 # spellingMap is a dictionary of names for the spelling and a tuple of intervals members.
 # if you add an entry, also add it to spellings tuple below.
-spellingMap = { "major" :  ( 'R',  '3',  '5' ),
-                "minor" :  ( 'R', 'b3',  '5' ),
-                "sus2" :   ( 'R',  '2',  '5' ),
-                "sus4" :   ( 'R',  '4',  '5' ),
-                "6" :      ( 'R',  '3',  '5',  '6' ),
-                "m6" :     ( 'R', 'b3',  '5',  '6' ),
-                "7" :      ( 'R',  '3',  '5', 'b7' ),
-                "m7" :     ( 'R', 'b3',  '5', 'b7' ),
-                "M7" :     ( 'R',  '3',  '5',  '7' ),
-                "9" :      ( 'R',  '3',  '5', 'b7',  '9' ),
-                "m9" :     ( 'R', 'b3',  '5', 'b7',  '9' ),
-                "M9" :     ( 'R',  '3',  '5',  '7',  '9' ),
-                "11" :     ( 'R',  '3',  '5', 'b7',  '9', '11' ),
-                "m11" :    ( 'R', 'b3',  '5', 'b7',  '9', '11' ),
-                "M11" :    ( 'R',  '3',  '5',  '7',  '9', '11' ),
-                "13" :     ( 'R',  '3',  '5', 'b7',  '9', '11', '13' ),
-                "m13" :    ( 'R', 'b3',  '5', 'b7',  '9', '11', '13' ),
-                "M13" :    ( 'R',  '3',  '5',  '7',  '9', '11', '13' ),
-                "dim" :    ( 'R', 'b3', 'b5',  '6' ),
-                "m7-5" :   ( 'R', 'b3', 'b5',  'b7' ),
-                "Maj-Key" :( 'R',  '2',  '3',  '4',  '5',  '6',  '7' ),
-                "Min-Key" :( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
-                "Pent-Min" :  ( 'R', 'b3',  '4',  '5', 'b7' ),
-                "Pent-Maj" :  ( 'R',  '2',  '3',  '5',  '6' ),
-                "mBlues" : ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
-                "MBlues" : ( 'R',  '2', 'b3',  '3',  '5',  '6' ) }
+spellingMap = { "major" :    ( 'R',  '3',  '5' ),
+                "minor" :    ( 'R', 'b3',  '5' ),
+                "sus2" :     ( 'R',  '2',  '5' ),
+                "sus4" :     ( 'R',  '4',  '5' ),
+                "6" :        ( 'R',  '3',  '5',  '6' ),
+                "m6" :       ( 'R', 'b3',  '5',  '6' ),
+                "7" :        ( 'R',  '3',  '5', 'b7' ),
+                "m7" :       ( 'R', 'b3',  '5', 'b7' ),
+                "M7" :       ( 'R',  '3',  '5',  '7' ),
+                "9" :        ( 'R',  '3',  '5', 'b7',  '9' ),
+                "m9" :       ( 'R', 'b3',  '5', 'b7',  '9' ),
+                "M9" :       ( 'R',  '3',  '5',  '7',  '9' ),
+                "11" :       ( 'R',  '3',  '5', 'b7',  '9', '11' ),
+                "m11" :      ( 'R', 'b3',  '5', 'b7',  '9', '11' ),
+                "M11" :      ( 'R',  '3',  '5',  '7',  '9', '11' ),
+                "13" :       ( 'R',  '3',  '5', 'b7',  '9', '11', '13' ),
+                "m13" :      ( 'R', 'b3',  '5', 'b7',  '9', '11', '13' ),
+                "M13" :      ( 'R',  '3',  '5',  '7',  '9', '11', '13' ),
+                "dim" :      ( 'R', 'b3', 'b5',  '6' ),
+                "m7-5" :     ( 'R', 'b3', 'b5',  'b7' ),
+                "Maj-Key" :  ( 'R',  '2',  '3',  '4',  '5',  '6',  '7' ),
+                "Min-Key" :  ( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
+                "Pent-Min" : ( 'R', 'b3',  '4',  '5', 'b7' ),
+                "Pent-Maj" : ( 'R',  '2',  '3',  '5',  '6' ),
+                "mBlues" :   ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
+                "MBlues" :   ( 'R',  '2', 'b3',  '3',  '5',  '6' ) }
 
 # pick the spellings you care about
 spellings = ( 'major', 'minor', 'sus2',  'sus4', '6', 'm6',
@@ -94,9 +97,7 @@ def showWithSharps( key, spelling ):
 
   def relMajor( key ):
     # input is a minor key, returns the relative major key
-    index = dispKeyList.index( key )
-    index += 3
-    index %= 12
+    index = ( dispKeyList.index( key ) + 3 ) % 12
     key = dispKeyList[ index ]
     return key
 
@@ -109,10 +110,7 @@ def showWithSharps( key, spelling ):
   return key not in bKeys
 
 def calcNote( root, fret ):
-  rootNum = dispKeyList.index( root )
-  rootNum += fret
-  rootNum %= 12
-
+  rootNum = ( dispKeyList.index( root ) + fret ) % 12
   return dispKeyList[ rootNum ]
 
 def calcInterval( note, key ):
@@ -149,27 +147,27 @@ def generateFretboard( inst, key, spelling ):
   strings are keyed by string number (1 - N) and contain a list of dictionaries for each fret
   There are also some other 'global' kinda things.. numStrings, instrument, etc.
 
-  TBD: This should be removed. There is no reason to generate the fretboard in advance,
+  This could be removed. There is no reason to generate the fretboard in advance,
   just generate frets on the fly while displaying.
   '''
 
   strings = instrumentMap[ inst ][ 't' ]
 
-  fretBoard = { 'numStrings' : len ( strings ),
+  fretBoard = { 'numStrings' : len( strings ),
                 'instrument' : inst,
                 'spelling'   : spelling,
                 'fretOffset' : instrumentMap[ inst ][ 'f' ] }
 
-  for string in range ( 1, len ( strings ) + 1 ):
+  for string in range( 1, len( strings ) + 1 ):
     stringList = []
     rootNote = strings[ string - 1 ]
     offset = instrumentMap[ inst ][ 'f' ][ string - 1 ]
 
-    for fret in range ( offset, num_frets + 1 ):
+    for fret in range( offset, num_frets + 1 ):
       fretInfo = fretInfoGen( rootNote, fret, offset, key, spelling )
       stringList.append( fretInfo )
 
-    fretBoard [string] = stringList
+    fretBoard[ string ] = stringList
 
   return fretBoard
 
@@ -191,7 +189,7 @@ class runGui():
           if fretboard[ 'fretOffset' ][ stringNum - 1 ] == fret[ 'fret' ]:
             fretChar = u'\u258c' + u'\u2015'
           else:
-            fretChar =  "|" # u'\u2502'
+            fretChar = "|" # u'\u2502'
 
           d = True
           if fret[ 'interval' ] in extIntervals and stringNum > ( numStrings / 2 ):
@@ -205,16 +203,20 @@ class runGui():
               value += "-"
             dispLine += "%s%s" % ( value, fretChar )
           else:
-            dispLine += u'\u2015'+ u'\u2015'+ "%s" % fretChar
+            dispLine += u'\u2015' + u'\u2015' + "%s" % fretChar
 
         s = Label( frame, text=dispLine, font=dFont )
         s.pack( side=TOP, pady=0 )
+
+        if( ( stringNum == 5 and self.instrument == instruments[ 7 ] ) or
+            ( stringNum == 6 and self.instrument == instruments[ 8 ] ) ):
+          s = Label( frame, text="", font=dFont )
+          s.pack( side=TOP, pady=0 )
 
     for widget in frame.winfo_children():
       widget.destroy()
 
     fretboard = generateFretboard( self.instrument, self.key, self.spelling )
-
     numStrings = fretboard[ 'numStrings' ]
 
     dispLine = " "
@@ -227,7 +229,7 @@ class runGui():
     s.pack( side=TOP )
 
     generateFB( 'note' )
-    s = Label( frame, text="---" )
+    s = Label( frame, text="-------------------------------------------" )
     s.pack( side=TOP )
     generateFB( 'interval' )
 
@@ -249,7 +251,6 @@ class runGui():
 
   def fretNumToggle( self ):
     global num_frets
-
     num_frets = 15 if num_frets == 24 else 24
     self.displayFretboards( self.fretboardFrame )
 
@@ -283,7 +284,7 @@ class runGui():
     self.spelMenu = OptionMenu( self.mainFrame, self.spellingVar, *spellings )
     self.spelMenu.pack( side=LEFT )
 
-    self.fn = Button( self.mainFrame, text="Notes", font=disFont[ 1 ], command=self.fnToggle )
+    self.fn = Button( self.mainFrame, text="Notes/Frets", font=disFont[ 1 ], command=self.fnToggle )
     self.fn.pack( side=LEFT )
 
     self.fn = Button( self.mainFrame, text="15/24", font=disFont[ 1 ], command=self.fretNumToggle )
