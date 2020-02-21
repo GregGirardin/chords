@@ -13,6 +13,9 @@ class bcolors:
   ENDC      = '\033[0m'
 
 DEFAULT_SETLIST_NAME = "setList"
+
+# These are additional song/lyric data that we store separately so
+# The user doesn't have to put them in the lyric file.
 songParams = ( "Artist", "Key", "Tempo", "Year", "Genre", "Length" )
 SP_ARTIST = 0
 SP_KEY = 1
@@ -23,7 +26,7 @@ SP_LENGTH = 5
 
 helpString = bcolors.WARNING + \
             "Commands:\n" \
-            "hjkl  - Navigate (or use arrows).\n" \
+            "hjkl  - Navigate.\n" \
             "df    - Back/forward multiple.\n" \
             "aA    - Add/delete a set.\n" \
             "os    - Open/save.\n" \
@@ -33,17 +36,18 @@ helpString = bcolors.WARNING + \
             "D     - Remove song from setlist.\n" \
             "x     - Export setlist.\n" \
             "t     - Annotation.\n" \
-            "e     - Edit song data.\n" \
             "~1234 - Go to library/set.\n" \
             "H     - Toggle highlight.\n" \
             "S     - Clone set.\n" \
-            "[]    - Show song by attribute.\n" \
+            "e     - Edit song data.\n" \
+            "[]    - Show song by File/Artist/Key/etc.\n" \
             "/     - Search.\n" \
             "q     - Quit." + bcolors.ENDC
 
 sieHelpString = bcolors.WARNING + \
                 "Commands:\n" \
                 "space - Edit value\n" \
+                "df    - Back/forward multiple.\n" \
                 "s     - Save song data.\n" \
                 "e     - Exit to set list editor.\n" \
                 "/     - Search for song.\n" \
@@ -85,7 +89,7 @@ annotation = None
 showBy = None
 
 SONG_COLUMNS = 4
-LIBRARY_ROWS = 10
+LIBRARY_ROWS = 8
 MAX_SETS = 8
 
 # Song Info Editor
@@ -687,27 +691,27 @@ def exportJsonDict(): # Save song meta data as json
 
 def sieRangeCheck( param, newVal ):
 
-  if param == "tempo":
+  if param == songParams[ SP_TEMPO ]:
     try:
       t = int( newVal )
-      if t < 10:
-        t = 10
-      elif t > 300:
-        t = 300
+      if t < 1:
+        t = 1
+      elif t > 999:
+        t = 999
       newVal = str( t )
     except:
       newVal = ""
-  elif param == "year":
+  elif param == songParams[ SP_YEAR ]:
     try:
       t = int( newVal )
-      if t < 1500:
-        t = 1500
+      if t < 1:
+        t = 1
       elif t > 2100:
         t = 2100
       newVal = str( t )
     except:
       newVal = ""
-  elif param == "key":
+  elif param == songParams[ SP_KEY ]:
     if len( newVal ) > 5:
       newVal = newVal[ 0 : 5 ]
 
@@ -718,9 +722,9 @@ def sieDisplayUI():
 
   os.system( 'clear' )
   print( "Additional song data." )
-  print( "-------------------- ------------------ ------- ----- ------ -------- ------" )
-  print( "File                 Artist             Key     Tempo Year   Genre    Length" )
-  print( "-------------------- ------------------ ------- ----- ------ -------- ------" )
+  print( "-------------------- ------------------ ------- ----- ------ ----------- --------" )
+  print( "File                 Artist             Key     Tempo Year   Genre       Length" )
+  print( "-------------------- ------------------ ------- ----- ------ ----------- --------" )
 
   first = cursorSong - 10
   if first < 0:
@@ -747,15 +751,20 @@ def sieDisplayUI():
 
         di[ param ] = tmpStr
 
-    print( "%-20s %-18s %-7s %-5s %-6s %-8s %-6s" % ( songLibrary[ ix ].fileName.split( "." )[ 0 ][ 0 : 19 ],
-           di[ songParams[ SP_ARTIST ] ][ 0 : 18 ],
-           di[ songParams[ SP_KEY ] ][ 0 : 7 ],
-           di[ songParams[ SP_TEMPO ] ],
-           di[ songParams[ SP_YEAR ] ],
-           di[ songParams[ SP_GENRE ] ][0 : 8 ],
-           di[ songParams[ SP_LENGTH ][ 0 : 6 ] ] ) )
+    if ix == cursorSong:
+      print( bcolors.BOLD, end="" )
+    print( "%-20s " % ( songLibrary[ ix ].fileName.split( "." )[ 0 ][ 0 : 19 ] ), end="" )
+    if ix == cursorSong:
+      print( bcolors.ENDC, end="" )
 
-  print( "----------------------------------------------------------------------------" )
+    print( "%-18s %-7s %-5s %-6s %-11s %-7s" % ( di[ songParams[ SP_ARTIST ] ][ 0 : 18 ],
+                                                 di[ songParams[ SP_KEY ] ][ 0 : 7 ],
+                                                 di[ songParams[ SP_TEMPO ] ][ 0 : 5],
+                                                 di[ songParams[ SP_YEAR ] ],
+                                                 di[ songParams[ SP_GENRE ] ][0 : 11 ],
+                                                 di[ songParams[ SP_LENGTH ] ][ 0 : 8 ] ) )
+
+  print( "--------------------------------------------------------------------------------" )
 
   if statusString:
     print( "\n" + bcolors.WARNING + statusString + bcolors.ENDC )
