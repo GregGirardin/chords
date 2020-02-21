@@ -1,4 +1,4 @@
-Python music utilities. See Readme.odt for documentation.
+Python music utilities. See Readme.pdf for documentation.
 
 1.  chords.py - A python fretboard display utility. Uses tkinter.
 

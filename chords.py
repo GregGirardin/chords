@@ -27,17 +27,16 @@ instrumentMap = \
   'Bass' :       { "t": ( "G", "D", "A", "E" ),           "f" : ( 0, 0, 0, 0 ) },
   '5StringBass' :{ "t": ( "G", "D", "A", "E", "B" ),      "f" : ( 0, 0, 0, 0, 0 ) },
   'Uke' :        { "t": ( "A", "E", "C", "G" ),           "f" : ( 0, 0, 0, 0 ) },
+  'Stick' :      { "t": ( "D", "A", "E", "B", "F#", "C", "G", "D", "A", "E" ),
+                   "f": ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) }, # Classic tuning
   'Banjo' :      { "t": ( "D", "B", "G", "D", "G" ),      "f" : ( 0, 0, 0, 0, 5 ) }
   }
 
 # pick the instruments you care about
-instruments = ( 'Guitar', 'Dropped D', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5StringBass' )
+instruments = ( 'Guitar', 'Dropped D', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5StringBass', 'Stick' )
 
-intervals = \
-  {
-  0 : ( 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5', 'b6',  '6', 'b7', '7' ),
-  1 : ( 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' )
-  }
+intervals = { 0 : ( 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5', 'b6',  '6', 'b7', '7' ),
+              1 : ( 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ) }
 
 # display with a #/b if that's how we'd display the major key.
 dispKeyList    = ( 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B' )
@@ -47,35 +46,32 @@ bKeys          = ( 'F', 'Bb', 'Eb','Ab', 'Db' ) # keys to be displayed as having
 
 # spellingMap is a dictionary of names for the spelling and a tuple of intervals members.
 # if you add an entry, also add it to spellings tuple below.
-spellingMap = \
-  {
-  "major" :  ( 'R',  '3',  '5' ),
-  "minor" :  ( 'R', 'b3',  '5' ),
-  "sus2" :   ( 'R',  '2',  '5' ),
-  "sus4" :   ( 'R',  '4',  '5' ),
-  "6" :      ( 'R',  '3',  '5',  '6' ),
-  "m6" :     ( 'R', 'b3',  '5',  '6' ),
-  "7" :      ( 'R',  '3',  '5', 'b7' ),
-  "m7" :     ( 'R', 'b3',  '5', 'b7' ),
-  "M7" :     ( 'R',  '3',  '5',  '7' ),
-  "9" :      ( 'R',  '3',  '5', 'b7',  '9' ),
-  "m9" :     ( 'R', 'b3',  '5', 'b7',  '9' ),
-  "M9" :     ( 'R',  '3',  '5',  '7',  '9' ),
-  "11" :     ( 'R',  '3',  '5', 'b7',  '9', '11' ),
-  "m11" :    ( 'R', 'b3',  '5', 'b7',  '9', '11' ),
-  "M11" :    ( 'R',  '3',  '5',  '7',  '9', '11' ),
-  "13" :     ( 'R',  '3',  '5', 'b7',  '9', '11', '13' ),
-  "m13" :    ( 'R', 'b3',  '5', 'b7',  '9', '11', '13' ),
-  "M13" :    ( 'R',  '3',  '5',  '7',  '9', '11', '13' ),
-  "dim" :    ( 'R', 'b3', 'b5',  '6' ),
-  "m7-5" :   ( 'R', 'b3', 'b5',  'b7' ),
-  "Maj-Key" :( 'R',  '2',  '3',  '4',  '5',  '6',  '7' ),
-  "Min-Key" :( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
-  "Pent-Min" :  ( 'R', 'b3',  '4',  '5', 'b7' ),
-  "Pent-Maj" :  ( 'R',  '2',  '3',  '5',  '6' ),
-  "mBlues" : ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
-  "MBlues" : ( 'R',  '2', 'b3',  '3',  '5',  '6' )
-  }
+spellingMap = { "major" :  ( 'R',  '3',  '5' ),
+                "minor" :  ( 'R', 'b3',  '5' ),
+                "sus2" :   ( 'R',  '2',  '5' ),
+                "sus4" :   ( 'R',  '4',  '5' ),
+                "6" :      ( 'R',  '3',  '5',  '6' ),
+                "m6" :     ( 'R', 'b3',  '5',  '6' ),
+                "7" :      ( 'R',  '3',  '5', 'b7' ),
+                "m7" :     ( 'R', 'b3',  '5', 'b7' ),
+                "M7" :     ( 'R',  '3',  '5',  '7' ),
+                "9" :      ( 'R',  '3',  '5', 'b7',  '9' ),
+                "m9" :     ( 'R', 'b3',  '5', 'b7',  '9' ),
+                "M9" :     ( 'R',  '3',  '5',  '7',  '9' ),
+                "11" :     ( 'R',  '3',  '5', 'b7',  '9', '11' ),
+                "m11" :    ( 'R', 'b3',  '5', 'b7',  '9', '11' ),
+                "M11" :    ( 'R',  '3',  '5',  '7',  '9', '11' ),
+                "13" :     ( 'R',  '3',  '5', 'b7',  '9', '11', '13' ),
+                "m13" :    ( 'R', 'b3',  '5', 'b7',  '9', '11', '13' ),
+                "M13" :    ( 'R',  '3',  '5',  '7',  '9', '11', '13' ),
+                "dim" :    ( 'R', 'b3', 'b5',  '6' ),
+                "m7-5" :   ( 'R', 'b3', 'b5',  'b7' ),
+                "Maj-Key" :( 'R',  '2',  '3',  '4',  '5',  '6',  '7' ),
+                "Min-Key" :( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
+                "Pent-Min" :  ( 'R', 'b3',  '4',  '5', 'b7' ),
+                "Pent-Maj" :  ( 'R',  '2',  '3',  '5',  '6' ),
+                "mBlues" : ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
+                "MBlues" : ( 'R',  '2', 'b3',  '3',  '5',  '6' ) }
 
 # pick the spellings you care about
 spellings = ( 'major', 'minor', 'sus2',  'sus4', '6', 'm6',
@@ -88,7 +84,7 @@ spellings = ( 'major', 'minor', 'sus2',  'sus4', '6', 'm6',
 extChords = ( '9', 'm9', 'M9','11', 'm11', 'M11', '13', 'm13', 'M13' )
 extIntervals = ( '9', '11', '13' )
 minorSpellings = ( 'm', 'm7', 'm9', 'm11', 'm13', 'm-Key' )
-NUM_FRETS = 15
+num_frets = 15
 
 disFont = { 0 : ( "TkFixedFont", 18, "bold italic" ),
             1 : ( "TkFixedFont", 14, "" ) }
@@ -135,22 +131,14 @@ def fretInfoGen( root, fret, fretOffset, key, spelling ):
   '''
   assert fret >= fretOffset, "Fret below fret offset."
 
-  fretInfo = {
-               'root' : root,
-               'fret' : fret,
-               'note' : calcNote( root, fret - fretOffset )
-             }
+  fretInfo = { 'root' : root, 'fret' : fret, 'note' : calcNote( root, fret - fretOffset ) }
   interval = calcInterval( fretInfo ['note'], key )
   x = 1 if spelling in extChords else 0
   fretInfo[ 'interval' ] = intervals[ x ][ interval ]
   fretInfo[ 'inSpelling' ] = intervals[ x ][ interval ] in spellingMap[ spelling ]
 
   # convert note for display
-  if showWithSharps( key, spelling ):
-    curKeyList = keyListSharps
-  else:
-    curKeyList = keyListFlats
-
+  curKeyList = keyListSharps if showWithSharps( key, spelling ) else keyListFlats
   fretInfo[ 'note' ] = curKeyList[ dispKeyList.index( fretInfo[ 'note' ] ) ]
 
   return fretInfo
@@ -167,19 +155,17 @@ def generateFretboard( inst, key, spelling ):
 
   strings = instrumentMap[ inst ][ 't' ]
 
-  fretBoard = {
-                'numStrings' : len ( strings ),
+  fretBoard = { 'numStrings' : len ( strings ),
                 'instrument' : inst,
                 'spelling'   : spelling,
-                'fretOffset' : instrumentMap[ inst ][ 'f' ]
-              }
+                'fretOffset' : instrumentMap[ inst ][ 'f' ] }
 
   for string in range ( 1, len ( strings ) + 1 ):
     stringList = []
     rootNote = strings[ string - 1 ]
     offset = instrumentMap[ inst ][ 'f' ][ string - 1 ]
 
-    for fret in range ( offset, NUM_FRETS + 1 ):
+    for fret in range ( offset, num_frets + 1 ):
       fretInfo = fretInfoGen( rootNote, fret, offset, key, spelling )
       stringList.append( fretInfo )
 
@@ -187,133 +173,10 @@ def generateFretboard( inst, key, spelling ):
 
   return fretBoard
 
-def displayFretboard( fretboard, interval = False ):
-  numStrings = fretboard[ 'numStrings' ]
-
-  print( "\n  ", end = "" )
-  for fret in range ( 0, NUM_FRETS + 1 ):
-    print( "%2s   " % fret, end = "" )
-    if fret == 9: # formatting hack
-      print( " ", end="" )
-
-  print()
-  for stringNum in range( 1, numStrings + 1 ):
-    string = fretboard[ stringNum ]
-
-    print( string[ 0 ][ 'note' ], " ", end = "", sep = "" )
-    print( "     " * fretboard[ 'fretOffset' ][ stringNum - 1 ], end = "" )
-
-    for fret in string:
-      if fretboard[ 'fretOffset' ][ stringNum - 1 ] == fret[ 'fret' ]:
-        fretChar = "x"
-      else:
-        fretChar = "|"
-
-      if fret[ 'inSpelling' ]:
-        if interval:
-          value = fret[ 'interval' ]
-        else:
-          value = fret[ 'note' ]
-
-        if len( value ) == 1:
-          value += "-"
-
-        print( "-%s-%s" % ( value, fretChar ), end = "", sep='' )
-      else:
-        print( "----%s" % fretChar, end = "" )
-    print ()
-
-def displayInfo( instrument, key, spelling ):
-  os.system( 'clear' )
-
-  fretboard = generateFretboard( instrument, key, spelling )
-
-  print( fretboard[ 'instrument' ], key, fretboard[ 'spelling' ] )
-  displayFretboard( fretboard )
-  displayFretboard( fretboard, True )
-  print ()
-
-  # help
-  print( "i : Instruments: ", end="" )
-  for inst in instruments:
-    print( inst, "", end = "" )
-  print()
-  print( "mr7[] : Spellings: ", end="" )
-  for spel in spellings:
-    print( spel, "", end="" )
-  print()
-  print( "a..g -= : Key" )
-  print( "q : quit" )
-
-def getInput():
-  """
-  Copied from http://stackoverflow.com/questions/983354/how-do-i-make-python-to-wait-for-a-pressed-key
-  """
-  import termios, fcntl, sys, os
-  fd = sys.stdin.fileno()
-  flags_save = fcntl.fcntl( fd, fcntl.F_GETFL )
-  attrs_save = termios.tcgetattr( fd )
-  attrs = list( attrs_save )
-  attrs[ 0 ] &= ~(termios.IGNBRK | termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
-                  termios.IGNCR | termios.ICRNL | termios.IXON )
-  attrs[ 1 ] &= ~termios.OPOST
-  attrs[ 2 ] &= ~(termios.CSIZE | termios.PARENB)
-  attrs[ 2 ] |= termios.CS8
-  attrs[ 3 ] &= ~(termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN )
-  termios.tcsetattr( fd, termios.TCSANOW, attrs)
-  fcntl.fcntl( fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK )
-  try:
-    ret = sys.stdin.read( 1 )
-  except KeyboardInterrupt:
-    ret = 0
-  finally:
-    termios.tcsetattr( fd, termios.TCSAFLUSH, attrs_save )
-    fcntl.fcntl( fd, fcntl.F_SETFL, flags_save )
-  return ret
-
-def runCli():
-  keyIx = 0
-  instrumentIx = 0
-  spellingIx = 0
-
-  while True:
-    displayInfo( instruments[ instrumentIx ], dispKeyList[ keyIx ], spellings[ spellingIx ] )
-
-    ch = getInput ()
-    if ch == 'q':
-      exit()
-    elif ch == 'i':
-      instrumentIx += 1
-      instrumentIx %= len( instruments )
-    elif ch == ']':
-      spellingIx += 1
-      spellingIx %= len( spellings )
-    elif ch == '[':
-      if spellingIx > 0:
-        spellingIx -= 1
-      else:
-        spellingIx = len( spellings ) - 1
-    elif ch == '=':
-      keyIx += 1
-      keyIx %= len( dispKeyList )
-    elif ch == '-':
-      if ( keyIx > 0 ):
-        keyIx -= 1
-      else:
-        keyIx = len( dispKeyList ) - 1
-    elif ch == 'm':
-      spellingIx = spellings.index( 'M-Key' )
-    elif ch == 'r':
-      spellingIx = spellings.index( 'm-Key' )
-    elif ch == '7':
-      spellingIx = spellings.index( '7' )
-    elif ch.upper() in dispKeyList:
-      keyIx = dispKeyList.index( ch.upper() )
-
 class runGui():
 
   def displayFretboards( self, frame ):
-    dFont = tkFont.Font( family = 'Courier', size = 16 )
+    dFont = tkFont.Font( family='Courier', size=16 )
 
     def generateFB( dispKey ):
       for stringNum in range( 1, numStrings + 1 ):
@@ -336,9 +199,9 @@ class runGui():
 
           if fret[ 'inSpelling' ] and d:
             value = fret[ dispKey ]
-            if ( dispKey == 'note' and self.fretsNotes ) or value == 'R':
+            if( dispKey == 'note' and self.fretsNotes ) or value == 'R':
               value = u'\u25cf'
-            if len ( value ) == 1:
+            if len( value ) == 1:
               value += "-"
             dispLine += "%s%s" % ( value, fretChar )
           else:
@@ -355,7 +218,7 @@ class runGui():
     numStrings = fretboard[ 'numStrings' ]
 
     dispLine = " "
-    for fret in range ( 0, NUM_FRETS + 1 ):
+    for fret in range( 0, num_frets + 1 ):
       dispLine += ( " %2s" % fret )
       if fret == 0:
         dispLine += " "
@@ -364,7 +227,7 @@ class runGui():
     s.pack( side=TOP )
 
     generateFB( 'note' )
-    s = Label( frame, text="---" ) # ---
+    s = Label( frame, text="---" )
     s.pack( side=TOP )
     generateFB( 'interval' )
 
@@ -382,6 +245,12 @@ class runGui():
 
   def fnToggle( self ):
     self.fretsNotes = not self.fretsNotes
+    self.displayFretboards( self.fretboardFrame )
+
+  def fretNumToggle( self ):
+    global num_frets
+
+    num_frets = 15 if num_frets == 24 else 24
     self.displayFretboards( self.fretboardFrame )
 
   def __init__( self ):
@@ -414,19 +283,18 @@ class runGui():
     self.spelMenu = OptionMenu( self.mainFrame, self.spellingVar, *spellings )
     self.spelMenu.pack( side=LEFT )
 
-    self.fn = Button( self.mainFrame, text="Frets/Notes", font=disFont[ 1 ], command=self.fnToggle )
+    self.fn = Button( self.mainFrame, text="Notes", font=disFont[ 1 ], command=self.fnToggle )
+    self.fn.pack( side=LEFT )
+
+    self.fn = Button( self.mainFrame, text="15/24", font=disFont[ 1 ], command=self.fretNumToggle )
     self.fn.pack( side=LEFT )
 
     self.fretsFrame = Frame( root )
     self.fretboardFrame = Frame( root )
     self.fretsFrame.pack( side=TOP )
     self.fretboardFrame.pack( side=TOP )
-
     self.displayFretboards( self.fretboardFrame )
 
     root.mainloop()
 
-if 'c' in sys.argv:
-  runCli()
-else:
-  runGui()
+runGui()
