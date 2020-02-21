@@ -403,6 +403,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
         curOff[ 0 ] += 1
       else:
         repeat = m.repeat
+
         annotate( m, headerLines, ANN_IX, curOff, False )
         curBeatNum = 1
         for b in m.get():
@@ -778,7 +779,7 @@ while True:
   elif ch == 'R': # toggle repeat
     m = currentSong.get( cursorMeasure )
     if m:
-      m.repeat = False if m.repeat == True else False
+      m.repeat = False if m.repeat == True else True
   elif ch == 'd': # delete beat.
     m = currentSong.get( cursorMeasure )
     if currentSong.count() > 1 or m.count() > 1:
