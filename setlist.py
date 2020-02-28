@@ -11,6 +11,7 @@ class bcolors:
   UNDERLINE = '\033[4m'
   REVERSE   = '\033[7m'
   ENDC      = '\033[0m'
+  ENDC      = '\033[0m'
 
 DEFAULT_SETLIST_NAME = "setList"
 
@@ -317,7 +318,7 @@ def displayUI():
       if showBy is None:
         songString = s.fileName[ : -4 ]
         if s.medley:
-          songString +=  " ->"
+          songString += " " + u"\u2192" # right arrow
         print( "%-24s" % ( songString ), end="" )
 
       else:
@@ -574,7 +575,7 @@ def exportSet():
            "}\n"
            ".selectNext\n"
            "{\n"
-           "  background-color: #fdd;\n"
+           "  background-color: #fee;\n"
            "  color: #444;\n"
            "  cursor: pointer;\n"
            "  padding: 10px;\n"
@@ -614,10 +615,10 @@ def exportSet():
             songText = line.rstrip()
 
             if s.medley:
-              songText += " ->"
+              songText += "&#8595;" # down arrow
 
             if s.highLight == HIGHLIGHT_ON:
-              f.write( "%s) <font color=\"red\">%s</font></button> \n" % ( songNumber, songText ) )
+              f.write( "%s) <font color=\"red\">%s</font></button>\n" % ( songNumber, songText ) )
             else:
               f.write( "%s) %s</button>\n" % ( songNumber, songText ) )
             f.write( "<div class=\"panel\">\n" )
@@ -668,7 +669,7 @@ def exportSet():
         print( "Exception.." )
         exit()
       if s.medley:
-        f.write( "<i>---> Medley</i>\n" )
+        f.write( "<font size = 5>&#8595;</font>" ) # Big down arrow
       f.write( "</div>\n" )
       songNumber += 1
     setNumber += 1
