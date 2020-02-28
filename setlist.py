@@ -40,10 +40,10 @@ helpString = bcolors.WARNING + \
   "H     - Toggle highlight.\n" \
   "S     - Clone set.\n" \
   "e     - Edit song data.\n" \
+  "y     - Medley.\n" \
   "[]    - Show song by File/Artist/Key/etc.\n" \
   "/     - Search.\n" \
   "q     - Quit." + bcolors.ENDC
-# "y     - Medley.\n" \
 
 sieHelpString = bcolors.WARNING + \
   "Commands:\n" \
@@ -610,10 +610,16 @@ def exportSet():
           pf = line[ : 2 ] # prefix
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
+
+            songText = line.rstrip()
+
+            if s.medley:
+              songText += " ->"
+
             if s.highLight == HIGHLIGHT_ON:
-              f.write( "%s) <font color=\"red\">%s</font></button> \n" % ( songNumber, line.rstrip() ) )
+              f.write( "%s) <font color=\"red\">%s</font></button> \n" % ( songNumber, songText ) )
             else:
-              f.write( "%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
+              f.write( "%s) %s</button>\n" % ( songNumber, songText ) )
             f.write( "<div class=\"panel\">\n" )
 
             # Add song meta data if present (artist / key / tempo / year)
@@ -661,6 +667,8 @@ def exportSet():
       except:
         print( "Exception.." )
         exit()
+      if s.medley:
+        f.write( "<i>---> Medley</i>\n" )
       f.write( "</div>\n" )
       songNumber += 1
     setNumber += 1
@@ -684,7 +692,7 @@ def exportSet():
           "\n"
            "function openSong( elem )\n"
            "{\n"
-           "  elem.classList.toggle(\"active\");\n"
+           "  elem.classList.add(\"active\");\n"
            "  var panel = elem.nextElementSibling;\n"
            "  panel.style.display = \"block\";\n"
            "}\n"
@@ -997,12 +1005,12 @@ while True:
       s.highLight = HIGHLIGHT_ON if s.highLight == HIGHLIGHT_NONE else HIGHLIGHT_NONE
     else:
       statusString = "In Library."
-  #elif ch == 'y':
-  #  if currentSet != LIBRARY_SET:
-  #    s = setLists[ currentSet ].songList[ currentSong ]
-  #    s.medley = True if s.medley == False else False
-  #  else:
-  #    statusString = "In Library."
+  elif ch == 'y':
+    if currentSet != LIBRARY_SET:
+      s = setLists[ currentSet ].songList[ currentSong ]
+      s.medley = True if s.medley == False else False
+    else:
+      statusString = "In Library."
   elif ch == 't':
     annotation = raw_input( 'Enter annotation:' )
     if annotation == "":
