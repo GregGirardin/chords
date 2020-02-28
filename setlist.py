@@ -25,34 +25,35 @@ SP_GENRE = 4
 SP_LENGTH = 5
 
 helpString = bcolors.WARNING + \
-            "Commands:\n" \
-            "hjkl  - Navigate.\n" \
-            "df    - Back/forward multiple.\n" \
-            "aA    - Add/delete a set.\n" \
-            "os    - Open/save.\n" \
-            "mM    - Move song/set.\n" \
-            "nN    - Name the set/list.\n" \
-            "cCp   - Copy to/Clear/Paste Clipboard.\n" \
-            "D     - Remove song from setlist.\n" \
-            "x     - Export setlist.\n" \
-            "t     - Annotation.\n" \
-            "~1234 - Go to library/set.\n" \
-            "H     - Toggle highlight.\n" \
-            "S     - Clone set.\n" \
-            "e     - Edit song data.\n" \
-            "[]    - Show song by File/Artist/Key/etc.\n" \
-            "/     - Search.\n" \
-            "q     - Quit." + bcolors.ENDC
+  "Commands:\n" \
+  "hjkl  - Navigate.\n" \
+  "df    - Back/forward multiple.\n" \
+  "aA    - Add/delete a set.\n" \
+  "os    - Open/save.\n" \
+  "mM    - Move song/set.\n" \
+  "nN    - Name the set/list.\n" \
+  "cCp   - Copy to/Clear/Paste Clipboard.\n" \
+  "D     - Remove song from setlist.\n" \
+  "x     - Export setlist.\n" \
+  "t     - Annotation.\n" \
+  "~1234 - Go to library/set.\n" \
+  "H     - Toggle highlight.\n" \
+  "S     - Clone set.\n" \
+  "e     - Edit song data.\n" \
+  "[]    - Show song by File/Artist/Key/etc.\n" \
+  "/     - Search.\n" \
+  "q     - Quit." + bcolors.ENDC
+# "y     - Medley.\n" \
 
 sieHelpString = bcolors.WARNING + \
-                "Commands:\n" \
-                "space - Edit value\n" \
-                "df    - Back/forward multiple.\n" \
-                "s     - Save song data.\n" \
-                "e     - Exit to set list editor.\n" \
-                "/     - Search for song.\n" \
-                "n     - Next occurrence of search.\n" \
-                "q     - Quit." + bcolors.ENDC
+  "Commands:\n" \
+  "space - Edit value\n" \
+  "df    - Back/forward multiple.\n" \
+  "s     - Save song data.\n" \
+  "e     - Exit to set list editor.\n" \
+  "/     - Search for song.\n" \
+  "n     - Next occurrence of search.\n" \
+  "q     - Quit." + bcolors.ENDC
 
 class SetClass( object ):
   def __init__( self, name=None ):
@@ -66,12 +67,13 @@ class Song( object ):
     self.fileName = fileName
     self.songName = songName
 
-    e = { }
+    elements = { }
     for p in songParams:
-      e[ p ] = None
-    self.elements = e # dict of songParams
+      elements[ p ] = None
+    self.elements = elements # dict keyed by songParams
     self.count = 0 # Highlight duplicate songs with count
     self.highLight = HIGHLIGHT_NONE
+    self.medley = False
 
 setLists = []
 clipboard = []
@@ -148,13 +150,17 @@ def getInput():
   return ret
 
 # Update song info from library. What's copied in the setlist may have been updated.
-# all we keep from the set file is the fileName and highlight flag
+# Note that a Song in the setlist does have some parameters which can differ
+# from what's in the library.
 def updateSongDataFromLibrary():
   for set in setLists:
     for song in set.songList:
       for libSong in songLibrary:
         if libSong.fileName == song.fileName:
           song.elements = libSong.elements
+          # fwd compatibility. Create new elements if not in the .set
+          if not hasattr( song, 'medley'):
+            song.medley = False
 
 # Count instances of all songs to display duplicates
 def calcSongCounts():
@@ -265,7 +271,7 @@ def displayUI():
         print( " " + song.elements[ songParams[ SP_LENGTH ] ], end="" )
   print()
   if showBy is not None:
-    print( "Show by " + songParams [ showBy ] )
+    print( "Show by " + songParams[ showBy ] )
   else:
     print()
 
@@ -309,7 +315,11 @@ def displayUI():
         print( bcolors.BLUE, end="" )
 
       if showBy is None:
-        print( "%-24s" % ( s.fileName[ : -4 ] ), end="" )
+        songString = s.fileName[ : -4 ]
+        if s.medley:
+          songString +=  " ->"
+        print( "%-24s" % ( songString ), end="" )
+
       else:
         v = s.elements[ songParams [ showBy ] ]
         if v is None:
@@ -550,7 +560,6 @@ def exportSet():
            "  font-size: 15px;\n"
            "  transition: 0.4s;\n"
            "}\n"
-           "\n"
            ".active, .accordion:hover\n"
            "{\n"
            "  background-color: #ccc;\n"
@@ -563,6 +572,20 @@ def exportSet():
            "  background-color: white;\n"
            "  overflow: hidden;\n"
            "}\n"
+           ".selectNext\n"
+           "{\n"
+           "  background-color: #fdd;\n"
+           "  color: #444;\n"
+           "  cursor: pointer;\n"
+           "  padding: 10px;\n"
+           "  width: 100%;\n"
+           "  border: double;\n"
+           "  text-align: center;\n"
+           "  outline: none;\n"
+           "  font-size: 15px;\n"
+           "  transition: 0.4s;\n"
+           "}\n"
+           "\n"
            "</style>\n"
            "</head>\n"
            "<body>\n" )
@@ -588,10 +611,10 @@ def exportSet():
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
             if s.highLight == HIGHLIGHT_ON:
-              f.write( "%s) <font color=\"red\">%s</font>\n" % ( songNumber, line.rstrip() ) )
+              f.write( "%s) <font color=\"red\">%s</font></button> \n" % ( songNumber, line.rstrip() ) )
             else:
               f.write( "%s) %s</button>\n" % ( songNumber, line.rstrip() ) )
-            f.write( "</button> <div class=\"panel\">\n" )
+            f.write( "<div class=\"panel\">\n" )
 
             # Add song meta data if present (artist / key / tempo / year)
             # You can also just put in html in the txt since it's pasted directly.
@@ -637,25 +660,57 @@ def exportSet():
           fileLine += 1
       except:
         print( "Exception.." )
+        exit()
       f.write( "</div>\n" )
       songNumber += 1
     setNumber += 1
 
-  f.write( "<script>\n"
+  f.write( "<script>\n"\
            "var acc = document.getElementsByClassName(\"accordion\");\n"
            "var i;\n"
            "\n"
-           "for( i = 0;i < acc.length;i++ ) {\n"
-           "  acc[ i ].addEventListener(\"click\", function() {\n"
-           "    this.classList.toggle(\"active\");\n"
-           "    var panel = this.nextElementSibling;\n"
-           "    if( panel.style.display === \"block\" ) {\n"
-           "      panel.style.display = \"none\";\n"
-           "    }\n"
-           "    else {\n"
-           "      panel.style.display = \"block\";\n"
-           "    }\n"
+           "function toggleSong( elem )\n"
+           "{\n"
+           "  elem.classList.toggle(\"active\");\n"
+           "  var panel = elem.nextElementSibling;\n"
+           "  if( panel.style.display === \"block\" ) {\n"
+           "    panel.style.display = \"none\";\n"
+           "  }\n"
+           "  else {\n"
+           "    panel.style.display = \"block\";\n"
+           "  }\n"
+           "}\n"
+           "\n"
+          "\n"
+           "function openSong( elem )\n"
+           "{\n"
+           "  elem.classList.toggle(\"active\");\n"
+           "  var panel = elem.nextElementSibling;\n"
+           "  panel.style.display = \"block\";\n"
+           "}\n"
+           "\n"
+           "for( i = 0;i < acc.length;i++ )\n"
+           "{\n"
+           "  acc[ i ].addEventListener(\"click\", function()\n"
+           "  {\n"
+           "    toggleSong( this );\n"
            "  } );\n"
+           "\n"
+           "if( i < acc.length - 1 )\n"
+           "{\n"
+           "  var b = document.createElement( \"button\" );\n"
+           "  b.classList.add( 'selectNext' );"
+           "  b.innerHTML = \"Next\";\n"
+           "  b.song = acc[ i ];\n"
+           "  b.nextSong = acc[ i + 1 ];\n"
+           "  panel = acc[ i ].nextElementSibling;\n"
+           "  panel.appendChild( b, panel.firstChild );\n"
+           "  b.addEventListener(\"click\", function() {\n"
+           "      toggleSong( this.song );\n"
+           "      openSong( this.nextSong );\n"
+           "      this.nextSong.scrollIntoView();\n"
+           "    } );\n"
+           "  }\n"
            "}\n"
            "</script>\n"
            "</body></html>\n" )
@@ -942,6 +997,12 @@ while True:
       s.highLight = HIGHLIGHT_ON if s.highLight == HIGHLIGHT_NONE else HIGHLIGHT_NONE
     else:
       statusString = "In Library."
+  #elif ch == 'y':
+  #  if currentSet != LIBRARY_SET:
+  #    s = setLists[ currentSet ].songList[ currentSong ]
+  #    s.medley = True if s.medley == False else False
+  #  else:
+  #    statusString = "In Library."
   elif ch == 't':
     annotation = raw_input( 'Enter annotation:' )
     if annotation == "":
