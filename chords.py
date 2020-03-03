@@ -23,12 +23,14 @@ instrumentMap = {
   'Bass' :       { "t": ( "G", "D", "A", "E" ),           "f" : ( 0, 0, 0, 0 ) },
   '5StringBass' :{ "t": ( "G", "D", "A", "E", "B" ),      "f" : ( 0, 0, 0, 0, 0 ) },
   'Uke' :        { "t": ( "A", "E", "C", "G" ),           "f" : ( 0, 0, 0, 0 ) },
-  'Stick' :      { "t": ( "D", "A", "E", "B", "F#", "C", "G", "D", "A", "E" ), "f": ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) }, # Classic tuning
-  'Stick-4ths':  { "t": ("C", "G", "D", "A", "E", "B", "E", "A", "D", "G", "C", "F" ), "f": ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) },
+  'Stick' :      { "t": ( "D", "A", "E", "B", "F#", "C", "G", "D", "A", "E" ), "f":
+    ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) }, # Classic tuning
+  'Stick-4ths':  { "t": ("C", "G", "D", "A", "E", "B", "E", "A", "D", "G", "C", "F" ), "f":
+    ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) },
   'Banjo' :      { "t": ( "D", "B", "G", "D", "G" ),      "f" : ( 0, 0, 0, 0, 5 ) } }
 
 # Pick the instruments you care about
-instruments = ( 'Guitar', 'Dropped D', 'Bass', 'Uke', 'Mandolin', 'Banjo', '5StringBass', 'Stick', 'Stick-4ths' )
+instruments = ( 'Guitar', 'Bass', 'Dropped D', 'Uke', 'Mandolin', 'Banjo', '5StringBass', 'Stick', 'Stick-4ths' )
 
 intervals = { 0 : ( 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5',  'b6',  '6', 'b7', '7' ),
               1 : ( 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ) }
@@ -67,22 +69,21 @@ spellingMap = { "major" :    ( 'R',  '3',  '5' ),
                 "Pent-Maj" : ( 'R',  '2',  '3',  '5',  '6' ),
                 "mBlues" :   ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
                 "MBlues" :   ( 'R',  '2', 'b3',  '3',  '5',  '6' ),
-
                 # Harmonizations
-                "I" :        (  'R',  '3',  '5' ),
-                "ii" :       (  '2',  '4',  '6' ),
-                "iii" :      (  '3',  '5',  '7' ),
-                "IV" :       (  '4',  '6',  'R' ),
-                "V" :        (  '5',  '7',  '2' ),
-                "vi" :       (  '6',  'R',  '3' ),
-                "vii dim" :  (  '7',  '2',  '4' ),
-                "i" :        (  '1', 'b3',  '5' ),
-                "ii dim" :   (  '2',  '4', 'b6' ),
-                "bIII" :     ( 'b3',  '5', 'b7' ),
-                "iv" :       (  '4', 'b6',  'R' ),
-                "v" :        (  '5', 'b7',  '2' ),
-                "bVI" :      ( 'b6',  'R', 'b3' ),
-                "bVII" :     ( 'b7',  '2',  '4' ),
+                "I":       ('R', '3', '5'),
+                "ii":      ('2', '4', '6'),
+                "iii":     ('3', '5', '7'),
+                "IV":      ('4', '6', 'R'),
+                "V":       ('5', '7', '2'),
+                "vi":      ('6', 'R', '3'),
+                "vii dim": ('7', '2', '4'),
+                "i":       ('1', 'b3', '5'),
+                "ii dim":  ('2', '4', 'b6'),
+                "bIII":    ('b3', '5', 'b7'),
+                "iv":      ('4', 'b6', 'R'),
+                "v":       ('5', 'b7', '2'),
+                "bVI":     ('b6', 'R', 'b3'),
+                "bVII":    ('b7', '2', '4'),
                 }
 
 # Pick the spellings (keys in spellingMap) you care about.
@@ -111,7 +112,7 @@ class runGui():
 
     def relMajor( key ):
       # input is a minor key, returns the relative major key
-      index = (dispKeyList.index( key ) + 3) % 12
+      index = ( dispKeyList.index( key ) + 3 ) % 12
       key = dispKeyList[ index ]
       return key
 
@@ -124,7 +125,7 @@ class runGui():
     return key not in bKeys
 
   def calcNote( self, root, fret ):
-    rootNum = (dispKeyList.index( root ) + fret) % 12
+    rootNum = ( dispKeyList.index( root ) + fret ) % 12
     return dispKeyList[ rootNum ]
 
   def calcInterval( self, note, key ):
@@ -254,11 +255,6 @@ class runGui():
   def spellingChange( self, *args ):
     self.spelling = self.spellingVar.get()
     self.displayFretboards( self.fretboardFrame )
-    #self.displayMainframe()
-
-  def harmonizationChange( self, *args ):
-    self.harmonization = self.harmonizationVar.get()
-    print ( self.harmonization )
 
   def fnToggle( self ):
     self.fretsNotes = not self.fretsNotes
@@ -282,12 +278,7 @@ class runGui():
     self.spellingVar.set( spellings[ 0 ] )
     self.spellingVar.trace( 'w', self.spellingChange )
 
-    self.harmonizationVar = StringVar()
-    self.harmonizationVar.set( self.spelling )
-    self.harmonizationVar.trace( 'w', self.harmonizationChange )
-
   def displayMainframe( self ):
-
     for widget in self.mainFrame.winfo_children():
       widget.destroy()
 
@@ -300,12 +291,6 @@ class runGui():
     self.spellingMenu = OptionMenu( self.mainFrame, self.spellingVar, *spellings )
     self.spellingMenu.pack( side=LEFT )
 
-    '''
-    if self.spelling in harmonization:
-      self.harmonizationMenu = OptionMenu( self.mainFrame, self.harmonizationVar, *harmonization[ self.spelling ] )
-      self.harmonizationMenu.pack( side=LEFT )
-    '''
-
     self.fn = Button( self.mainFrame, text="Notes/Frets", font=disFont[ 1 ], command=self.fnToggle )
     self.fn.pack( side=LEFT )
     self.fb = Button( self.mainFrame, text="15/24", font=disFont[ 1 ], command=self.fretNumToggle )
@@ -315,7 +300,6 @@ class runGui():
     self.instrument = instruments[ 0 ]
     self.key = dispKeyList[ 0 ]
     self.spelling = spellings[ 0 ]
-    self.harmonization = None
     self.fretsNotes = False
 
     root = Tk()
