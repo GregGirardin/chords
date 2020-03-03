@@ -579,9 +579,8 @@ def exportSet():
            "  color: #444;\n"
            "  cursor: pointer;\n"
            "  padding: 10px;\n"
-           "  width: 100%;\n"
-           "  border: double;\n"
-           "  text-align: center;\n"
+           "  width: 90%;\n"
+           "  text-align: left;\n"
            "  outline: none;\n"
            "  font-size: 15px;\n"
            "  transition: 0.4s;\n"
@@ -654,7 +653,7 @@ def exportSet():
           elif pf == "c!": # Chorus
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
           elif pf == "h!": # Harmonica
-            f.write( "<b><font style=\"font-family:courier;\" size=\"3\" color=\"red\" >&nbsp Harmonica : " )
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\" color=\"red\" >&nbsp Harmonica : " )
             f.write( line[ 2 : ] )
             f.write( "</font></b><br>\n" )
           # Ignore 2nd line if empty. It's unnecessary space in the html
