@@ -15,7 +15,6 @@ Each note is a value representing the fret and string
 '''
 
 songExt = ".pytab"
-unsavedChgStr = 'Unsaved changes. Continue? (y/n)'
 
 statusString = None
 selectedfileIx = 0
@@ -42,6 +41,7 @@ class bcolors:
   WARNING = '\033[93m'
   FAIL    = '\033[91m'
   ENDC    = '\033[0m'
+  RED     = '\033[91m'
 
 MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32
@@ -323,7 +323,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
   ''' Display starting from current measure display DISPLAY_BEATS beats, so the width isn't quite fixed
       based on how many measures that is.
   '''
-  global statusString, offsetMode
+  global statusString, offsetMode, unsavedChange
   assert cursor_m >= measure, "Cursor before current measure."
 
   SUMMARY_IX = 0 # header lines
@@ -337,9 +337,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
                   '  ',    # Measures
                   '',      # Annotations
                   '  ' ]   # Beats
-
   fretboardLines = [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ']
-
   instructions = [ '',
                    'Use arrows to move cursor',
                    '><  Forward / back measure',
@@ -347,13 +345,15 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
                    'S   Offset          a/i Add/Insert beat',
                    'd   Delete beat     sp  Clear note',
                    'm   Add measure     c/p Copy/Paste',
-                   'n   Annotate        h   hammer/pulloff/normal',
+                   'n   Annotate        h   hammer/pull/slide',
                    'r   Rename song     b   Page break',
                    'R   Repeat          s   Save',
                    'o/O open/reOpen     x/X Export (txt / html)',
                    'I   Instrument      q   Quit' ]
 
-  headerLines[ SUMMARY_IX ] += song.songName + ", " + str ( song.count() ) + " measures, " + "%d beats in measure." % ( song.get( cursorMeasure ).count() )
+  headerLines[ SUMMARY_IX ] += song.songName + ", " + str ( song.count() ) + " measures, " + \
+                               "%d beats in measure. " % ( song.get( cursorMeasure ).count() ) + \
+                               ( bcolors.RED + "Edited" + bcolors.ENDC if unsavedChange else "" )
 
   if statusString is not None:
     headerLines[ STATUS_IX ] += statusString
@@ -461,7 +461,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
   os.system( 'clear' )
   for line in headerLines:
     print( line )
-  fl = fretboardLines if instrument == INST_GUITAR else fretboardLines[ 2: ]
+  fl = fretboardLines if instrument == INST_GUITAR else fretboardLines[ 2 : ]
   for line in fl:
     print( line )
   for line in instructions:
@@ -503,6 +503,7 @@ def getInput():
   return ret
 
 def findPrevBeat( song, curMeasure, curBeat ):
+
   if curBeat > 1:
     curBeat -= 1
   elif curMeasure > 1:
@@ -512,6 +513,7 @@ def findPrevBeat( song, curMeasure, curBeat ):
   return curMeasure, curBeat
 
 def findNextBeat( song, curMeasure, curBeat ):
+
   if song.count() > 0:
     if curBeat < song.get( curMeasure ).count():
       curBeat += 1
@@ -528,6 +530,7 @@ def findNextBeat( song, curMeasure, curBeat ):
   return curMeasure, curBeat
 
 def findPrevMeasure( song, curMeasure, curBeat ):
+
   if curMeasure > 1:
     curMeasure -= 1
     if curBeat > song.get( curMeasure ).count():
@@ -536,6 +539,7 @@ def findPrevMeasure( song, curMeasure, curBeat ):
   return curMeasure, curBeat
 
 def findNextMeasure( song, curMeasure, curBeat ):
+
   if song.count() > curMeasure:
     curMeasure += 1
     if curBeat > song.get( curMeasure ).count():
@@ -545,6 +549,7 @@ def findNextMeasure( song, curMeasure, curBeat ):
 
 def findSong():
   global statusString, selectedfileIx
+
   re = "./*" + songExt
 
   matchList = glob.glob( re )
@@ -564,7 +569,7 @@ def findSong():
       line = "  "
       if index == selectedfileIx:
         line = "> "
-      line += s[ 2: ].split( "." )[ 0 ]
+      line += s[ 2 : ].split( "." )[ 0 ]
       index += 1
 
       print( line )
@@ -573,7 +578,7 @@ def findSong():
     if c == "LEFT":
       return None
     if c == "RIGHT":
-      return matchList[ selectedfileIx ][ 2: ].split( "." )[ 0 ]
+      return matchList[ selectedfileIx ][ 2 : ].split( "." )[ 0 ]
     if c == "DOWN":
       if selectedfileIx < len( matchList ) - 1:
         selectedfileIx += 1
@@ -583,6 +588,7 @@ def findSong():
 
 def handleCopy( song, measure, beat ):
   global statusString
+
   bList = []
   print( "Beats to copy? (1-9,c,m)" )
   numBeats = 0
@@ -702,7 +708,6 @@ if not currentSong:
   currentSong.get( 1 ).addBeat()
 
 currentMeasure = 1 # Where the UI starts displaying from
-
 cursorMeasure = 1 # Cursor position
 cursorBeat = 1
 cursorString = 4
@@ -739,13 +744,7 @@ while True:
   displayUI( currentSong, currentMeasure, cursorMeasure, cursorBeat, cursorString )
   ch = getInput()
   if ch == 'q':
-    if unsavedChange:
-      print( unsavedChgStr )
-      verify = getInput ()
-      if verify == 'y':
-        exit()
-    else:
-      exit()
+    exit()
   elif ch == 'RIGHT': # go to the next beat if one exists
     cursorMeasure, cursorBeat = findNextBeat( currentSong, cursorMeasure, cursorBeat )
   elif ch == 'LEFT':  # go to the previous beat if possible
@@ -784,7 +783,7 @@ while True:
     m = currentSong.get( cursorMeasure )
     if currentSong.count() > 1 or m.count() > 1:
       m.pop( cursorBeat )
-      if m.count () == 0: # delete measure
+      if m.count() == 0: # delete measure
         currentSong.pop( cursorMeasure )
         if cursorMeasure > 1:
           cursorMeasure -= 1
@@ -873,11 +872,6 @@ while True:
   elif ch == 'X':
     statusString = export( currentSong, True )
   elif ch == 'O': # re-open
-    if unsavedChange:
-      print( unsavedChgStr )
-      verify = getInput()
-      if verify != 'y':
-        continue
     loadedSong = load( songName )
     if loadedSong is not None:
       currentSong = loadedSong
@@ -886,11 +880,6 @@ while True:
       cursorString = 4
       unsavedChange = False
   elif ch == 'o': # open
-    if unsavedChange:
-      print( unsavedChgStr )
-      verify = getInput()
-      if verify != 'y':
-        continue
     newSongName = findSong()
     if newSongName:
       loadedSong = load( newSongName )

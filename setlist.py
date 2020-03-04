@@ -11,7 +11,6 @@ class bcolors:
   UNDERLINE = '\033[4m'
   REVERSE   = '\033[7m'
   ENDC      = '\033[0m'
-  ENDC      = '\033[0m'
 
 DEFAULT_SETLIST_NAME = "setList"
 

@@ -92,10 +92,8 @@ spellings = ( 'major', 'minor', 'sus2',  'sus4', '6', 'm6', '7',  'm7',  'M7',
               'Maj-Key', 'Min-Key', 'Pent-Min', 'Pent-Maj', 'mBlues', 'MBlues' )
 
 # spellings that can be harmonized
-harmonization = {
-                  "Maj-Key" : ( "I", "ii", "iii", "IV", "V", "vi", "vii dim" ),
-                  "Min-Key" : ( "i", "ii dim", "bIII", "iv", "v", "bVI", "bVII" ),
-                }
+harmonization = { "Maj-Key" : ( "I", "ii", "iii", "IV", "V", "vi", "vii dim" ),
+                  "Min-Key" : ( "i", "ii dim", "bIII", "iv", "v", "bVI", "bVII" ), }
 
 extChords = ( '9', 'm9', 'M9','11', 'm11', 'M11', '13', 'm13', 'M13' )
 extIntervals = ( '9', '11', '13' )
@@ -166,10 +164,10 @@ class runGui():
 
     strings = instrumentMap[ inst ][ 't' ]
 
-    fretBoard = { 'numStrings': len( strings ),
-                  'instrument': inst,
-                  'spelling':   spelling,
-                  'fretOffset': instrumentMap[ inst ][ 'f' ] }
+    fretBoard = { 'numStrings' : len( strings ),
+                  'instrument' : inst,
+                  'spelling'   : spelling,
+                  'fretOffset' : instrumentMap[ inst ][ 'f' ] }
 
     for string in range( 1, len( strings ) + 1 ):
       stringList = []
@@ -219,8 +217,8 @@ class runGui():
         s = Label( frame, text=dispLine, font=dFont )
         s.pack( side=TOP, pady=0 )
 
-        if( ( stringNum == 5 and self.instrument == instruments[ 7 ] ) or
-            ( stringNum == 6 and self.instrument == instruments[ 8 ] ) ):
+        if( ( stringNum == 5 and self.instrument == 'Stick' ) or
+            ( stringNum == 6 and self.instrument == 'Stick-4ths' ) ):
           s = Label( frame, text="", font=dFont )
           s.pack( side=TOP, pady=0 )
 
