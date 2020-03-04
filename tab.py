@@ -342,13 +342,13 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
                    'Use arrows to move cursor',
                    '><  Forward / back measure',
                    '`1234567890-= note at 0-12, 7-18, 12-24',
-                   'S   Offset          a/i Add/Insert beat',
+                   't   Offset          a/i Add/Insert beat',
                    'd   Delete beat     sp  Clear note',
                    'm   Add measure     c/p Copy/Paste',
                    'n   Annotate        h   hammer/pull/slide',
                    'r   Rename song     b   Page break',
                    'R   Repeat          s   Save',
-                   'o/O open/reOpen     x/X Export (txt / html)',
+                   'o   Open            x/X Export (txt / html)',
                    'I   Instrument      q   Quit' ]
 
   headerLines[ SUMMARY_IX ] += song.songName + ", " + str ( song.count() ) + " measures, " + \
@@ -862,7 +862,7 @@ while True:
     setNote( 11 )
   elif ch == '=':
     setNote( 12 )
-  elif ch == 'S': # Toggle 0-12, 7-16 or 12-24
+  elif ch == 't': # Toggle 0-12, 7-16 or 12-24
     offsetMode = OFFSET_MODE_NORMAL if offsetMode == OFFSET_MODE_OCTAVE else offsetMode + 1
   elif ch == 's': # Save
     save( currentSong )
@@ -871,14 +871,6 @@ while True:
     statusString = export( currentSong, False )
   elif ch == 'X':
     statusString = export( currentSong, True )
-  elif ch == 'O': # re-open
-    loadedSong = load( songName )
-    if loadedSong is not None:
-      currentSong = loadedSong
-      cursorMeasure = 1
-      cursorBeat = 1
-      cursorString = 4
-      unsavedChange = False
   elif ch == 'o': # open
     newSongName = findSong()
     if newSongName:
