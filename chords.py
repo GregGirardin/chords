@@ -33,7 +33,8 @@ instrumentMap = {
 instruments = ( 'Guitar', 'Bass', 'Dropped D', 'Uke', 'Mandolin', 'Banjo', '5StringBass', 'Stick', 'Stick-4ths' )
 
 intervals = { 0 : ( 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5',  'b6',  '6', 'b7', '7' ),
-              1 : ( 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ) }
+              1 : ( 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ),
+              2 : ( 'R', 'b2', '2', 'b3', '3',  '4', '#4', '5',  'b6',  '6', 'b7', '7' ) }
 
 # display with a #/b if that's how we'd display the major key.
 dispKeyList    = ( 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B' )
@@ -63,8 +64,13 @@ spellingMap = { "major" :    ( 'R',  '3',  '5' ),
                 "M13" :      ( 'R',  '3',  '5',  '7',  '9', '11', '13' ),
                 "dim" :      ( 'R', 'b3', 'b5',  '6' ),
                 "m7-5" :     ( 'R', 'b3', 'b5', 'b7' ),
-                "Maj-Key" :  ( 'R',  '2',  '3',  '4',  '5',  '6',  '7' ),
-                "Min-Key" :  ( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
+                "Ionian" :   ( 'R',  '2',  '3',  '4',  '5',  '6',  '7' ),
+                "Dorian" :   ( 'R',  '2',  'b3',  '4',  '5',  '6',  'b7' ),
+                "Phrygian" : ( 'R',  'b2', 'b3',  '4',  '5',  'b6',  'b7' ),
+                "Lydian" :   ( 'R',  '2',  '3',  '#4',  '5',  '6',  '7' ), # currently special case the #4
+                "Mixolydian" :  ( 'R',  '2',  '3',  '4',  '5',  '6',  'b7' ),
+                "Aeolian" :  ( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
+                "Locrian" :  ( 'R',  'b2', 'b3',  '4',  'b5', 'b6', 'b7' ),
                 "Pent-Min" : ( 'R', 'b3',  '4',  '5', 'b7' ),
                 "Pent-Maj" : ( 'R',  '2',  '3',  '5',  '6' ),
                 "mBlues" :   ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
@@ -89,15 +95,16 @@ spellingMap = { "major" :    ( 'R',  '3',  '5' ),
 # Pick the spellings (keys in spellingMap) you care about.
 spellings = ( 'major', 'minor', 'sus2',  'sus4', '6', 'm6', '7',  'm7',  'M7',
               '9',  'm9',  'M9', '11', 'm11', 'M11', '13', 'm13', 'M13', 'dim', 'm7-5',
-              'Maj-Key', 'Min-Key', 'Pent-Min', 'Pent-Maj', 'mBlues', 'MBlues' )
+              'Ionian', 'Dorian','Phrygian','Lydian','Mixolydian', 'Aeolian', 'Locrian',
+              'Pent-Min', 'Pent-Maj', 'mBlues', 'MBlues' )
 
 # spellings that can be harmonized
-harmonization = { "Maj-Key" : ( "I", "ii", "iii", "IV", "V", "vi", "vii dim" ),
-                  "Min-Key" : ( "i", "ii dim", "bIII", "iv", "v", "bVI", "bVII" ), }
+# harmonization = { "Maj-Key" : ( "I", "ii", "iii", "IV", "V", "vi", "vii dim" ),
+#                   "Min-Key" : ( "i", "ii dim", "bIII", "iv", "v", "bVI", "bVII" ), }
 
 extChords = ( '9', 'm9', 'M9','11', 'm11', 'M11', '13', 'm13', 'M13' )
 extIntervals = ( '9', '11', '13' )
-minorSpellings = ( 'm', 'm7', 'm9', 'm11', 'm13', 'm-Key' )
+minorSpellings = ( 'm', 'm7', 'm9', 'm11', 'm13', 'm-Key', 'Aeolian' )
 num_frets = 15
 
 disFont = { 0 : ( "TkFixedFont", 18, "bold italic" ),
@@ -108,16 +115,26 @@ class runGui():
   def showWithSharps( self, key, spelling ):
     # return True if we should show this key/spelling as having sharps (vs flats)
 
-    def relMajor( key ):
+    def relMajor( key, off=3 ):
       # input is a minor key, returns the relative major key
-      index = ( dispKeyList.index( key ) + 3 ) % 12
+      index = ( dispKeyList.index( key ) + off ) % 12
       key = dispKeyList[ index ]
       return key
 
     if spelling in ( 'mBlues', 'MBlues' ):  # Blues is always flats
       return False
 
-    if spelling in minorSpellings:
+    if spelling == "Dorian":
+      key = relMajor( key, 10 )
+    elif spelling == "Phrygian":
+      key = relMajor( key, 8 )
+    elif spelling == "Lydian":
+      key = relMajor( key, 7 )
+    elif spelling == "Mixolydian":
+      key = relMajor( key, 5 )
+    elif spelling == "Locrian":
+      key = relMajor( key, 1 )
+    elif spelling in minorSpellings:
       key = relMajor( key )
 
     return key not in bKeys
@@ -142,7 +159,13 @@ class runGui():
 
     fretInfo = { 'root': root, 'fret': fret, 'note': self.calcNote( root, fret - fretOffset ) }
     interval = self.calcInterval( fretInfo[ 'note' ], key )
-    x = 1 if spelling in extChords else 0
+    if spelling in extChords:
+      x = 1
+    elif spelling == 'Lydian':
+      x = 2
+    else:
+      x = 0
+
     fretInfo[ 'interval' ] = intervals[ x ][ interval ]
     fretInfo[ 'inSpelling' ] = intervals[ x ][ interval ] in spellingMap[ spelling ]
 
