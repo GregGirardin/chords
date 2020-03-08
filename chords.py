@@ -268,10 +268,10 @@ class runGui():
     FRET_NUM_VERT_OFFSET = 20
 
     FRET1_TOP = FRET_NUM_VERT_OFFSET + 20
-    FRET1_BOTTOM = FRET1_TOP + ( numStrings + 1 ) * STRING_SPACING
+    FRET1_BOTTOM = FRET1_TOP + ( numStrings - 1 ) * STRING_SPACING
 
-    FRET2_TOP = FRET1_BOTTOM + 20
-    FRET2_BOTTOM = FRET2_TOP + ( numStrings + 1 ) * STRING_SPACING
+    FRET2_TOP = FRET1_BOTTOM + 40
+    FRET2_BOTTOM = FRET2_TOP + ( numStrings - 1 ) * STRING_SPACING
 
     STRING_LEFT = LEFT_BORDER + 10
     STRING_RIGHT = STRING_LEFT + ( num_frets + 1 ) * FRET_SPACING
@@ -293,7 +293,7 @@ class runGui():
       self.canvas.create_rectangle( xPos, FRET2_TOP, xPos + w, FRET2_BOTTOM, fill="black" )
 
     if self.fretsNotes:
-      for fretInd in( 3, 5, 7, 9, 12, 15, 17 ): # Too cluttered for now?
+      for fretInd in( 3, 5, 7, 9, 12, 15 ): # Too cluttered for now?
         xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInd * FRET_SPACING
 
         if fretInd == 12:
@@ -306,21 +306,21 @@ class runGui():
           self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4 )
 
     # Draw strings
-    for s in range( 1, numStrings + 1 ):
+    for s in range( 0, numStrings ):
       self.canvas.create_text( STRING_LEFT - 20,
                                FRET1_TOP + s * STRING_SPACING,
-                               text=fretboard[ s ][ 0 ][ 'root'] )
+                               text=fretboard[ s + 1 ][ 0 ][ 'root'] )
       self.canvas.create_text( STRING_LEFT - 20,
                                FRET2_TOP + s * STRING_SPACING,
-                               text=fretboard[ s ][ 0 ][ 'root'] )
+                               text=fretboard[ s + 1 ][ 0 ][ 'root'] )
       self.canvas.create_line( STRING_LEFT,  FRET1_TOP + s * STRING_SPACING,
                                STRING_RIGHT, FRET1_TOP + s * STRING_SPACING )
       self.canvas.create_line( STRING_LEFT,  FRET2_TOP + s * STRING_SPACING,
                                STRING_RIGHT, FRET2_TOP + s * STRING_SPACING )
 
     # Populate individual frets
-    for stringNum in range( 1, numStrings + 1 ):
-      string = fretboard[ stringNum ]
+    for stringNum in range( 0, numStrings ):
+      string = fretboard[ stringNum + 1 ]
       for fret in string:
         if fret[ 'interval' ] in extIntervals and stringNum > ( numStrings / 2 ):
           continue # Don't display ext intervals on bass strings
@@ -435,8 +435,8 @@ class runGui():
     self.fb = Button( self.mainFrame, text="15/24", font=disFont[ 1 ], command=self.fretNumToggle )
     self.fb.pack( side=LEFT )
     # Overlay
-    self.fb = Button( self.mainFrame, text="+", font=disFont[ 1 ], command=self.overlayToggle )
-    self.fb.pack( side=LEFT )
+    #self.fb = Button( self.mainFrame, text="+", font=disFont[ 1 ], command=self.overlayToggle )
+    #self.fb.pack( side=LEFT )
 
     if self.overlay:
       self.OLkeysMenu = OptionMenu( self.mainFrame, self.OLkeysVar, *dispKeyList )
