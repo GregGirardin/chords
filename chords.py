@@ -329,51 +329,35 @@ class runGui():
         yPos = FRET1_TOP + stringNum * STRING_SPACING
 
         if self.fretsNotes: # Show frets?
+          fill = None
           if self.overlay:
             if fret[ 'inSpelling' ] and fret[ 'inOLSpelling' ]:
-              self.canvas.create_oval( xPos - 5, yPos - 5,
-                                       xPos + 5, yPos + 5,
-                                       fill="black" ) # draw a fret in top fretboard
+              fill="#8ff" # blue-green if in both
             else:
               if fret[ 'inSpelling' ]:
-                self.canvas.create_oval( xPos - 5, yPos - 5,
-                                         xPos + 5, yPos + 5,
-                                         fill="red" )
-              if fret[ 'inOLSpelling' ]:
-                self.canvas.create_oval( xPos - 5, yPos - 5,
-                                         xPos + 5, yPos + 5,
-                                         fill="blue" )
+                fill="#f88"
+              elif fret[ 'inOLSpelling' ]:
+                fill="#88f"
           elif fret[ 'inSpelling' ]:
-            self.canvas.create_oval( xPos - 5, yPos - 5,
-                                     xPos + 5, yPos + 5,
-                                     fill="black" )
+            fill="#f88"
+          if fill:
+            self.canvas.create_oval( xPos - 5, yPos - 5, xPos + 5, yPos + 5, fill=fill )
         else: # show notes
+          fill = None
           if self.overlay:
             if fret[ 'inSpelling' ] and fret[ 'inOLSpelling' ]:
-              self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
-                                       xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
-                                       fill="#8ff",
-                                       #outline="black",
-                                       ) # erase
-              self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
+              fill="#8ff",
             else:
               if fret[ 'inSpelling' ]:
-                self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
-                                         xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
-                                         fill="#f88",
-                                         )  # erase
-                self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
-              if fret[ 'inOLSpelling' ]:
-                self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
-                                         xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
-                                         fill="#88f",
-                                         )  # erase
-                self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
+                fill="#f88"
+              elif fret[ 'inOLSpelling' ]:
+                fill="#88f"
           elif fret[ 'inSpelling' ]:
+            fill="#f88"
+          if fill:
             self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
                                      xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
-                                     fill="#f88",
-                                     ) # erase
+                                     fill=fill )
             self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
 
         # Bottom fretboard is just Chord 1's intervals.
