@@ -319,7 +319,6 @@ def displayUI():
         if s.medley:
           songString += " " + u"\u2192" # right arrow
         print( "%-24s" % ( songString ), end="" )
-
       else:
         v = s.elements[ songParams [ showBy ] ]
         if v is None:
@@ -327,6 +326,7 @@ def displayUI():
         elif v == song.elements[ songParams [ showBy ] ]:
           print( bcolors.RED, end="" )
         print( "%-24s" % ( v ), end="" )
+
       print( bcolors.ENDC, end="" )
       songIx += 1
 
@@ -342,6 +342,7 @@ def displayUI():
   if first_row < 0:
     last_row -= first_row
     first_row = 0
+
   if last_row >= len( songLibrary ) / SONG_COLUMNS:
     diff = int( last_row - len( songLibrary ) / SONG_COLUMNS )
     last_row -= diff
@@ -652,7 +653,7 @@ def exportSet():
           elif pf == "c!": # Chorus
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
           elif pf == "h!": # Harmonica
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\" color=\"red\" >&nbsp Harmonica : " )
+            f.write( "<b><font style=\"font-family:courier;\" size=\"2\" color=\"red\" >&nbsp Harmonica :" )
             f.write( line[ 2 : ] )
             f.write( "</font></b><br>\n" )
           # Ignore 2nd line if empty. It's unnecessary space in the html
@@ -680,15 +681,16 @@ def exportSet():
            "{\n"
            "  elem.classList.toggle(\"active\");\n"
            "  var panel = elem.nextElementSibling;\n"
-           "  if( panel.style.display === \"block\" ) {\n"
+           "  if( panel.style.display === \"block\" )\n"
+           "  {\n"
            "    panel.style.display = \"none\";\n"
            "  }\n"
-           "  else {\n"
+           "  else\n"
+           "  {\n"
            "    panel.style.display = \"block\";\n"
            "  }\n"
            "}\n"
            "\n"
-          "\n"
            "function openSong( elem )\n"
            "{\n"
            "  elem.classList.add(\"active\");\n"
@@ -825,7 +827,6 @@ def sieDisplayUI():
                                                  di[ songParams[ SP_YEAR ] ],
                                                  di[ songParams[ SP_GENRE ] ][0 : 11 ],
                                                  di[ songParams[ SP_LENGTH ] ][ 0 : 8 ] ) )
-
   print( "--------------------------------------------------------------------------------" )
 
   if statusString:

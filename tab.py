@@ -46,9 +46,8 @@ class bcolors:
 MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32
 DISPLAY_BEATS = 32 # number of beats we can display on a line
-'''
- Wrapper around a list. This API is 1 based
-'''
+
+# Wrapper around a list. This API is 1 based
 class pytabContainer( object ):
 
   def __init__( self ):
@@ -671,10 +670,7 @@ def handlePaste( song, beats, measure, beat ):
   else:
     m.pop( 1 )
 
-  if beat == m.count() + 1:
-    inserting = False
-  else:
-    inserting = True
+  inserting = False if beat == m.count() + 1 else True
 
   beatsPasted = 0
   for b in beats:
@@ -742,6 +738,7 @@ def setNote( fret ):
 
 while True:
   displayUI( currentSong, currentMeasure, cursorMeasure, cursorBeat, cursorString )
+
   ch = getInput()
   if ch == 'q':
     exit()
