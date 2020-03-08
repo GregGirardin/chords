@@ -328,33 +328,53 @@ class runGui():
         xPos = LEFT_BORDER + FRET_SPACING + fret[ 'fret' ] * FRET_SPACING - FRET_SPACING / 2
         yPos = FRET1_TOP + stringNum * STRING_SPACING
 
-        if self.fretsNotes:
-          if self.overlay: #
+        if self.fretsNotes: # Show frets?
+          if self.overlay:
             if fret[ 'inSpelling' ] and fret[ 'inOLSpelling' ]:
               self.canvas.create_oval( xPos - 5, yPos - 5,
                                        xPos + 5, yPos + 5,
-                                       fill="yellow" )  # draw a fret in top fretboard
+                                       fill="black" ) # draw a fret in top fretboard
             else:
               if fret[ 'inSpelling' ]:
                 self.canvas.create_oval( xPos - 5, yPos - 5,
                                          xPos + 5, yPos + 5,
-                                         fill="red" )  # draw a fret in top fretboard
+                                         fill="red" )
               if fret[ 'inOLSpelling' ]:
                 self.canvas.create_oval( xPos - 5, yPos - 5,
                                          xPos + 5, yPos + 5,
-                                         fill="blue" )  # draw a fret in top fretboard
-
+                                         fill="blue" )
           elif fret[ 'inSpelling' ]:
             self.canvas.create_oval( xPos - 5, yPos - 5,
                                      xPos + 5, yPos + 5,
-                                     fill="black" ) # draw a fret in top fretboard
-        elif fret[ 'inSpelling' ]:
-          self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
-                                   xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
-                                   fill="white",
-                                   # outline="white",
-                                   ) # erase
-          self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
+                                     fill="black" )
+        else: # show notes
+          if self.overlay:
+            if fret[ 'inSpelling' ] and fret[ 'inOLSpelling' ]:
+              self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
+                                       xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
+                                       fill="#8ff",
+                                       #outline="black",
+                                       ) # erase
+              self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
+            else:
+              if fret[ 'inSpelling' ]:
+                self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
+                                         xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
+                                         fill="#f88",
+                                         )  # erase
+                self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
+              if fret[ 'inOLSpelling' ]:
+                self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
+                                         xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
+                                         fill="#88f",
+                                         )  # erase
+                self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
+          elif fret[ 'inSpelling' ]:
+            self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
+                                     xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
+                                     fill="#f88",
+                                     ) # erase
+            self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
 
         # Bottom fretboard is just Chord 1's intervals.
         if fret[ 'inSpelling' ]:
@@ -390,16 +410,28 @@ class runGui():
 
   def fnToggle( self ):
     self.fretsNotes = not self.fretsNotes
+    self.notesFrets.set( "Notes" if self.fretsNotes else "Frets" )
+
     self.displayFretboards()
 
   def fretNumToggle( self ):
     global num_frets
     num_frets = 15 if num_frets == 24 else 24
+    self.btn1524txt.set( "24" if num_frets == 15 else "15" )
+
+    self.displayMainframe()
     self.displayFretboards( )
 
   def overlayToggle( self ):
     self.overlay = not self.overlay
-    self.displayMainframe()
+    self.overlayTxt.set( "-" if self.overlay else "+" )
+    if self.overlay:
+      self.OLkeysMenu[ "state" ] = "normal"
+      self.OLspellingMenu[ "state" ] = "normal"
+    else:
+      self.OLkeysMenu[ "state" ] = "disable"
+      self.OLspellingMenu[ "state" ] = "disable"
+
     self.displayFretboards()
 
   def initMainframe( self ):
@@ -414,6 +446,15 @@ class runGui():
     self.spellingVar = StringVar()
     self.spellingVar.set( spellings[ 0 ] )
     self.spellingVar.trace( 'w', self.spellingChange )
+
+    self.btn1524txt = StringVar()
+    self.btn1524txt.set( "15" )
+
+    self.overlayTxt = StringVar()
+    self.overlayTxt.set( "+" )
+
+    self.notesFrets = StringVar()
+    self.notesFrets.set( "Frets" )
 
     self.OLkeysVar = StringVar()
     self.OLkeysVar.set( dispKeyList[ 0 ] )
@@ -436,21 +477,26 @@ class runGui():
     self.spellingMenu = OptionMenu( self.mainFrame, self.spellingVar, *spellings )
     self.spellingMenu.pack( side=LEFT )
 
-    self.fn = Button( self.mainFrame, text="Notes/Frets", font=disFont[ 1 ], command=self.fnToggle )
+    self.overLayButton = Button( self.mainFrame,
+                                 textvariable=self.overlayTxt,
+                                 font=disFont[ 1 ],
+                                 command=self.overlayToggle )
+    self.overLayButton.pack( side=LEFT )
+
+    self.OLkeysMenu = OptionMenu( self.mainFrame, self.OLkeysVar, *dispKeyList )
+    self.OLkeysMenu.pack( side=LEFT )
+
+    self.OLspellingMenu = OptionMenu( self.mainFrame, self.OLspellingVar, *spellings )
+    self.OLspellingMenu.pack( side=LEFT )
+
+    self.OLkeysMenu[ "state" ] = "disable"
+    self.OLspellingMenu[ "state" ] = "disable"
+
+    self.fn = Button( self.mainFrame, textvariable=self.notesFrets, font=disFont[ 1 ], command=self.fnToggle )
     self.fn.pack( side=LEFT )
 
-    self.fb = Button( self.mainFrame, text="15/24", font=disFont[ 1 ], command=self.fretNumToggle )
+    self.fb = Button( self.mainFrame, textvariable=self.btn1524txt, font=disFont[ 1 ], command=self.fretNumToggle )
     self.fb.pack( side=LEFT )
-    # Overlay
-    self.fb = Button( self.mainFrame, text="+", font=disFont[ 1 ], command=self.overlayToggle )
-    self.fb.pack( side=LEFT )
-
-    if self.overlay:
-      self.OLkeysMenu = OptionMenu( self.mainFrame, self.OLkeysVar, *dispKeyList )
-      self.OLkeysMenu.pack( side=LEFT )
-
-      self.OLspellingMenu = OptionMenu( self.mainFrame, self.OLspellingVar, *spellings )
-      self.OLspellingMenu.pack( side=LEFT )
 
   def __init__( self ):
     self.instrument = instruments[ 0 ]
