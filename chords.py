@@ -71,6 +71,7 @@ spellingMap = { "major" :    ( 'R',  '3',  '5' ),
                 "Aeolian" :  ( 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ),
                 "Locrian" :  ( 'R', 'b2', 'b3',  '4', 'b5', 'b6', 'b7' ),
                 "Melodic" :  ( 'R',  '2', 'b3',  '4',  '5', '6', '7' ),
+                "Harmonic" : ( 'R',  '2', 'b3',  '4',  '5', 'b6', '7' ),
                 "Pent-Min" : ( 'R', 'b3',  '4',  '5', 'b7' ),
                 "Pent-Maj" : ( 'R',  '2',  '3',  '5',  '6' ),
                 "mBlues" :   ( 'R', 'b3',  '4', 'b5',  '5', 'b7' ),
@@ -80,7 +81,8 @@ spellingMap = { "major" :    ( 'R',  '3',  '5' ),
 # Pick the spellings (keys in spellingMap) you care about.
 spellings = ( 'major', 'minor', 'sus2', 'sus4', '6', 'm6', '7', 'm7', 'M7',
               '9', 'm9', 'M9', '11', 'm11', 'M11', '13', 'm13', 'M13', 'dim', 'm7-5',
-              'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian', 'Melodic',
+              'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian',
+              'Aeolian', 'Locrian', 'Melodic', 'Harmonic',
               'Pent-Min', 'Pent-Maj', 'mBlues', 'MBlues' )
 
 extChords = ( '9', 'm9', 'M9', '11', 'm11', 'M11', '13', 'm13', 'M13' )
@@ -188,95 +190,27 @@ class runGui():
       fretBoard[ string ] = stringList
 
     return fretBoard
-  '''
-  def generateFB( self, dispKey ):
 
-    fretboard = self.generateFretboard( )
-    frame = self.fretboardFrame
-    dFont = tkFont.Font( family='Courier', size=16 )
-    dFontHL = tkFont.Font( family='Courier', weight="bold", size=16 )
-
-    numStrings = fretboard[ 'numStrings' ]
-
-    for stringNum in range( 1, numStrings + 1 ):
-      string = fretboard[ stringNum ]
-      dispLine = string[ 0 ][ 'root' ] + " "
-      if len( dispLine ) == 2:
-        dispLine += " "
-
-      dispLine += ( "   " * fretboard[ 'fretOffset' ][ stringNum - 1 ] )
-
-      for fret in string:
-        if fretboard[ 'fretOffset' ][ stringNum - 1 ] == fret[ 'fret' ]:
-          fretChar = u'\u258c' + u'\u2015'
-        else:
-          fretChar = "|" # u'\u2502'
-
-        d = True
-        if fret[ 'interval' ] in extIntervals and stringNum > ( numStrings / 2 ):
-          d = False
-
-        if fret[ 'inSpelling' ] and d:
-          value = fret[ dispKey ]
-          if( dispKey == 'note' and self.fretsNotes ) or value == 'R':
-            value = u'\u25cf'
-          if len( value ) == 1:
-            value += "-"
-          dispLine += "%s%s" % ( value, fretChar )
-        else:
-          dispLine += u'\u2015' + u'\u2015' + "%s" % fretChar
-
-      s = Label( frame, text=dispLine, font=dFont, borderwidth=0 )
-      s.pack( side=TOP, pady=0 )
-
-      if( ( stringNum == 5 and self.instrument == 'Stick' ) or # break up stick into bass / treble
-          ( stringNum == 6 and self.instrument == 'Stick-4ths' ) ):
-        s = Label( frame, text="", font=dFont )
-        s.pack( side=TOP, pady=0 )
-
-  def displayFretboards_old( self ):
-    dFont = tkFont.Font( family='Courier', size=16 )
-
-    frame = self.fretboardFrame
-
-    for widget in frame.winfo_children():
-      widget.destroy()
-
-    dispLine = " "
-    for fret in range( 0, num_frets + 1 ):
-      dispLine += ( " %2s" % fret )
-      if fret == 0:
-        dispLine += " "
-
-    s = Label( frame, text=dispLine, font=dFont )
-    s.pack( side=TOP )
-
-    self.generateFB( 'note' )
-    s = Label( frame, text="-------------------------------------------" )
-    s.pack( side=TOP )
-    self.generateFB( 'interval' )
-
-  '''
   def displayFretboards( self ):
 
-    fretboard = self.generateFretboard( )
+    fretboard = self.generateFretboard()
     numStrings = fretboard[ 'numStrings' ]
 
     LEFT_BORDER = 30
-    STRING_SPACING = 20
+    STR_SPC = 20
     FRET_SPACING = 30
     FRET_NUM_VERT_OFFSET = 20
 
     FRET1_TOP = FRET_NUM_VERT_OFFSET + 20
-    FRET1_BOTTOM = FRET1_TOP + ( numStrings - 1 ) * STRING_SPACING
+    FRET1_BOTTOM = FRET1_TOP + ( numStrings - 1 ) * STR_SPC
 
     FRET2_TOP = FRET1_BOTTOM + 40
-    FRET2_BOTTOM = FRET2_TOP + ( numStrings - 1 ) * STRING_SPACING
+    FRET2_BOTTOM = FRET2_TOP + ( numStrings - 1 ) * STR_SPC
 
     STRING_LEFT = LEFT_BORDER + 10
     STRING_RIGHT = STRING_LEFT + ( num_frets + 1 ) * FRET_SPACING
 
-    HIDE_RADIUS = 9
+    HIDE_RAD = 9 # Hide radius
 
     self.canvas.delete( ALL )
 
@@ -285,10 +219,9 @@ class runGui():
       xPos = LEFT_BORDER + FRET_SPACING + fret * FRET_SPACING
 
       txt = str( fret )
-      self.canvas.create_text( xPos - STRING_SPACING / 2, FRET_NUM_VERT_OFFSET, text=txt ) # Fretboard numbering
+      self.canvas.create_text( xPos - STR_SPC / 2, FRET_NUM_VERT_OFFSET, text=txt ) # Fretboard numbering
 
-      w = 2 if fret else 4
-
+      w = 1 if fret else 4
       self.canvas.create_rectangle( xPos, FRET1_TOP, xPos + w, FRET1_BOTTOM, fill="black" )
       self.canvas.create_rectangle( xPos, FRET2_TOP, xPos + w, FRET2_BOTTOM, fill="black" )
 
@@ -297,26 +230,26 @@ class runGui():
         xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInd * FRET_SPACING
 
         if fretInd == 12:
-          yPos = ( FRET1_TOP + FRET1_BOTTOM ) / 3  # put 1/3 from top / bottom
+          yPos = ( FRET1_TOP + FRET1_BOTTOM ) / 3 # put 1/3 from top / bottom
           self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4 )
           yPos = ( FRET1_TOP + FRET1_BOTTOM ) * 2/3
           self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4 )
         else:
-          yPos = ( FRET1_TOP + FRET1_BOTTOM ) / 2  # put in the middle
+          yPos = ( FRET1_TOP + FRET1_BOTTOM ) / 2 # put in the middle
           self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4 )
 
     # Draw strings
     for s in range( 0, numStrings ):
       self.canvas.create_text( STRING_LEFT - 20,
-                               FRET1_TOP + s * STRING_SPACING,
+                               FRET1_TOP + s * STR_SPC,
                                text=fretboard[ s + 1 ][ 0 ][ 'root'] )
       self.canvas.create_text( STRING_LEFT - 20,
-                               FRET2_TOP + s * STRING_SPACING,
+                               FRET2_TOP + s * STR_SPC,
                                text=fretboard[ s + 1 ][ 0 ][ 'root'] )
-      self.canvas.create_line( STRING_LEFT,  FRET1_TOP + s * STRING_SPACING,
-                               STRING_RIGHT, FRET1_TOP + s * STRING_SPACING )
-      self.canvas.create_line( STRING_LEFT,  FRET2_TOP + s * STRING_SPACING,
-                               STRING_RIGHT, FRET2_TOP + s * STRING_SPACING )
+      self.canvas.create_line( STRING_LEFT,  FRET1_TOP + s * STR_SPC,
+                               STRING_RIGHT, FRET1_TOP + s * STR_SPC )
+      self.canvas.create_line( STRING_LEFT,  FRET2_TOP + s * STR_SPC,
+                               STRING_RIGHT, FRET2_TOP + s * STR_SPC )
 
     # Populate individual frets
     for stringNum in range( 0, numStrings ):
@@ -325,50 +258,39 @@ class runGui():
         if fret[ 'interval' ] in extIntervals and stringNum > ( numStrings / 2 ):
           continue # Don't display ext intervals on bass strings
 
-        xPos = LEFT_BORDER + FRET_SPACING + fret[ 'fret' ] * FRET_SPACING - FRET_SPACING / 2
-        yPos = FRET1_TOP + stringNum * STRING_SPACING
+        xPos = LEFT_BORDER + FRET_SPACING / 2 + fret[ 'fret' ] * FRET_SPACING
+        yPos = FRET1_TOP + stringNum * STR_SPC
 
-        if self.fretsNotes: # Show frets?
-          fill = None
-          if self.overlay:
-            if fret[ 'inSpelling' ] and fret[ 'inOLSpelling' ]:
-              fill="#8ff" # blue-green if in both
-            else:
-              if fret[ 'inSpelling' ]:
-                fill="#f88"
-              elif fret[ 'inOLSpelling' ]:
-                fill="#88f"
-          elif fret[ 'inSpelling' ]:
-            fill="#f88"
-          if fill:
+        fill = None
+        if self.overlay:
+          if fret[ 'inSpelling' ] and fret[ 'inOLSpelling' ]:
+            fill="#8ff" # blue-green if in both
+          else:
+            if fret[ 'inSpelling' ]:
+              fill="#f88" # red-ish
+            elif fret[ 'inOLSpelling' ]:
+              fill="#88f" # blue-ish
+        elif fret[ 'inSpelling' ]:
+          fill="#f88"
+
+        if fill:
+          if self.fretsNotes: # Show frets?
             self.canvas.create_oval( xPos - 5, yPos - 5, xPos + 5, yPos + 5, fill=fill )
-        else: # show notes
-          fill = None
-          if self.overlay:
-            if fret[ 'inSpelling' ] and fret[ 'inOLSpelling' ]:
-              fill="#8ff",
-            else:
-              if fret[ 'inSpelling' ]:
-                fill="#f88"
-              elif fret[ 'inOLSpelling' ]:
-                fill="#88f"
-          elif fret[ 'inSpelling' ]:
-            fill="#f88"
-          if fill:
-            self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
-                                     xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
+          else:
+            self.canvas.create_oval( xPos - HIDE_RAD, yPos - HIDE_RAD,
+                                     xPos + HIDE_RAD, yPos + HIDE_RAD,
                                      fill=fill )
             self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
 
         # Bottom fretboard is just Chord 1's intervals.
         if fret[ 'inSpelling' ]:
-          yPos = FRET2_TOP + stringNum * STRING_SPACING
+          yPos = FRET2_TOP + stringNum * STR_SPC
           if fret[ 'interval' ] == 'R':
             self.canvas.create_oval( xPos - 5, yPos - 5,
                                      xPos + 5, yPos + 5, fill="black" ) # draw a fret in top fretboard
           else:
-            self.canvas.create_oval( xPos - HIDE_RADIUS, yPos - HIDE_RADIUS,
-                                     xPos + HIDE_RADIUS, yPos + HIDE_RADIUS,
+            self.canvas.create_oval( xPos - HIDE_RAD, yPos - HIDE_RAD,
+                                     xPos + HIDE_RAD, yPos + HIDE_RAD,
                                      fill="white", outline="white" ) # erase
             self.canvas.create_text( xPos, yPos, text=fret[ 'interval' ] )
 
@@ -403,8 +325,7 @@ class runGui():
     num_frets = 15 if num_frets == 24 else 24
     self.btn1524txt.set( "24" if num_frets == 15 else "15" )
 
-    self.displayMainframe()
-    self.displayFretboards( )
+    self.displayFretboards()
 
   def overlayToggle( self ):
     self.overlay = not self.overlay
@@ -476,10 +397,16 @@ class runGui():
     self.OLkeysMenu[ "state" ] = "disable"
     self.OLspellingMenu[ "state" ] = "disable"
 
-    self.fn = Button( self.mainFrame, textvariable=self.notesFrets, font=disFont[ 1 ], command=self.fnToggle )
+    self.fn = Button( self.mainFrame,
+                      textvariable=self.notesFrets,
+                      font=disFont[ 1 ],
+                      command=self.fnToggle )
     self.fn.pack( side=LEFT )
 
-    self.fb = Button( self.mainFrame, textvariable=self.btn1524txt, font=disFont[ 1 ], command=self.fretNumToggle )
+    self.fb = Button( self.mainFrame,
+                      textvariable=self.btn1524txt,
+                      font=disFont[ 1 ],
+                      command=self.fretNumToggle )
     self.fb.pack( side=LEFT )
 
   def __init__( self ):
