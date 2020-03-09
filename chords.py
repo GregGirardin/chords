@@ -291,7 +291,7 @@ class runGui():
           else:
             self.canvas.create_oval( xPos - HIDE_RAD, yPos - HIDE_RAD,
                                      xPos + HIDE_RAD, yPos + HIDE_RAD,
-                                     fill="white", outline="white" ) # erase
+                                     fill="white", outline="black" ) # erase
             self.canvas.create_text( xPos, yPos, text=fret[ 'interval' ] )
 
   def instrumentChange( self, *args ):
