@@ -226,7 +226,7 @@ class runGui():
       self.canvas.create_rectangle( xPos, FRET2_TOP, xPos + w, FRET2_BOTTOM, fill="black" )
 
     if self.fretsNotes:
-      for fretInd in( 3, 5, 7, 9, 12, 15 ): # Too cluttered for now?
+      for fretInd in( 3, 5, 7, 9, 12, 15 ):
         xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInd * FRET_SPACING
 
         if fretInd == 12:
@@ -286,11 +286,9 @@ class runGui():
         if fret[ 'inSpelling' ]:
           yPos = FRET2_TOP + stringNum * STR_SPC
           if fret[ 'interval' ] == 'R':
-            self.canvas.create_oval( xPos - 5, yPos - 5,
-                                     xPos + 5, yPos + 5, fill="black" ) # draw a fret in top fretboard
+            self.canvas.create_oval( xPos - 5, yPos - 5, xPos + 5, yPos + 5, fill="black" )
           else:
-            self.canvas.create_oval( xPos - HIDE_RAD, yPos - HIDE_RAD,
-                                     xPos + HIDE_RAD, yPos + HIDE_RAD,
+            self.canvas.create_oval( xPos - HIDE_RAD, yPos - HIDE_RAD, xPos + HIDE_RAD, yPos + HIDE_RAD,
                                      fill="white", outline="black" ) # erase
             self.canvas.create_text( xPos, yPos, text=fret[ 'interval' ] )
 
@@ -316,14 +314,14 @@ class runGui():
 
   def fnToggle( self ):
     self.fretsNotes = not self.fretsNotes
-    self.notesFrets.set( "Notes" if self.fretsNotes else "Frets" )
+    self.notesFrets.set( "Frets" if self.fretsNotes else "Notes" )
 
     self.displayFretboards()
 
   def fretNumToggle( self ):
     global num_frets
     num_frets = 15 if num_frets == 24 else 24
-    self.btn1524txt.set( "24" if num_frets == 15 else "15" )
+    self.btn1524txt.set( "15" if num_frets == 15 else "24" )
 
     self.displayFretboards()
 
@@ -353,13 +351,13 @@ class runGui():
     self.spellingVar.trace( 'w', self.spellingChange )
 
     self.btn1524txt = StringVar()
-    self.btn1524txt.set( "15" )
+    self.btn1524txt.set( "24" )
 
     self.overlayTxt = StringVar()
     self.overlayTxt.set( "+" )
 
     self.notesFrets = StringVar()
-    self.notesFrets.set( "Frets" )
+    self.notesFrets.set( "Notes" )
 
     self.OLkeysVar = StringVar()
     self.OLkeysVar.set( dispKeyList[ 0 ] )
