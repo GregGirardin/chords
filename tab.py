@@ -172,6 +172,7 @@ def save( song ):
 
   statusString = "Saved."
 
+
 def annotate( o, h, ANN_IX, curOff, html ):
   '''
   Display annotation if it won't overwrite a previous one.
@@ -191,10 +192,12 @@ def annotate( o, h, ANN_IX, curOff, html ):
         h[ ANN_IX ] += o.annotation
         curOff[ 1 ] += len( o.annotation )
 
+measure_spaces = 0
+
 def export( song, html ):
   ''' Save in human readable format. Could probably refactor with displayUI() '''
   lstatusString = None # local status string.
-  global instrument
+  global instrument, measure_spaces
   fileName = song.songName + ( ".html" if html else ".txt" )
 
   try:
@@ -214,14 +217,15 @@ def export( song, html ):
     f.write( "</h2><hr>" )
 
   measure = 1
-  curOff = [ 3, 0 ] # current, where the space is
-  twoSp = '&nbsp&nbsp'
 
   while measure <= song.count():
     headerLines = [ '&nbsp', '' ] if html else [ ' ', '' ] # [ measures, annotations ]
+    curOff = [ 3, 0 ]  # current, where the space is
     fretboardLines = [ 'E ','B ','G ','D ','A ','E ' ]
 
     def endOfMeasure( repeat = False ):
+      global measure_spaces
+
       for s in( 0, 1, 4, 5 ):
         fretboardLines[ s ] += '|'
 
@@ -229,7 +233,7 @@ def export( song, html ):
       fretboardLines[ 2 ] += ch
       fretboardLines[ 3 ] += ch
 
-      headerLines[ MEAS_IX ] += ( '&nbsp' if html else ' ' )
+      measure_spaces += 1
 
     disBeats = DISPLAY_BEATS
     repeat = False
@@ -275,12 +279,15 @@ def export( song, html ):
 
             if curBeatNum == 1:
               if measure < 10:
-                headerLines[ MEAS_IX ] += ( twoSp if html else "  " )
+                measure_spaces += 2
               elif measure < 100:
-                headerLines[ MEAS_IX ] += ( "&nbsp" if html else " " )
-              headerLines[ MEAS_IX ] += "%d" % ( measure )
+                measure_spaces += 1
+
+              headerLines[ MEAS_IX ] += ( "&nbsp" * measure_spaces if html else " " * measure_spaces ) + "%d" % ( measure )
+              measure_spaces = 0
             else:
-              headerLines[ MEAS_IX ] += ( '&nbsp&nbsp&nbsp' if html else '   ' )
+              measure_spaces += 3
+
             curOff[ 0 ] += 3
             curBeatNum += 1
 
@@ -294,13 +301,17 @@ def export( song, html ):
         if song.get( measure ).pageBreak:
           break
 
+    measure_spaces = 0
+
     for line in headerLines:
       f.write( line )
       if html:
         f.write( "<br>" )
       f.write ("\n")
 
-    fl = fretboardLines if instrument == INST_GUITAR else fretboardLines[ 2: ]
+    # gmg
+
+    fl = fretboardLines if instrument == INST_GUITAR else fretboardLines[ 2 : ]
 
     for line in fl:
       f.write( line )
