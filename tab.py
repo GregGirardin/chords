@@ -20,10 +20,6 @@ songExt = ".pytab"
 statusString = None
 selectedfileIx = 0
 
-OFFSET_MODE_NORMAL = 0
-OFFSET_MODE_MIDDLE = 1
-OFFSET_MODE_OCTAVE = 2
-
 INST_GUITAR = 1
 INST_BASS = 2
 
@@ -32,7 +28,6 @@ NOTE_HAMMER = 1
 NOTE_PULLOFF = 2
 NOTE_SLIDE = 3
 
-offsetMode = OFFSET_MODE_NORMAL
 instrument = INST_GUITAR
 
 DISPLAY_BEATS = 32
@@ -356,7 +351,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
   ''' Display starting from current measure display DISPLAY_BEATS beats, so the width isn't quite fixed
       based on how many measures that is.
   '''
-  global statusString, offsetMode, unsavedChange, tuningIndex
+  global statusString, unsavedChange, tuningIndex
   assert cursor_m >= measure, "Cursor before current measure."
 
   SUMMARY_IX = 0 # header lines
@@ -375,16 +370,15 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
   instructions = [ '',
                    'Use arrows to move cursor',
                    '><  Forward / back measure',
-                   '`1234567890-= note at 0-12, 7-18, 12-24',
-                   't   Offset          a/i Add/Insert beat',
+                   '`123...!@#... note at 0-24',
+                   'a/i Add/Insert beat q Quit',
                    'd   Delete beat     sp  Clear note',
                    'm   Add measure     c/p Copy/Paste',
                    'n   Annotate        h   hammer/pull/slide',
                    'r   Rename song     b   Page break',
                    'R   Repeat          s   Save',
                    'o   Open            x/X Export (txt / html)',
-                   'I   Instrument      T   Tuning',
-                   'q   Quit' ]
+                   'I   Instrument      T   Tuning' ]
 
   headerLines[ SUMMARY_IX ] += song.songName + ", " + str ( song.count() ) + " measures, " + \
                                "%d beats in measure. " % ( song.get( cursorMeasure ).count() ) + \
@@ -392,11 +386,6 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
 
   if statusString is not None:
     headerLines[ STATUS_IX ] += bcolors.RED + statusString+ bcolors.ENDC
-  else:
-    if offsetMode == OFFSET_MODE_MIDDLE:
-      headerLines[ STATUS_IX ] += "7-18"
-    elif offsetMode == OFFSET_MODE_OCTAVE:
-      headerLines[ STATUS_IX ] += "12-24"
 
   curOff = [ 3, 0 ]
 
@@ -763,12 +752,6 @@ def getNote():
 def setNote( fret ):
   global unsavedChange
 
-  if offsetMode == OFFSET_MODE_OCTAVE:
-    fret += 12
-  elif offsetMode == OFFSET_MODE_MIDDLE:
-    if fret < 7:
-      fret += 12
-
   m = currentSong.get( cursorMeasure )
   if not m.get( cursorBeat ):
     m.addBeat( cursorBeat )
@@ -898,8 +881,30 @@ while True:
     setNote( 11 )
   elif ch == '=':
     setNote( 12 )
-  elif ch == 't': # Toggle 0-12, 7-16 or 12-24
-    offsetMode = OFFSET_MODE_NORMAL if offsetMode == OFFSET_MODE_OCTAVE else offsetMode + 1
+  elif ch == '!':
+    setNote( 13 )
+  elif ch == '@':
+    setNote( 14 )
+  elif ch == '#':
+    setNote( 15 )
+  elif ch == '$':
+    setNote( 16 )
+  elif ch == '%':
+    setNote( 17 )
+  elif ch == '^':
+    setNote( 18 )
+  elif ch == '&':
+    setNote( 19 )
+  elif ch == '*':
+    setNote( 20 )
+  elif ch == '(':
+    setNote( 21 )
+  elif ch == ')':
+    setNote( 22 )
+  elif ch == '_':
+    setNote( 23 )
+  elif ch == '+':
+    setNote( 24 )
   elif ch == 's': # Save
     save( currentSong )
     unsavedChange = False
