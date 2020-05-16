@@ -8,7 +8,8 @@ Greg Girardin
 Nashua NH, USA
 November, 2016
 
-A song will be modeled as a list of measures.
+A song will be modeled as a list tracks (e.g. guitar1, guitar2, bass)
+Each track will contain a list of measures.
 Each measure contains a list of beats.
 Each beat is a list of simultaneous notes, empty list indicates a rest
 Each note is a value representing the fret and string
@@ -47,6 +48,13 @@ MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32
 DISPLAY_BEATS = 32 # number of beats we can display on a line
 
+tuningsDict = { "Standard" : [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ' ],
+                "Drop D"   : [ 'E ', 'B ', 'G ', 'D ', 'A ', 'D ' ],
+                "DADGAD"   : [ 'D ', 'A ', 'G ', 'D ', 'A ', 'D ' ] }
+
+tunings = [ "Standard", "Drop D", "DADGAD" ]
+tuningIndex = 0
+
 # Wrapper around a list. This API is 1 based
 class pytabContainer( object ):
 
@@ -63,7 +71,7 @@ class pytabContainer( object ):
 
     return True
 
-  def set( self, obj, index = None, insert = False ):
+  def set( self, obj, index=None, insert=False ):
     # If index is none then append. Create if necessary.
     if index is None and insert == True:
       assert 0, "Must provide index to insert"
@@ -131,26 +139,44 @@ class pytabMeasure( pytabContainer ):
     self.repeat = False
     pytabContainer.__init__( self )
 
-  def addBeat( self, beat = None, insert = False ):
+  def addBeat( self, beat=None, insert=False ):
     if beat:
       assert beat <= MAX_BEATS_PER_MEAS, "Exceeded max beats per measure."
       assert beat > 0, "First beat is 1."
     return self.set( pytabBeat(), beat, insert )
 
-class pytabSong( pytabContainer ):
-
+'''
+class pytabTrack( pytabContainer ):
   def __init__( self, name ):
     self.songName = name
     pytabContainer.__init__( self )
 
-  def addMeasure( self, measure = None, insert = False ):
+  def addMeasure( self, measure=None, insert=False ):
+    if measure:
+      assert measure <= 500, "Beyond max measure."
+      assert measure > 0, "First measure is 1."
+    return self.set( pytabMeasure(), measure, insert )
+'''
+
+class pytabSong( pytabContainer ):
+
+  def __init__( self, name ):
+    self.songName = name
+    self.tuningIndex = 0
+    pytabContainer.__init__( self )
+  # def addTrack( self, trackName )
+  #   pass
+  # def deleteTrack( self, trackName )
+  #   pass
+
+  def addMeasure( self, measure=None, insert=False ):
 
     if measure:
       assert measure <= 500, "Beyond max measure."
       assert measure > 0, "First measure is 1."
     return self.set( pytabMeasure(), measure, insert )
 
-def load( name ):
+def loadSong( name ):
   global statusString
   fileName = name + songExt
 
@@ -172,11 +198,10 @@ def save( song ):
 
   statusString = "Saved."
 
-
 def annotate( o, h, ANN_IX, curOff, html ):
   '''
   Display annotation if it won't overwrite a previous one.
-  o is the object that may have an annotation (measure or beat)
+  o is the object that may have an annotation ( measure or beat )
   h is the header to be modified, we're also passed the indexes since they vary between the UI and export
   '''
   if o:
@@ -211,7 +236,7 @@ def export( song, html ):
              "<html><head><style type=\"text/css\">a {text-decoration: none}</style></head>\n"
              "<body><font style=\"font-family:courier;\" size=\"2\">\n<h2>\n")
   MEAS_IX = 0
-  ANN_IX  = 1
+  ANN_IX = 1
   f.write( song.songName + ( "<br>\n" if html else "\n" ) )
   if html:
     f.write( "</h2><hr>" )
@@ -221,7 +246,7 @@ def export( song, html ):
   while measure <= song.count():
     headerLines = [ '&nbsp', '' ] if html else [ ' ', '' ] # [ measures, annotations ]
     curOff = [ 3, 0 ]  # current, where the space is
-    fretboardLines = [ 'E ','B ','G ','D ','A ','E ' ]
+    fretboardLines = copy.copy( tuningsDict[ tunings[ currentSong.tuningIndex ] ] )
 
     def endOfMeasure( repeat = False ):
       global measure_spaces
@@ -309,8 +334,6 @@ def export( song, html ):
         f.write( "<br>" )
       f.write ("\n")
 
-    # gmg
-
     fl = fretboardLines if instrument == INST_GUITAR else fretboardLines[ 2 : ]
 
     for line in fl:
@@ -333,7 +356,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
   ''' Display starting from current measure display DISPLAY_BEATS beats, so the width isn't quite fixed
       based on how many measures that is.
   '''
-  global statusString, offsetMode, unsavedChange
+  global statusString, offsetMode, unsavedChange, tuningIndex
   assert cursor_m >= measure, "Cursor before current measure."
 
   SUMMARY_IX = 0 # header lines
@@ -347,7 +370,8 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
                   '  ',    # Measures
                   '',      # Annotations
                   '  ' ]   # Beats
-  fretboardLines = [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ']
+  fretboardLines = copy.copy( tuningsDict[ tunings[ currentSong.tuningIndex ] ] )
+
   instructions = [ '',
                    'Use arrows to move cursor',
                    '><  Forward / back measure',
@@ -359,14 +383,15 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
                    'r   Rename song     b   Page break',
                    'R   Repeat          s   Save',
                    'o   Open            x/X Export (txt / html)',
-                   'I   Instrument      q   Quit' ]
+                   'I   Instrument      T   Tuning',
+                   'q   Quit' ]
 
   headerLines[ SUMMARY_IX ] += song.songName + ", " + str ( song.count() ) + " measures, " + \
                                "%d beats in measure. " % ( song.get( cursorMeasure ).count() ) + \
                                ( bcolors.RED + "Edited" + bcolors.ENDC if unsavedChange else "" )
 
   if statusString is not None:
-    headerLines[ STATUS_IX ] += statusString
+    headerLines[ STATUS_IX ] += bcolors.RED + statusString+ bcolors.ENDC
   else:
     if offsetMode == OFFSET_MODE_MIDDLE:
       headerLines[ STATUS_IX ] += "7-18"
@@ -377,7 +402,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
 
   statusString = None
 
-  def endOfMeasure( pageBreak = False, repeat = False ):
+  def endOfMeasure( pageBreak=False, repeat=False ):
     global instrument
     bc = '/' if pageBreak else '|'
 
@@ -491,6 +516,7 @@ def getInput():
   attrs[ 3 ] &= ~( termios.ECHONL | termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN )
   termios.tcsetattr( fd, termios.TCSANOW, attrs )
   fcntl.fcntl( fd, fcntl.F_SETFL, flags_save & ~os.O_NONBLOCK )
+
   try:
     ret = sys.stdin.read( 1 )
     if ord( ret ) == 27: # Escape
@@ -702,13 +728,16 @@ def handlePaste( song, beats, measure, beat ):
 
   return beatsPasted
 
+###########
 # main loop
+###########
+
 songName = "Song"
 
 if len( sys.argv ) == 2:
   songName = sys.argv[ 1 ].split( "." )[ 0 ]
 
-currentSong = load( songName )
+currentSong = loadSong( songName )
 if not currentSong:
   currentSong = pytabSong( songName )
   currentSong.addMeasure()
@@ -858,7 +887,6 @@ while True:
       m.annotation = annotation
     else:
       statusString = "Invalid measure."
-
   elif ch == '`': # various notes follow `1234567890-= represent fretboard 0-12.
     setNote( 0 )
   elif ch >= '1' and ch <= '9':
@@ -882,7 +910,7 @@ while True:
   elif ch == 'o': # open
     newSongName = findSong()
     if newSongName:
-      loadedSong = load( newSongName )
+      loadedSong = loadSong( newSongName )
       if loadedSong is not None:
         currentSong = loadedSong
         songName = newSongName
@@ -904,6 +932,11 @@ while True:
         cursorString = 3
     else:
       instrument = INST_GUITAR
+  elif ch == 'T': # Tuning
+    currentSong.tuningIndex  += 1
+    if currentSong.tuningIndex  >= len( tunings ):
+      currentSong.tuningIndex = 0
+    statusString = tunings[ currentSong.tuningIndex ]
 
   # Calculate currentMeasure
   displayBeats = 0

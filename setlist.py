@@ -260,7 +260,7 @@ def displayUI():
       if song.elements[ songParams [ SP_ARTIST ] ]:
         print( " by " + song.elements[ songParams [ SP_ARTIST ] ], end="" )
       if song.elements[ songParams [ SP_KEY ] ]:
-        print( " " + song.elements[ songParams [ SP_KEY ] ], end="" )
+        print( " key " + song.elements[ songParams [ SP_KEY ] ], end="" )
       if song.elements[ songParams [ SP_TEMPO ] ]:
         print( " " + song.elements[ songParams [ SP_TEMPO ] ] + "bpm", end="" )
       if song.elements[ songParams [ SP_YEAR ] ]:
@@ -268,7 +268,7 @@ def displayUI():
       if song.elements[ songParams [ SP_GENRE ] ]:
         print( " " + song.elements[ songParams [ SP_GENRE ] ], end="" )
       if song.elements[ songParams[ SP_LENGTH ] ]:
-        print( " " + song.elements[ songParams[ SP_LENGTH ] ], end="" )
+        print( " length " + song.elements[ songParams[ SP_LENGTH ] ], end="" )
   print()
   if showBy is not None:
     print( "Show by " + songParams[ showBy ] )
@@ -726,9 +726,9 @@ def exportSet():
   f.close()
   statusString = "Export complete."
 
-# Song info editor functions
+# "Song Information Editor" functions.
+# Additional song info not contained in the .txt file is saved as json. Artist, key, etc.
 
-# Additional song info not contained in the .txt file is saved as json.
 # Open the file and add the information to the song data
 def openSieJson():
   global sieFileName, songLibrary
