@@ -6,7 +6,7 @@ A basic tablature editing utility.
 
 Greg Girardin
 Nashua NH, USA
-November, 2016
+November, 2020
 
 A song will be modeled as a list tracks (e.g. guitar1, guitar2, bass)
 Each track will contain a list of measures.
@@ -39,8 +39,12 @@ class bcolors:
   ENDC    = '\033[0m'
   RED     = '\033[91m'
 
+GLOBAL_TRACK = 1 # Things that apply to all tracks will be put in track 1, tbd, put in song
+
 MAX_WIDTH = 120
 MAX_BEATS_PER_MEAS = 32
+MAX_TRACKS = 3
+MAX_MEASURES = 500
 DISPLAY_BEATS = 32 # number of beats we can display on a line
 
 tuningsDict = { "Standard" : [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ' ],
@@ -50,21 +54,22 @@ tuningsDict = { "Standard" : [ 'E ', 'B ', 'G ', 'D ', 'A ', 'E ' ],
 tunings = [ "Standard", "Drop D", "DADGAD" ]
 tuningIndex = 0
 
-# Wrapper around a list. This API is 1 based
+'''
+  Wrapper around a list. This API is 1 based
+
+  API
+
+  set
+  get
+  pop
+  clr
+'''
+
 class pytabContainer( object ):
 
   def __init__( self ):
     self.objects = []
     self.annotation = None # place to allow comments
-
-  def rangeCheck( self, index ):
-    if not index:
-      return True
-
-    if index >= len( self.objects ) + 1:
-      return False
-
-    return True
 
   def set( self, obj, index=None, insert=False ):
     # If index is none then append. Create if necessary.
@@ -75,7 +80,7 @@ class pytabContainer( object ):
       assert 0, "Bad index."
 
     if index:
-      index -= 1 # make 0 based
+      index -= 1 # make 0 based, API is 1 based
       # Add empty entries if necessary, ex: we're adding measure 10 to a new song.
       while self.count() <= index:
         self.objects.append( None )
@@ -89,6 +94,17 @@ class pytabContainer( object ):
 
     return obj
 
+  def get( self, index=None ):
+    # get an object list.
+    if index:
+      assert index > 0, "Index must be > 0."
+      if index > len( self.objects ):
+        return None
+      index -= 1 # make 0 based, API is 1 based.
+      return self.objects[ index ]
+    else:
+      return self.objects
+
   def pop( self, index ):
     if index < 1 or index > len( self.objects ):
       return None
@@ -98,17 +114,6 @@ class pytabContainer( object ):
 
   def clr( self, index ):
     return( self.set( None, index ) )
-
-  def get( self, index = None ):
-    # get an object or entire list.
-    if index:
-      assert index > 0, "Index must be > 0."
-      if index > len( self.objects ):
-        return None
-      index -= 1
-      return self.objects[ index ]
-    else:
-      return self.objects
 
   def count( self ):
     return len( self.objects )
@@ -123,8 +128,8 @@ class pytabNote( object ):
 class pytabBeat( pytabContainer ):
 
   def addNote( self, string, fret, noteType ):
-    assert string >= 1 and string <= 6, "Valid strings are 1-6"
-    assert fret >= 0 and fret <= 24, "Valid frets are 0-24"
+    assert string >= 1 and string <= 6, "Valid strings are 1-6" # tbd
+    assert fret >= 0 and fret <= 24, "Valid frets are 0-24" # tbd
     return self.set( pytabNote( string, fret, noteType ), string )
 
 class pytabMeasure( pytabContainer ):
@@ -140,18 +145,17 @@ class pytabMeasure( pytabContainer ):
       assert beat > 0, "First beat is 1."
     return self.set( pytabBeat(), beat, insert )
 
-'''
 class pytabTrack( pytabContainer ):
-  def __init__( self, name ):
-    self.songName = name
+  def __init__( self, name="Track" ):
+    self.trackName = name
+    #self.trackType = type # guitar, bass, etc
     pytabContainer.__init__( self )
 
   def addMeasure( self, measure=None, insert=False ):
     if measure:
-      assert measure <= 500, "Beyond max measure."
+      assert measure <= MAX_MEASURES, "Beyond max measure."
       assert measure > 0, "First measure is 1."
     return self.set( pytabMeasure(), measure, insert )
-'''
 
 class pytabSong( pytabContainer ):
 
@@ -159,17 +163,13 @@ class pytabSong( pytabContainer ):
     self.songName = name
     self.tuningIndex = 0
     pytabContainer.__init__( self )
-  # def addTrack( self, trackName )
-  #   pass
-  # def deleteTrack( self, trackName )
-  #   pass
 
-  def addMeasure( self, measure=None, insert=False ):
+  def addTrack( self, track=None, insert=False, name="Track" ):
 
-    if measure:
-      assert measure <= 500, "Beyond max measure."
-      assert measure > 0, "First measure is 1."
-    return self.set( pytabMeasure(), measure, insert )
+    if track:
+      assert track <= MAX_TRACKS, "Beyond max track."
+      assert track > 0, "First track is 1."
+    return self.set( pytabTrack( name ), track, insert )
 
 def loadSong( name ):
   global statusString
@@ -238,12 +238,12 @@ def export( song, html ):
 
   measure = 1
 
-  while measure <= song.count():
+  while measure <= song.get( 1 ).count():
     headerLines = [ '&nbsp', '' ] if html else [ ' ', '' ] # [ measures, annotations ]
     curOff = [ 3, 0 ]  # current, where the space is
     fretboardLines = copy.copy( tuningsDict[ tunings[ currentSong.tuningIndex ] ] )
 
-    def endOfMeasure( repeat = False ):
+    def endOfMeasure( repeat=False ):
       global measure_spaces
 
       for s in( 0, 1, 4, 5 ):
@@ -259,8 +259,8 @@ def export( song, html ):
     repeat = False
 
     while True:
-      if measure <= song.count() and disBeats > 0:
-        m = song.get( measure )
+      if measure <= song.get( 1 ).count() and disBeats > 0:
+        m = song.get( 1 ).get( measure )
         if m == None:
           endOfMeasure( repeat )
           curOff[ 0 ] += 1
@@ -347,11 +347,11 @@ def export( song, html ):
   f.close()
   return lstatusString
 
-def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
+def displayUI( song, measure, cursor_t, cursor_m, cursor_b, cursor_s ):
   ''' Display starting from current measure display DISPLAY_BEATS beats, so the width isn't quite fixed
       based on how many measures that is.
   '''
-  global statusString, unsavedChange, tuningIndex
+  global statusString, unsavedChange
   assert cursor_m >= measure, "Cursor before current measure."
 
   SUMMARY_IX = 0 # header lines
@@ -367,25 +367,25 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
                   '  ' ]   # Beats
   fretboardLines = copy.copy( tuningsDict[ tunings[ currentSong.tuningIndex ] ] )
 
-  instructions = [ '',
-                   'Use arrows to move cursor',
-                   '><  Forward / back measure',
-                   '`123...!@#... note at 0-24',
-                   'a/i Add/Insert beat q Quit',
-                   'd   Delete beat     sp  Clear note',
+  instructions = [ '\nUse arrows to move cursor',
+                   '><  Fwd / back measure',
+                   '123.. shift + 12 note',
+                   't-= Add/move track  D   Delete track',
+                   'a/i Add/Ins beat    d   Delete beat',
+                   'q   quit            sp  Clear note',
                    'm   Add measure     c/p Copy/Paste',
                    'n   Annotate        h   hammer/pull/slide',
                    'r   Rename song     b   Page break',
                    'R   Repeat          s   Save',
-                   'o   Open            x/X Export (txt / html)',
-                   'I   Instrument      T   Tuning' ]
+                   'o   Open            x/X Export (txt/html)',
+                   'I   Instrument      G   Tuning' ]
 
-  headerLines[ SUMMARY_IX ] += song.songName + ", " + str ( song.count() ) + " measures, " + \
-                               "%d beats in measure. " % ( song.get( cursorMeasure ).count() ) + \
+  headerLines[ SUMMARY_IX ] += song.songName +", " + str( song.get( 1 ).count() ) + " measures, " + \
+                               "%d beats in measure. " % ( song.get( 1 ).get( cursorMeasure ).count() ) + \
                                ( bcolors.RED + "Edited" + bcolors.ENDC if unsavedChange else "" )
 
   if statusString is not None:
-    headerLines[ STATUS_IX ] += bcolors.RED + statusString+ bcolors.ENDC
+    headerLines[ STATUS_IX ] += bcolors.RED + statusString + bcolors.ENDC
 
   curOff = [ 3, 0 ]
 
@@ -420,8 +420,8 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
   repeat = False
 
   while True:
-    if measure <= song.count() and disBeats > 0:
-      m = song.get( measure )
+    if measure <= song.get( 1 ).count() and disBeats > 0:
+      m = song.get( 1 ).get( measure )
       if m == None:
         endOfMeasure( repeat )
         curOff[ 0 ] += 1
@@ -471,7 +471,7 @@ def displayUI( song, measure, cursor_m, cursor_b, cursor_s ):
           curBeatNum += 1
 
         pb = False
-        if measure + 1 <= song.count():
+        if measure + 1 <= song.get( 1 ).count():
           nm = song.get( measure + 1 )
           if nm and nm.pageBreak:
             pb = nm.pageBreak
@@ -527,48 +527,48 @@ def getInput():
     fcntl.fcntl( fd, fcntl.F_SETFL, flags_save )
   return ret
 
-def findPrevBeat( song, curMeasure, curBeat ):
+def findPrevBeat( song, curTrack, curMeasure, curBeat ):
 
   if curBeat > 1:
     curBeat -= 1
   elif curMeasure > 1:
     curMeasure -= 1
-    curBeat = song.get( curMeasure ).count()
+    curBeat = song.get( 1 ).get( curMeasure ).count()
 
-  return curMeasure, curBeat
+  return curTrack, curMeasure, curBeat
 
-def findNextBeat( song, curMeasure, curBeat ):
+def findNextBeat( song, curTrack, curMeasure, curBeat ):
 
-  if song.count() > 0:
-    if curBeat < song.get( curMeasure ).count():
+  if song.get( 1 ).count() > 0:
+    if curBeat < song.get( 1 ).get( curMeasure ).count():
       curBeat += 1
-    elif curMeasure < song.count():
+    elif curMeasure < song.get( 1 ).count():
       curMeasure += 1
       curBeat = 1
     elif not measureEmpty( song, curMeasure ):
       # create new empty measure if you scroll right passed a non-empty measure
       curMeasure += 1
       curBeat = 1
-      m = song.addMeasure()
+      m = song.get( 1 ).addMeasure()
       m.addBeat()
 
-  return curMeasure, curBeat
+  return curTrack, curMeasure, curBeat
 
 def findPrevMeasure( song, curMeasure, curBeat ):
 
   if curMeasure > 1:
     curMeasure -= 1
-    if curBeat > song.get( curMeasure ).count():
-      curBeat = song.get( curMeasure ).count()
+    if curBeat > song.get( 1 ).get( curMeasure ).count():
+      curBeat = song.get( 1 ).get( curMeasure ).count()
 
   return curMeasure, curBeat
 
 def findNextMeasure( song, curMeasure, curBeat ):
 
-  if song.count() > curMeasure:
+  if song.get( 1 ).count() > curMeasure:
     curMeasure += 1
-    if curBeat > song.get( curMeasure ).count():
-      curBeat = song.get( curMeasure ).count()
+    if curBeat > song.get( 1 ).get( curMeasure ).count():
+      curBeat = song.get( 1 ).get( curMeasure ).count()
 
   return curMeasure, curBeat
 
@@ -633,6 +633,7 @@ def handleCopy( song, measure, beat ):
   if not numBeats:
     statusString = "Invalid input for copy."
     return None
+
   while numBeats:
     m = song.get( measure )
     if m:
@@ -652,6 +653,7 @@ def handleCopy( song, measure, beat ):
 
   return bList
 
+# An empty measure has 1 beat with no notes in it.
 def measureEmpty( song, measure ):
   empty = False
 
@@ -717,11 +719,8 @@ def handlePaste( song, beats, measure, beat ):
 
   return beatsPasted
 
-###########
-# main loop
-###########
-
-songName = "Song"
+# Load default song if present
+songName = "Song-2.0"
 
 if len( sys.argv ) == 2:
   songName = sys.argv[ 1 ].split( "." )[ 0 ]
@@ -729,19 +728,26 @@ if len( sys.argv ) == 2:
 currentSong = loadSong( songName )
 if not currentSong:
   currentSong = pytabSong( songName )
-  currentSong.addMeasure()
-  currentSong.get( 1 ).addBeat()
+  trk = currentSong.addTrack( 1, name="Default" )
+  meas = trk.addMeasure( 1 )
+  meas.addBeat( 1 )
 
 currentMeasure = 1 # Where the UI starts displaying from
-cursorMeasure = 1 # Cursor position
+
+cursorTrack = 1 # Cursor position
+cursorMeasure = 1
 cursorBeat = 1
 cursorString = 4
+
 unsavedChange = False
 
-cpBuf = []
+cpBuf = [] # List for copy/paste
 
-def getNote():
-  m = currentSong.get( cursorMeasure )
+def getNote(): # return the note at cursorTrack : cursorMeasure : cursorBeat : cursorString
+
+  t = currentSong.get( cursorTrack )
+
+  m = t.get( cursorMeasure )
   if not m:
     return None
   if not m.get( cursorBeat ):
@@ -749,26 +755,40 @@ def getNote():
   b = m.get( cursorBeat )
   return b.get( cursorString )
 
-def setNote( fret ):
+def setNote( fret ): # set the note at cursorTrack : cursorMeasure : cursorBeat : cursorString
   global unsavedChange
 
-  m = currentSong.get( cursorMeasure )
+  t = currentSong.get( cursorTrack )
+
+  m = t.get( cursorMeasure )
   if not m.get( cursorBeat ):
     m.addBeat( cursorBeat )
   b = m.get( cursorBeat )
   b.addNote( cursorString, fret, NOTE_NORMAL )
   unsavedChange = True
 
+#############
+# main loop #
+#############
+
 while True:
-  displayUI( currentSong, currentMeasure, cursorMeasure, cursorBeat, cursorString )
+  displayUI( currentSong, currentMeasure, cursorTrack, cursorMeasure, cursorBeat, cursorString )
 
   ch = getInput()
   if ch == 'q':
     exit()
+  elif ch == 't': # add track
+    statusString = "Add Track"
+  elif ch == 'D': # delete track
+    statusString = "Delete Track"
+  elif ch == '-': # move track up
+    statusString = "Track up"
+  elif ch == '=': # move track down
+    statusString = "Track down"
   elif ch == 'RIGHT': # go to the next beat if one exists
-    cursorMeasure, cursorBeat = findNextBeat( currentSong, cursorMeasure, cursorBeat )
+    cursorTrack, cursorMeasure, cursorBeat = findNextBeat( currentSong, cursorTrack, cursorMeasure, cursorBeat )
   elif ch == 'LEFT':  # go to the previous beat if possible
-    cursorMeasure, cursorBeat = findPrevBeat( currentSong, cursorMeasure, cursorBeat )
+    cursorTrack, cursorMeasure, cursorBeat = findPrevBeat( currentSong, cursorTrack, cursorMeasure, cursorBeat )
   elif ch == 'UP':
     if cursorString > ( 1 if instrument == INST_GUITAR else 3 ):
       cursorString -= 1
@@ -776,59 +796,63 @@ while True:
     if cursorString < 6:
       cursorString += 1
   elif ch == ',':
+    # track doesn't change
     cursorMeasure, cursorBeat = findPrevMeasure( currentSong, cursorMeasure, cursorBeat )
   elif ch == '.':
+    # track doesn't change
     cursorMeasure, cursorBeat = findNextMeasure( currentSong, cursorMeasure, cursorBeat )
   elif ch == 'a' or ch == 'i': # add/insert beat
     offset = 1 if ch == 'a' else 0
-    m = currentSong.get( cursorMeasure )
+    m = currentSong.get( GLOBAL_TRACK ).get( cursorMeasure )
     if not m:
-      m = currentSong.addMeasure( cursorMeasure )
+      m = currentSong.get( GLOBAL_TRACK ).addMeasure( cursorMeasure )
     if m.count() == MAX_BEATS_PER_MEAS:
       statusString = "Max beats reached."
     elif cursorBeat == m.count() and ch == 'a':
       m.addBeat()
     else:
-      m.addBeat( cursorBeat + offset, insert = True )
+      m.addBeat( cursorBeat + offset, insert=True )
     unsavedChange = True
   elif ch == 'b': # toggle page break
-    m = currentSong.get( cursorMeasure )
+    m = currentSong.get( GLOBAL_TRACK ).get( cursorMeasure )
     if m:
       m.pageBreak = False if m.pageBreak == True else True
   elif ch == 'R': # toggle repeat
-    m = currentSong.get( cursorMeasure )
+    m = currentSong.get( GLOBAL_TRACK ).get( cursorMeasure )
     if m:
       m.repeat = False if m.repeat == True else True
   elif ch == 'd': # delete beat.
-    m = currentSong.get( cursorMeasure )
-    if currentSong.count() > 1 or m.count() > 1:
+    m = currentSong.get( GLOBAL_TRACK ).get( cursorMeasure )
+    if currentSong.get( GLOBAL_TRACK ).count() > 1 or m.count() > 1:
+      # tbd: all tracks
       m.pop( cursorBeat )
       if m.count() == 0: # delete measure
-        currentSong.pop( cursorMeasure )
+        currentSong.get( GLOBAL_TRACK ).pop( cursorMeasure )
         if cursorMeasure > 1:
           cursorMeasure -= 1
-          cursorBeat = currentSong.get( cursorMeasure ).count()
+          cursorBeat = currentSong.get( GLOBAL_TRACK ).get( cursorMeasure ).count()
       else:
         if cursorBeat > m.count():
           cursorBeat = m.count()
       unsavedChange = True
   elif ch == ' ': # clear note
-    m = currentSong.get( cursorMeasure )
+    m = currentSong.get( GLOBAL_TRACK ).get( cursorMeasure ) # tbd, all tracks
     b = m.get( cursorBeat )
     b.clr( cursorString )
     unsavedChange = True
   elif ch == 'm': # add a measure after the current one
-    if cursorMeasure == currentSong.count():
-      m = currentSong.addMeasure()
+    if cursorMeasure == currentSong.get( GLOBAL_TRACK ).count():
+      m = currentSong.get( GLOBAL_TRACK ).addMeasure()
+      # tbd, add to all tracks
     else:
-      m = currentSong.addMeasure( cursorMeasure + 1, insert = True )
+      m = currentSong.get( GLOBAL_TRACK ).addMeasure( cursorMeasure + 1, insert=True )
     # Create as many beats as exist in the current measure
-    for _ in range( currentSong.get( cursorMeasure ).count( ) ):
+    for _ in range( currentSong.get( 1 ).get( cursorMeasure ).count() ):
       m.addBeat()
     unsavedChange = True
   elif ch == 'r': # Rename
     songName = raw_input( 'Enter song name:' )
-    currentSong.songName = songName
+    currentSong.get( GLOBAL_TRACK ).songName = songName
     unsavedChange = True
   elif ch == 'h': # Highlight
     n = getNote()
@@ -848,9 +872,10 @@ while True:
     annotation = raw_input( "Enter beat annotation:" )
     if len( annotation ) == 0: # clear
       annotation = None
-    m = currentSong.get( cursorMeasure )
+    m = currentSong.get( cursorTrack ).get( cursorMeasure )
     if not m:
-      m = currentSong.addMeasure( cursorMeasure )
+      m = currentSong.get( 1 ).addMeasure( cursorMeasure )
+      # tbd, add to all tracks
     if m:
       b = m.get( cursorBeat )
       if b:
@@ -863,9 +888,10 @@ while True:
     annotation = raw_input( "Enter measure annotation:" )
     if len( annotation ) == 0: # clear
       annotation = None
-    m = currentSong.get( cursorMeasure )
+    m = currentSong.get( GLOBAL_TRACK ).get( cursorMeasure )
     if not m:
-      m = currentSong.addMeasure( cursorMeasure )
+      m = currentSong.get( GLOBAL_TRACK ).addMeasure( cursorMeasure )
+      # tbd, add to all tracks
     if m:
       m.annotation = annotation
     else:
@@ -927,8 +953,8 @@ while True:
     cpBuf = handleCopy( currentSong, cursorMeasure, cursorBeat )
   elif ch == 'p': # paste
     cursorBeat += handlePaste( currentSong, cpBuf, cursorMeasure, cursorBeat )
-    if cursorBeat > currentSong.get( cursorMeasure ).count():
-      cursorBeat = currentSong.get( cursorMeasure ).count()
+    if cursorBeat > currentSong.get( 1 ).get( cursorMeasure ).count():
+      cursorBeat = currentSong.get( 1 ).get( cursorMeasure ).count()
     # ^ corner case because of how we handle pasting into empty measures.
   elif ch == 'I': # not destructive, only display, so no concern about unsaved
     if instrument == INST_GUITAR:
@@ -937,9 +963,9 @@ while True:
         cursorString = 3
     else:
       instrument = INST_GUITAR
-  elif ch == 'T': # Tuning
+  elif ch == 'G': # TuninG
     currentSong.tuningIndex  += 1
-    if currentSong.tuningIndex  >= len( tunings ):
+    if currentSong.tuningIndex >= len( tunings ):
       currentSong.tuningIndex = 0
     statusString = tunings[ currentSong.tuningIndex ]
 
@@ -948,13 +974,13 @@ while True:
   currentMeasure = cursorMeasure
   testMeasure = cursorMeasure
 
-  m = currentSong.get( testMeasure )
+  m = currentSong.get( GLOBAL_TRACK ).get( testMeasure )
   if m:
     displayBeats = m.count()
   testMeasure -= 1
 
   while testMeasure >= 1:
-    m = currentSong.get( testMeasure )
+    m = currentSong.get( GLOBAL_TRACK ).get( testMeasure )
     if m:
       displayBeats += m.count()
     displayBeats += 1 # the end of measure line takes up some space

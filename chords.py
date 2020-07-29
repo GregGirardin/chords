@@ -87,11 +87,11 @@ majHarmMap = { "I" :      ( 'R', '3', '5', '7' ),
                "vi" :     ( '6', 'R', '3', '5' ),
                "viiDim" : ( '7', '2', '4', '6' ) }
 
-# Pick the spellings (keys in spellingMap) you care about.
-spellings = ( 'major', 'minor', 'sus2', 'sus4', '6', 'm6', '7', 'm7', 'M7',
-              '9', 'm9', 'M9', 'dim', 'm7-5', # add 11ths and 13ths if desired
-              'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian',
-              'Melodic', 'Harmonic', 'Pent-Min', 'Pent-Maj', 'mBlues', 'MBlues' )
+# Pick the spellings (keys in spellingMap above) you care about.
+spellings = ( 'major', 'minor', 'sus2', 'sus4', '7', 'm7', 'M7', '9', 'dim', 'm7-5', # chords
+              'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian', # modes of major scale
+              'Melodic', 'Harmonic', 'Altered', 'Pent-Min', 'Pent-Maj', 'mBlues', 'MBlues' # other scales
+              )
 
 extChords = ( '9', 'm9', 'M9', '11', 'm11', 'M11', '13', 'm13', 'M13' )
 extIntervals = ( '9', '11', '13' )
