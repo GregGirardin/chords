@@ -67,7 +67,7 @@ class Song( object ):
     self.fileName = fileName
     self.songName = songName
 
-    elements = { }
+    elements = {}
     for p in songParams:
       elements[ p ] = None
     self.elements = elements # dict keyed by songParams
@@ -159,7 +159,7 @@ def updateSongDataFromLibrary():
         if libSong.fileName == song.fileName:
           song.elements = libSong.elements
           # fwd compatibility. Create new elements if not in the .set
-          if not hasattr( song, 'medley'):
+          if not hasattr( song, 'medley' ):
             song.medley = False
 
 # Count instances of all songs to display duplicates
@@ -608,6 +608,16 @@ def exportSet():
 
         for line in fLines:
           pf = line[ : 2 ] # prefix
+
+          # Is this tablature? If so use a fixed font
+          if pf in( "E|", "A|", "D|", "G|", "B|" ):
+            if tabMode == False:
+              f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
+              tabMode = True
+          elif tabMode == True:
+            f.write( "</font>\n" )
+            tabMode = False
+
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
 
@@ -641,13 +651,7 @@ def exportSet():
             if songInfo != "":
               f.write( "<i><font style=\"font-family:courier;\" size=\"1\">&nbsp" + songInfo + "</font></i><br><br>\n" )
 
-          elif pf == "t!": # Toggle 'tab mode', use fixed font
-            if tabMode == True:
-              f.write( "</font>\n" )
-              tabMode = False
-            else:
-              f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
-              tabMode = True
+          # insert any special tags here. Ex: h! means "Harmonica" in red.
           elif pf == "s!": # Solo
             f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
           elif pf == "c!": # Chorus
@@ -787,7 +791,7 @@ def sieDisplayUI():
   os.system( 'clear' )
   print( "Additional song data." )
   print( "-------------------- ------------------ ------- ----- ------ ----------- --------" )
-  print( "File                 Artist             Key     Tempo Year   Genre       Length" )
+  print( "File                 Artist             Key     Tempo Year   Genre       Length"   )
   print( "-------------------- ------------------ ------- ----- ------ ----------- --------" )
 
   first = cursorSong - 10
@@ -821,12 +825,12 @@ def sieDisplayUI():
     if ix == cursorSong:
       print( bcolors.ENDC, end="" )
 
-    print( "%-18s %-7s %-5s %-6s %-11s %-7s" % ( di[ songParams[ SP_ARTIST ] ][ 0 : 18 ],
-                                                 di[ songParams[ SP_KEY ] ][ 0 : 7 ],
-                                                 di[ songParams[ SP_TEMPO ] ][ 0 : 5],
-                                                 di[ songParams[ SP_YEAR ] ],
-                                                 di[ songParams[ SP_GENRE ] ][0 : 11 ],
-                                                 di[ songParams[ SP_LENGTH ] ][ 0 : 8 ] ) )
+    print( "%-18s %-7s %-5s %-6s %-11s %-7s" % ( di[ songParams[ SP_ARTIST  ] ][ 0 : 18 ],
+                                                 di[ songParams[ SP_KEY     ] ][ 0 :  7 ],
+                                                 di[ songParams[ SP_TEMPO   ] ][ 0 :  5 ],
+                                                 di[ songParams[ SP_YEAR    ] ],
+                                                 di[ songParams[ SP_GENRE   ] ][ 0 : 11 ],
+                                                 di[ songParams[ SP_LENGTH  ] ][ 0 :  8 ] ) )
   print( "--------------------------------------------------------------------------------" )
 
   if statusString:
