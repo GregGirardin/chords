@@ -539,7 +539,6 @@ def pasteClipboard():
 
 def exportSet():
   global statusString, setLists, annotation
-  tabMode = False
 
   fname = setListName + ".html"
   f = open( fname, "w" )
@@ -605,18 +604,24 @@ def exportSet():
         fLines = sf.readlines()
         sf.close()
         fileLine = 0
+        ffAuto = False  # fixed font
+        ffManual = False
+        ffState = False
 
         for line in fLines:
           pf = line[ : 2 ] # prefix
+          if pf == "f!": # User explicitly wants to toggle fixed font
+            ffManual = True if ffManual == False else False
+            continue
+          ffAuto = True if pf in( "E|", "A|", "D|", "G|", "B|" ) else False # tablature, then use a fixed font.
 
-          # Is this tablature? If so use a fixed font
-          if pf in( "E|", "A|", "D|", "G|", "B|" ):
-            if tabMode == False:
+          if ffAuto or ffManual:
+            if not ffState:
               f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
-              tabMode = True
-          elif tabMode == True:
+              ffState = True
+          elif ffState:
             f.write( "</font>\n" )
-            tabMode = False
+            ffState = False
 
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
