@@ -604,7 +604,6 @@ def exportSet():
         fLines = sf.readlines()
         sf.close()
         fileLine = 0
-        ffAuto = False  # fixed font
         ffManual = False
         ffState = False
 
@@ -615,11 +614,11 @@ def exportSet():
             continue
           ffAuto = True if pf in( "E|", "A|", "D|", "G|", "B|" ) else False # tablature, then use a fixed font.
 
-          if ffAuto or ffManual:
+          if ffAuto or ffManual: # We want to use a fixed font.
             if not ffState:
               f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
               ffState = True
-          elif ffState:
+          elif ffState: # Don't want fixed font
             f.write( "</font>\n" )
             ffState = False
 
@@ -629,7 +628,7 @@ def exportSet():
             songText = line.rstrip()
 
             if s.medley:
-              songText += "&#8595;" # down arrow
+              songText += "&#8595;" # Down arrow
 
             if s.highLight == HIGHLIGHT_ON:
               f.write( "%s) <font color=\"red\">%s</font></button>\n" % ( songNumber, songText ) )
@@ -640,19 +639,11 @@ def exportSet():
             # Add song meta data if present (artist / key / tempo / year)
             # You can also just put in html in the txt since it's pasted directly.
             songInfo = ""
-            if s.elements[ songParams[ SP_ARTIST ] ]:
-              songInfo += "by " + s.elements[ songParams[ SP_ARTIST ] ] + ". "
-            if s.elements[ songParams[ SP_KEY ] ]:
-              songInfo += " " + s.elements[ songParams[ SP_KEY ] ]
-            if s.elements[ songParams[ SP_TEMPO ] ]:
-              songInfo += " " + s.elements[ songParams[ SP_TEMPO ] ] + "bpm"
-            if s.elements[ songParams[ SP_YEAR ] ]:
-              songInfo += " " + s.elements[ songParams[ SP_YEAR ] ]
-            if s.elements[ songParams[ SP_GENRE ] ]:
-              songInfo += " " + s.elements[ songParams[ SP_GENRE ] ]
-            if s.elements[ songParams[ SP_LENGTH ] ]:
-              songInfo += " " + s.elements[ songParams[ SP_LENGTH ] ]
-
+            for param in( SP_ARTIST, SP_KEY, SP_TEMPO, SP_YEAR, SP_GENRE, SP_LENGTH ):
+              if s.elements[ songParams[ param ] ]:
+                songInfo += s.elements[ songParams[ param ] ] + " "
+                if param == SP_TEMPO:
+                  songInfo += "bpm"
             if songInfo != "":
               f.write( "<i><font style=\"font-family:courier;\" size=\"1\">&nbsp" + songInfo + "</font></i><br><br>\n" )
 
