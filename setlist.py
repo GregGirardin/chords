@@ -592,6 +592,8 @@ def exportSet():
   if annotation:
     f.write( annotation + "\n" )
 
+  ffState = False # Fixed Font state
+
   # Songs
   setNumber = 1
   for l in setLists[ 0 : len( setLists ) ]:
@@ -605,7 +607,6 @@ def exportSet():
         sf.close()
         fileLine = 0
         ffManual = False
-        ffState = False # Fixed Font state
 
         for line in fLines:
           pf = line[ : 2 ] # prefix
