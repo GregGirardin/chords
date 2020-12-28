@@ -605,15 +605,15 @@ def exportSet():
         sf.close()
         fileLine = 0
         ffManual = False
-        ffState = False
+        ffState = False # Fixed Font state
 
         for line in fLines:
           pf = line[ : 2 ] # prefix
           if pf == "f!": # User explicitly wants to toggle fixed font
             ffManual = True if ffManual == False else False
-            continue
-          ffAuto = True if pf in( "E|", "A|", "D|", "G|", "B|" ) else False # tablature, then use a fixed font.
-
+            continue # Don't output that line.
+          ffAuto = True if pf in( "E|", "A|", "D|", "G|", "B|",
+                                  "I:", "V:", "C:", "S:", "B:", "O:" ) else False # tablature or chords, then use a fixed font.
           if ffAuto or ffManual: # We want to use a fixed font.
             if not ffState:
               f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
@@ -658,10 +658,13 @@ def exportSet():
             f.write( "</font></b><br>\n" )
           # Ignore 2nd line if empty. It's unnecessary space in the html
           elif fileLine > 1 or line != "\n": # add spaces
-            while line[ 0 ] == " ":
-              line = line[ 1 : ]
-              f.write( "&nbsp" )
-            f.write( "%s<br>\n" % ( line.rstrip() ) )
+            nLine = ""
+            for c in line:
+              if c == " ":
+                nLine += "&nbsp" # replace spaces in the line so the browser doesn't skip it.
+              else:
+                nLine += c
+            f.write( "%s<br>\n" % ( nLine.rstrip() ) )
 
           fileLine += 1
       except:
