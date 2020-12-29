@@ -483,7 +483,10 @@ def moveToSet( set ):
   else:
     currentSet = set
     l = len( setLists[ currentSet ].songList )
-    currentSong = None if l == 0 else l - 1
+    if l == 0:
+     currentSong = None
+    elif l < currentSong:
+      currentSong = l - 1
 
 def deleteSet():
   global currentSet, currentSong
@@ -610,16 +613,18 @@ def exportSet():
 
         for line in fLines:
           pf = line[ : 2 ] # prefix
-          if pf == "f!": # User explicitly wants to toggle fixed font
+          if pf == "f!": # Explicity toggle fixed font. Stay fixed until end of song.
             ffManual = True if ffManual == False else False
             continue # Don't output that line.
-          ffAuto = True if pf in( "E|", "A|", "D|", "G|", "B|",
-                                  "I:", "V:", "C:", "S:", "B:", "O:" ) else False # tablature or chords, then use a fixed font.
-          if ffAuto or ffManual: # We want to use a fixed font.
+
+          # if tablature or chords. "E|", "A|" etc or "I: A E D", "C: A D". Use a fixed font.
+          ffAuto = True if pf[ 1 : 2 ] in ( "|", ":" ) else False
+
+          if ffAuto or ffManual: # We want to use a fixed font?
             if not ffState:
               f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
               ffState = True
-          elif ffState: # Don't want fixed font
+          elif ffState: # Don't want fixed font. (All fixed is harder to read for lyrics)
             f.write( "</font>\n" )
             ffState = False
 
