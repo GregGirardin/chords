@@ -612,13 +612,12 @@ def exportSet():
         ffManual = False
 
         for line in fLines:
-          pf = line[ : 2 ] # prefix
-          if pf == "f!": # Explicity toggle fixed font. Stay fixed until end of song.
+          if line[ 0: 2 ] == "f!": # Explicity toggle fixed font. Stay fixed until end of song.
             ffManual = True if ffManual == False else False
             continue # Don't output that line.
 
           # if tablature or chords. "E|", "A|" etc or "I: A E D", "C: A D". Use a fixed font.
-          ffAuto = True if pf[ 1 : 2 ] in ( "|", ":" ) else False
+          ffAuto = True if line[ 1 : 2 ] in ( "|", ":" ) else False
 
           if ffAuto or ffManual: # We want to use a fixed font?
             if not ffState:
@@ -652,16 +651,9 @@ def exportSet():
                   songInfo += "bpm"
             if songInfo != "":
               f.write( "<i><font style=\"font-family:courier;\" size=\"1\">&nbsp" + songInfo + "</font></i><br><br>\n" )
-
-          # insert any special tags here. Ex: h! means "Harmonica" in red.
-          elif pf == "s!": # Solo
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Solo</font></b><br>\n" )
-          elif pf == "c!": # Chorus
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\">&nbsp Chorus</font></b><br>\n" )
-          elif pf == "h!": # Harmonica
-            f.write( "<b><font style=\"font-family:courier;\" size=\"2\" color=\"red\" >&nbsp Harmonica :" )
-            f.write( line[ 2 : ] )
-            f.write( "</font></b><br>\n" )
+          # Bold lines starting with !
+          elif line[ 0 : 1 ] == "!":
+            f.write( "<b>- %s -</b><br>\n" % ( line[ 1 : ].rstrip() ) )
           # Ignore 2nd line if empty. It's unnecessary space in the html
           elif fileLine > 1 or line != "\n": # add spaces
             nLine = ""
