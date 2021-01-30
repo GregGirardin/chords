@@ -252,7 +252,13 @@ def displayUI():
   elif currentSong is not None:
     song = setLists[ currentSet ].songList[ currentSong ]
 
-  print( "File:" + setListName )
+  print( "File:" + setListName, end="" )
+  if operMode == MODE_MOVE_SONG:
+    print( bcolors.WARNING + " Song Move Mode" + bcolors.ENDC, end="" )
+  elif operMode == MODE_MOVE_SET:
+    print( bcolors.WARNING + " Set Move Mode" + bcolors.ENDC, end="" )
+
+  print()
 
   if song:
     print( "Song:\"" + song.songName.strip() + "\"", end="" )
@@ -949,17 +955,13 @@ while True:
       statusString = "No song selected."
     elif operMode != MODE_MOVE_SONG:
       operMode = MODE_MOVE_SONG
-      statusString = "Song move mode."
     else:
       operMode = MODE_MOVE_NORMAL
-      statusString = "Cursor move mode."
   elif ch == 'M':
     if operMode != MODE_MOVE_SET and currentSet != LIBRARY_SET:
       operMode = MODE_MOVE_SET
-      statusString = "Set move mode."
     else:
       operMode = MODE_MOVE_NORMAL
-      statusString = "Cursor move mode."
   elif ch == 'a':
     if currentSet == MAX_SETS:
       statusString = "Max sets exceeded."
