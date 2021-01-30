@@ -288,8 +288,6 @@ def displayUI():
     if setNumber == currentSet: # Highlight the current set
       if operMode == MODE_MOVE_SET:
         print( bcolors.REVERSE, end="" )
-      else:
-        print( bcolors.UNDERLINE, end="" )
 
     if l.name:
       print( "\n-", l.name, "-", "/", len( l.songList ) )
@@ -306,9 +304,9 @@ def displayUI():
 
       cursor = True if setNumber == currentSet and songIx == currentSong else False
       if cursor:
-        print( bcolors.REVERSE if operMode == MODE_MOVE_SONG else bcolors.BOLD, end="" )
+        print( bcolors.REVERSE if operMode == MODE_MOVE_SONG else bcolors.REVERSE, end="" )
       if s.fileName == libSongName:
-        print( bcolors.REVERSE, end="" )
+        print( bcolors.BLUE, end="" )
       elif s.highLight == HIGHLIGHT_ON and showBy is None:
         print( bcolors.RED, end="" )
       elif s.count > 1:
@@ -357,7 +355,7 @@ def displayUI():
       print()
     cursor = True if currentSet == LIBRARY_SET and songIx == librarySong else False
     if cursor:
-      print( bcolors.BOLD, end="" )
+      print( bcolors.REVERSE, end="" )
 
     if showBy is None:
       print( "%-24s" % ( songLibrary[ songIx ].fileName[ : -4 ] ), end="" )

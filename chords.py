@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+# #!/Library/Frameworks/Python.framework/Versions/3.9/bin/python3 # TBD, use python3
 
 '''
 Chords
@@ -9,6 +9,7 @@ girardin1972@hotmail.com
 from __future__ import print_function
 import os, sys
 from functools import partial
+
 if sys.version_info.major == 2:
   from Tkinter import *
   import tkFont
@@ -227,32 +228,32 @@ class runGui():
       xPos = LEFT_BORDER + FRET_SPACING + fret * FRET_SPACING
 
       txt = str( fret )
-      self.canvas.create_text( xPos - STR_SPC / 2, FRET_NUM_VERT_OFFSET, text=txt ) # Fretboard numbering
+      self.canvas.create_text( xPos - STR_SPC / 2, FRET_NUM_VERT_OFFSET, text=txt, fill="black" ) # Fretboard numbering
 
       w = 1 if fret else 4
       if fret == 12:
         w = 2
-      self.canvas.create_rectangle( xPos, FRET1_TOP, xPos + w, FRET1_BOTTOM, fill="black" )
-      self.canvas.create_rectangle( xPos, FRET2_TOP, xPos + w, FRET2_BOTTOM, fill="black" )
+      self.canvas.create_rectangle( xPos, FRET1_TOP, xPos + w + 1, FRET1_BOTTOM, fill="black" )
+      self.canvas.create_rectangle( xPos, FRET2_TOP, xPos + w + 1, FRET2_BOTTOM, fill="black" )
 
     for fretInd in( 3, 5, 7, 9, 12, 15, 17 ):
       xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInd * FRET_SPACING
 
       if fretInd == 12:
         yPos = ( FRET1_TOP + FRET1_BOTTOM ) / 3 # put 1/3 from top / bottom
-        self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4 )
+        self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4,fill="black" )
         yPos = ( FRET1_TOP + FRET1_BOTTOM ) * 2/3
-        self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4 )
+        self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4,fill="black" )
       else:
         yPos = ( FRET1_TOP + FRET1_BOTTOM ) / 2 # put in the middle
-        self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4 )
+        self.canvas.create_oval( xPos - 4, yPos - 4, xPos + 4, yPos + 4,fill="black" )
 
     # Draw strings
     for s in range( 0, numStrings ):
-      self.canvas.create_text( STRING_LEFT - 20, FRET1_TOP + s * STR_SPC, text=fretboard[ s + 1 ][ 0 ][ 'root'] )
-      self.canvas.create_text( STRING_LEFT - 20, FRET2_TOP + s * STR_SPC, text=fretboard[ s + 1 ][ 0 ][ 'root'] )
-      self.canvas.create_line( STRING_LEFT,  FRET1_TOP + s * STR_SPC, STRING_RIGHT, FRET1_TOP + s * STR_SPC )
-      self.canvas.create_line( STRING_LEFT,  FRET2_TOP + s * STR_SPC, STRING_RIGHT, FRET2_TOP + s * STR_SPC )
+      self.canvas.create_text( STRING_LEFT - 20, FRET1_TOP + s * STR_SPC, text=fretboard[ s + 1 ][ 0 ][ 'root'], fill="black" )
+      self.canvas.create_text( STRING_LEFT - 20, FRET2_TOP + s * STR_SPC, text=fretboard[ s + 1 ][ 0 ][ 'root'], fill="black" )
+      self.canvas.create_line( STRING_LEFT,  FRET1_TOP + s * STR_SPC, STRING_RIGHT, FRET1_TOP + s * STR_SPC, fill="black" )
+      self.canvas.create_line( STRING_LEFT,  FRET2_TOP + s * STR_SPC, STRING_RIGHT, FRET2_TOP + s * STR_SPC, fill="black" )
 
     # Populate individual frets
     for stringNum in range( 0, numStrings ):
@@ -278,7 +279,7 @@ class runGui():
 
         if fill:
           self.canvas.create_oval( xPos - HIDE_RAD, yPos - HIDE_RAD, xPos + HIDE_RAD, yPos + HIDE_RAD, fill=fill )
-          self.canvas.create_text( xPos, yPos, text=fret[ 'note' ] )
+          self.canvas.create_text( xPos, yPos, text=fret[ 'note' ], fill="black" )
 
         # Bottom fretboard is just Chord 1's intervals.
         if fret[ 'inSpelling' ]:
@@ -288,7 +289,7 @@ class runGui():
           else:
             self.canvas.create_oval( xPos - HIDE_RAD, yPos - HIDE_RAD, xPos + HIDE_RAD, yPos + HIDE_RAD,
                                      fill="white", outline="black" ) # erase
-            self.canvas.create_text( xPos, yPos, text=fret[ 'interval' ] )
+            self.canvas.create_text( xPos, yPos, text=fret[ 'interval' ], fill="black" )
 
   def instrumentChange( self, *args ):
     self.instrument = self.inst.get()
@@ -354,24 +355,30 @@ class runGui():
       widget.destroy()
 
     self.instMenu = OptionMenu( self.mainFrame, self.inst, *instruments )
+    self.instMenu.config( fg="BLACK" )
     self.instMenu.pack( side=LEFT )
 
     self.keysMenu = OptionMenu( self.mainFrame, self.keysVar, *dispKeyList )
+    self.keysMenu.config( fg="BLACK" )
     self.keysMenu.pack( side=LEFT )
 
     self.spellingMenu = OptionMenu( self.mainFrame, self.spellingVar, *spellings )
+    self.spellingMenu.config( fg="BLACK" )
     self.spellingMenu.pack( side=LEFT )
 
     self.overLayButton = Button( self.mainFrame,
                                  textvariable=self.overlayTxt,
                                  font=disFont[ 1 ],
-                                 command=self.overlayToggle )
+                                 command=self.overlayToggle,
+                                 fg = "BLACK")
     self.overLayButton.pack( side=LEFT )
 
     self.OLkeysMenu = OptionMenu( self.mainFrame, self.OLkeysVar, *dispKeyList )
+    self.OLkeysMenu.config( fg="BLACK" )
     self.OLkeysMenu.pack( side=LEFT )
 
     self.OLspellingMenu = OptionMenu( self.mainFrame, self.OLspellingVar, *spellings )
+    self.OLspellingMenu.config( fg="BLACK" )
     self.OLspellingMenu.pack( side=LEFT )
 
     self.OLkeysMenu[ "state" ] = "disable"
