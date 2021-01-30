@@ -321,8 +321,7 @@ def displayUI():
           v = "---"
         elif v == song.elements[ songParams [ showBy ] ]:
           print( bcolors.RED, end="" )
-        songString += bcolors.ENDC
-        print( "%-28s" % ( v ), end="" )
+        print( "%-28s" % ( v ) + bcolors.ENDC, end="" )
 
       songIx += 1
 
