@@ -285,17 +285,10 @@ def displayUI():
     libSongName = songLibrary[ librarySong ].fileName
 
   for l in setLists:
-    if setNumber == currentSet: # Highlight the current set
-      if operMode == MODE_MOVE_SET:
-        print( bcolors.REVERSE, end="" )
-
     if l.name:
       print( "\n-", l.name, "-", "/", len( l.songList ) )
     else:
       print( "\nSet:", setNumber + 1, "/", len( l.songList ) )
-
-    if setNumber == currentSet:
-      print( bcolors.ENDC, end="" )
 
     songIx = 0
     for s in l.songList:
@@ -303,10 +296,8 @@ def displayUI():
         print()
 
       cursor = True if setNumber == currentSet and songIx == currentSong else False
-      if cursor:
-        print( bcolors.REVERSE if operMode == MODE_MOVE_SONG else bcolors.REVERSE, end="" )
-      if s.fileName == libSongName:
-        print( bcolors.BLUE, end="" )
+      if cursor or s.fileName == libSongName:
+        print( bcolors.REVERSE, end="" )
       elif s.highLight == HIGHLIGHT_ON and showBy is None:
         print( bcolors.RED, end="" )
       elif s.count > 1:
@@ -316,16 +307,17 @@ def displayUI():
         songString = s.fileName[ : -4 ]
         if s.medley:
           songString += " " + u"\u2192" # right arrow
-        print( "%-24s" % ( songString ), end="" )
+        songString += bcolors.ENDC
+        print( "%-28s" % ( songString ), end="" )
       else:
         v = s.elements[ songParams [ showBy ] ]
         if v is None:
           v = "---"
         elif v == song.elements[ songParams [ showBy ] ]:
           print( bcolors.RED, end="" )
-        print( "%-24s" % ( v ), end="" )
+        songString += bcolors.ENDC
+        print( "%-28s" % ( v ), end="" )
 
-      print( bcolors.ENDC, end="" )
       songIx += 1
 
     print()
