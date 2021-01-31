@@ -480,7 +480,7 @@ def moveToSet( set ):
     l = len( setLists[ currentSet ].songList )
     if l == 0:
      currentSong = None
-    elif l < currentSong:
+    elif currentSong >= l:
       currentSong = l - 1
 
 def deleteSet():
