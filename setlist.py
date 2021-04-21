@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
-import os, glob, copy, pickle, json
+import os, glob, copy, pickle, json, sys
 
 class bcolors:
   BLUE      = '\033[94m'
@@ -600,6 +600,10 @@ def exportSet():
     for s in l.songList:
       try:
         sName = s.fileName
+        if not os.path.exists( sName ):
+          print( sName, "does not exist." )
+          exit()
+        
         sf = open( sName, "r" )
         fLines = sf.readlines()
         sf.close()
@@ -666,7 +670,7 @@ def exportSet():
 
           fileLine += 1
       except:
-        print( "Exception.." )
+        print( "Exception:", sys.exc_info() )
         exit()
       if s.medley:
         f.write( "<font size = 5>&#8595;</font>" ) # Big down arrow
