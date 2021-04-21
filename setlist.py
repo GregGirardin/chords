@@ -618,15 +618,13 @@ def exportSet():
             if not ffState:
               f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
               ffState = True
-          elif ffState: # Don't want fixed font. (All fixed is harder to read for lyrics)
+          elif ffState: # Don't want fixed font. All fixed is harder to read for lyrics.
             f.write( "</font>\n" )
             ffState = False
 
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class=\"accordion\">" )
-
             songText = line.rstrip()
-
             if s.medley:
               songText += "&#8595;" # Down arrow
 
@@ -652,10 +650,17 @@ def exportSet():
           # Ignore 2nd line if empty. It's unnecessary space in the html
           elif fileLine > 1 or line != "\n": # add spaces
             nLine = ""
+            numSpaces = 0;
             for c in line:
               if c == " ":
-                nLine += "&nbsp" # replace spaces in the line so the browser doesn't skip it.
+                numSpaces += 1
               else:
+                if numSpaces == 1:
+                  nLine += " "
+                elif numSpaces > 1:
+                  for _ in range( 0, numSpaces ):
+                    nLine += "&nbsp" # replace spaces in the line so the browser doesn't skip it.
+                numSpaces = 0
                 nLine += c
             f.write( "%s<br>\n" % ( nLine.rstrip() ) )
 
