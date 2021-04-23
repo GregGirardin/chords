@@ -122,8 +122,8 @@ class Chords
     this.keyListFlats   = [ 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B' ];
     this.bKeys          = [ 'F', 'Bb', 'Eb','Ab', 'Db' ]; // Keys to be displayed as having flats
     this.chords = [ 'Major', 'Minor', 'sus2', 'sus4', '7', 'm7', 'M7', '9', 'dim', 'm7b5'];
-    this.scales = [ 'Major', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian',
-                    'Melodic', 'Harmonic', 'Altered', 'PentMin', 'PentMaj', 'Minor Blues', 'Major Blues' ];
+    this.scales = [ 'Major', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Minor', 'Locrian',
+                    'Melodic', 'Harmonic', 'Altered', 'PentMin', 'PentMaj', 'MinorBlues', 'MajorBlues' ];
 
     this.chordSpellings =
     {
@@ -151,20 +151,20 @@ class Chords
 
     this.scaleSpellings =
     {
-      Major :         [ 'R',  '2',  '3',  '4',  '5',  '6',  '7' ],
-      Dorian :        [ 'R',  '2', 'b3',  '4',  '5',  '6', 'b7' ],
-      Phrygian :      [ 'R', 'b2', 'b3',  '4',  '5', 'b6', 'b7' ],
-      Lydian :        [ 'R',  '2',  '3', '#4',  '5',  '6',  '7' ],
-      Mixolydian :    [ 'R',  '2',  '3',  '4',  '5',  '6', 'b7' ],
-      Minor :         [ 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ],
-      Locrian :       [ 'R', 'b2', 'b3',  '4', 'b5', 'b6', 'b7' ],
-      Melodic :       [ 'R',  '2', 'b3',  '4',  '5',  '6',  '7' ],
-      Harmonic :      [ 'R',  '2', 'b3',  '4',  '5', 'b6',  '7' ],
-      Altered :       [ 'R', 'b2', 'b3',  '3', 'b5', 'b6', 'b7' ],
-      PentMin :       [ 'R', 'b3',  '4',  '5', 'b7' ],
-      PentMaj :       [ 'R',  '2',  '3',  '5',  '6' ],
-      "Minor Blues" : [ 'R', 'b3',  '4', 'b5',  '5', 'b7' ],
-      "Major Blues" : [ 'R',  '2', 'b3',  '3',  '5',  '6' ],
+      Major :       [ 'R',  '2',  '3',  '4',  '5',  '6',  '7' ],
+      Dorian :      [ 'R',  '2', 'b3',  '4',  '5',  '6', 'b7' ],
+      Phrygian :    [ 'R', 'b2', 'b3',  '4',  '5', 'b6', 'b7' ],
+      Lydian :      [ 'R',  '2',  '3', '#4',  '5',  '6',  '7' ],
+      Mixolydian :  [ 'R',  '2',  '3',  '4',  '5',  '6', 'b7' ],
+      Minor :       [ 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ],
+      Locrian :     [ 'R', 'b2', 'b3',  '4', 'b5', 'b6', 'b7' ],
+      Melodic :     [ 'R',  '2', 'b3',  '4',  '5',  '6',  '7' ],
+      Harmonic :    [ 'R',  '2', 'b3',  '4',  '5', 'b6',  '7' ],
+      Altered :     [ 'R', 'b2', 'b3',  '3', 'b5', 'b6', 'b7' ],
+      PentMin :     [ 'R', 'b3',  '4',  '5', 'b7' ],
+      PentMaj :     [ 'R',  '2',  '3',  '5',  '6' ],
+      MinorBlues :  [ 'R', 'b3',  '4', 'b5',  '5', 'b7' ],
+      MajorBlues :  [ 'R',  '2', 'b3',  '3',  '5',  '6' ],
     };
 
     this.extChords = [ '9', 'm9', 'M9', '11', 'm11', 'M11', '13', 'm13', 'M13' ];
@@ -327,8 +327,8 @@ class Chords
     let numStrings = fretboard.numStrings;
 
     const LEFT_BORDER = 30;
-    const STR_SPC = 20;
-    const FRET_SPACING = 30;
+    const STR_SPC = 25;
+    const FRET_SPACING = 35;
     const FRET_NUM_VERT_OFFSET = 20;
 
     const FRET1_TOP = FRET_NUM_VERT_OFFSET + 20;
@@ -341,9 +341,10 @@ class Chords
     const STRING_LEFT = LEFT_BORDER + 10;
     const STRING_RIGHT = STRING_LEFT + ( this.num_frets + 1 ) * FRET_SPACING;
 
-    const HIDE_RAD = 8;
+    const DOT_RADIUS = 10;
     const PI = 3.14159;
 
+    this.canvas.width = ( this.num_frets + 3 ) * FRET_SPACING;
     this.canvas.height = FRET2_TOP + numStrings * STR_SPC;
     this.ctx.clearRect( 0, 0, this.canvas.width, this.canvas.height );
     this.ctx.beginPath();
@@ -437,8 +438,8 @@ class Chords
         {
           this.ctx.fillStyle = "#ff9090";
           this.ctx.beginPath();
-          this.ctx.ellipse( xPos, yPos, HIDE_RAD, HIDE_RAD, 0, 0, 2 * PI );
-          this.ctx.arc( xPos, yPos, HIDE_RAD, 0, 2 * Math.PI) ;
+          this.ctx.ellipse( xPos, yPos, DOT_RADIUS, DOT_RADIUS, 0, 0, 2 * PI );
+          this.ctx.arc( xPos, yPos, DOT_RADIUS, 0, 2 * Math.PI) ;
           this.ctx.fill();
           this.ctx.stroke();
           this.ctx.fillStyle = "black";
@@ -453,8 +454,8 @@ class Chords
 
           this.ctx.fillStyle = "#e0e0ff";
           this.ctx.beginPath();
-          this.ctx.ellipse( xPos, yPos, HIDE_RAD, HIDE_RAD, 0, 0, 2 * PI );
-          this.ctx.arc( xPos, yPos, HIDE_RAD, 0, 2 * Math.PI) ;
+          this.ctx.ellipse( xPos, yPos, DOT_RADIUS, DOT_RADIUS, 0, 0, 2 * PI );
+          this.ctx.arc( xPos, yPos, DOT_RADIUS, 0, 2 * Math.PI) ;
           this.ctx.fill();
           this.ctx.stroke();
 
