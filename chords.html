@@ -37,9 +37,10 @@
 .dropdown-content a
 {
   color: black;
-  padding: 5px 2px;
+  padding: 5px 10px;
   text-decoration: none;
   display: block;
+  min-width: 50;
 }
 
 .dropdown a:hover
@@ -78,8 +79,6 @@ const SCREEN_HEIGHT = 320;
 
 class Chords
 {
-
-
   constructor()
   {
     this.canvas = document.getElementById( "myCanvas" );
@@ -472,7 +471,17 @@ function chordsInit()
   console.log( "Chords!" );
   chordsObj = new Chords();
 }
-function togShow( list_id ) { document.getElementById( list_id ).classList.toggle( "show" ); }
+
+function togShow( list_id )
+{
+  // Close any other open dropdowns.
+  var dropdowns = document.getElementsByClassName( "dropdown-content" );
+  for( var i = 0;i < dropdowns.length;i++ )
+    if( dropdowns[ i ].classList.contains( 'show' ) )
+      dropdowns[ i ].classList.remove( 'show' );
+
+  document.getElementById( list_id ).classList.toggle( "show" );
+}
 
 function settingChange( param, value )
 {
