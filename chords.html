@@ -1,0 +1,502 @@
+<html>
+<head>
+
+<style>
+.dropbtn
+{
+  background-color: green;
+  color: white;
+  padding: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dropbtn:hover
+{
+  background-color: brown;
+}
+
+.dropdown
+{
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content
+{
+  display: none;
+  position: absolute;
+  background-color: white;
+  min-width: 140px;
+  overflow: auto;
+  box-shadow: 0px 8px 16px 0px rgba( 0, 0, 0, 0.2 );
+}
+
+.dropdown-content a
+{
+  color: black;
+  padding: 2px 2px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown a:hover
+{
+  background-color: #ddd;
+}
+
+.show
+{
+  display: block;
+}
+</style>
+
+</head>
+<body>
+<h2>Chords</h2>
+
+<div class="dropdown"> <button id="inst" onclick="togShow( 'inst_drop' )" class="dropbtn">Instrument</button>
+  <div id="inst_drop" class="dropdown-content"> </div> </div>
+
+<div class="dropdown"> <button id="key" onclick="togShow( 'key_drop' )" class="dropbtn">Key</button>
+  <div id="key_drop" class="dropdown-content"> </div> </div>
+
+<div class="dropdown"> <button id="spelling" onclick="togShow( 'spel_drop' )" class="dropbtn">Spelling</button>
+  <div id="spel_drop" class="dropdown-content"> </div> </div>
+<div>
+Inst: C Major
+</div>
+
+<div>
+<canvas id="myCanvas"></canvas>
+</div>
+
+<script>
+window.onload = chordsInit;
+
+const SCREEN_WIDTH  = 800;
+const SCREEN_HEIGHT = 350;
+
+class Chords
+{
+  static instruments = [ 'Guitar', 'Bass', 'DroppedD', 'Uke', 'Mandolin', 'Banjo', 'Bass5', 'Stick', 'Stick-4ths' ];
+
+  static instrumentMap =
+  {
+    Mandolin :  { t : [ "E", "A", "D", "G" ],
+                  f : [ 0, 0, 0, 0 ] },
+    Guitar :    { t : [ "E", "B", "G", "D", "A", "E" ],
+                  f : [ 0, 0, 0, 0, 0, 0 ] },
+    DroppedD :  { t : [ "E", "B", "G", "D", "A", "D" ],
+                  f : [ 0, 0, 0, 0, 0, 0 ] },
+    Bass :      { t : [ "G", "D", "A", "E" ],
+                  f : [ 0, 0, 0, 0 ] },
+    Bass5 :     { t : [ "G", "D", "A", "E", "B" ],
+                  f : [ 0, 0, 0, 0, 0 ] },
+    Uke :       { t : [ "A", "E", "C", "G" ],
+                  f : [ 0, 0, 0, 0 ] },
+    Stick :     { t : [ "D", "A", "E", "B", "F#", "C", "G", "D", "A", "E" ],
+                  f : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
+    Stick4ths : { t : [ "C", "G", "D", "A", "E", "B", "E", "A", "D", "G", "C", "F" ],
+                  f : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
+    Banjo :     { t : [ "D", "B", "G", "D", "G" ],
+                  f : [ 0, 0, 0, 0, 5 ] }
+  }
+
+  static intervals = { Normal   : [ 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5',  'b6',  '6', 'b7', '7' ],
+                       Extended : [ 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ],
+                       Lydian   : [ 'R', 'b2', '2', 'b3', '3',  '4', '#4', '5',  'b6',  '6', 'b7', '7' ] };
+
+  static dispKeyList    = [ 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B' ];
+  static keyListSharps  = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
+  static keyListFlats   = [ 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B' ];
+  static bKeys          = [ 'F', 'Bb', 'Eb','Ab', 'Db' ]; // Keys to be displayed as having flats
+
+  static spellings = [ 'major', 'minor', 'sus2', 'sus4', '7', 'm7', 'M7', '9', 'dim', 'm7b5',
+                       'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian',
+                       'Melodic', 'Harmonic', 'Altered', 'PentMin', 'PentMaj', 'mBlues', 'MBlues' ];
+
+  static spellingMap =
+  {
+    major :      [ 'R',  '3',  '5' ],
+    minor :      [ 'R', 'b3',  '5' ],
+    sus2 :       [ 'R',  '2',  '5' ],
+    sus4 :       [ 'R',  '4',  '5' ],
+    6 :          [ 'R',  '3',  '5',  '6' ],
+    m6 :         [ 'R', 'b3',  '5',  '6' ],
+    7 :          [ 'R',  '3',  '5', 'b7' ],
+    m7 :         [ 'R', 'b3',  '5', 'b7' ],
+    M7 :         [ 'R',  '3',  '5',  '7' ],
+    9 :          [ 'R',  '3',  '5', 'b7',  '9' ],
+    m9 :         [ 'R', 'b3',  '5', 'b7',  '9' ],
+    M9 :         [ 'R',  '3',  '5',  '7',  '9' ],
+    11 :         [ 'R',  '3',  '5', 'b7',  '9', '11' ],
+    m11 :        [ 'R', 'b3',  '5', 'b7',  '9', '11' ],
+    M11 :        [ 'R',  '3',  '5',  '7',  '9', '11' ],
+    13 :         [ 'R',  '3',  '5', 'b7',  '9', '11', '13' ],
+    m13 :        [ 'R', 'b3',  '5', 'b7',  '9', '11', '13' ],
+    M13 :        [ 'R',  '3',  '5',  '7',  '9', '11', '13' ],
+    dim :        [ 'R', 'b3', 'b5',  '6' ],
+    m7b5 :       [ 'R', 'b3', 'b5', 'b7' ],
+    Ionian :     [ 'R',  '2',  '3',  '4',  '5',  '6',  '7' ],
+    Dorian :     [ 'R',  '2', 'b3',  '4',  '5',  '6', 'b7' ],
+    Phrygian :   [ 'R', 'b2', 'b3',  '4',  '5', 'b6', 'b7' ],
+    Lydian :     [ 'R',  '2',  '3', '#4',  '5',  '6',  '7' ],
+    Mixolydian : [ 'R',  '2',  '3',  '4',  '5',  '6', 'b7' ],
+    Aeolian :    [ 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ],
+    Locrian :    [ 'R', 'b2', 'b3',  '4', 'b5', 'b6', 'b7' ],
+    Melodic :    [ 'R',  '2', 'b3',  '4',  '5',  '6',  '7' ],
+    Harmonic :   [ 'R',  '2', 'b3',  '4',  '5', 'b6',  '7' ],
+    Altered :    [ 'R', 'b2', 'b3',  '3', 'b5', 'b6', 'b7' ],
+    PentMin :    [ 'R', 'b3',  '4',  '5', 'b7' ],
+    PentMaj :    [ 'R',  '2',  '3',  '5',  '6' ],
+    mBlues :     [ 'R', 'b3',  '4', 'b5',  '5', 'b7' ],
+    MBlues :     [ 'R',  '2', 'b3',  '3',  '5',  '6' ],
+  };
+
+  static extChords = [ '9', 'm9', 'M9', '11', 'm11', 'M11', '13', 'm13', 'M13' ];
+  static extIntervals = [ '9', '11', '13' ];
+  static minorSpellings = [ 'm', 'm7', 'm9', 'm11', 'm13', 'm-Key', 'Aeolian' ];
+
+  constructor()
+  {
+    this.canvas = document.getElementById( "myCanvas" );
+    this.ctx = this.canvas.getContext( "2d" );
+    this.num_frets = 24;
+    this.canvas.width = SCREEN_WIDTH;
+    this.canvas.height = SCREEN_HEIGHT;
+
+    this.key = 'C';
+    this.instrument = Chords.instruments[ 0 ];
+    this.spelling = Chords.spellings[ 0 ];
+    this.OLspelling = Chords.spellings[ 0 ];
+    this.overlay = false;
+
+    var i;
+    var str = "";
+    var elem = document.getElementById( "inst_drop" );
+    for( i = 0;i < Chords.instruments.length;i++ )
+      str += "<a onclick=\"settingChange( 'Inst', '" + Chords.instruments[ i ] + "' )\">" + Chords.instruments[ i ] + "</a>\n";
+    elem.innerHTML = str;
+
+    var str = "";
+    var elem = document.getElementById( "key_drop" );
+    for( i = 0;i < Chords.dispKeyList.length;i++ )
+      str += "<a onclick=\"settingChange( 'Key', '" + Chords.dispKeyList[ i ] + "' )\">" + Chords.dispKeyList[ i ] + "</a>\n";
+    elem.innerHTML = str;
+
+    var str = "";
+    var elem = document.getElementById( "spel_drop" );
+    for( i = 0;i < Chords.spellings.length;i++ )
+      str += "<a onclick=\"settingChange( 'Spel', '" + Chords.spellings[ i ] + "' )\">" + Chords.spellings[ i ] + "</a>\n";
+    elem.innerHTML = str;
+
+    this.displayFretboard();
+  }
+
+  relKey( key, off )
+  {
+    index = ( dispKeyList.indexOf( key ) + off ) % 12;
+    key = dispKeyList[ index ];
+    return key
+  }
+
+  showWithSharps( key, spelling )
+  {
+    if( [ 'mBlues', 'MBlues' ].includes( spelling ) )
+      return false; // blues always shown with flats.
+
+    switch( spelling )
+    {
+      case "Dorian":      key = relKey( key, 10 ); break;
+      case "Phrygian":    key = relKey( key, 8 ); break;
+      case "Lydian":      key = relKey( key, 7 ); break;
+      case "Mixolydian":  key = relKey( key, 5 ); break;
+      case "Locrian":     key = relKey( key, 1 ); break;
+      default:
+        if( Chords.minorSpellings.includes( spelling ) )
+          key = relKey( key, 3 );
+      break;
+    }    
+
+    return Chords.bKeys.includes( key ) ? false : true;
+  }
+
+  calcNote( root, fret )
+  {
+    var rootNum = ( Chords.dispKeyList.indexOf( root ) + fret ) % 12;
+    return Chords.dispKeyList[ rootNum ];
+  }
+
+  calcInterval( note, key )
+  {
+    var noteNum = Chords.dispKeyList.indexOf( note ) + 12;  // C = 12, C# = 13, etc
+    var keyNum = Chords.dispKeyList.indexOf( key );  // C = 0, C# = 1
+    var intNum = ( noteNum - keyNum ) % 12;  // (if C) C = 0, C# = 1
+
+    return intNum;
+  }
+
+  fretInfoGen( root, fret, fretOffset )
+  {
+    /*
+    Generate an object about the given fret.
+    root is the string's fretOffset fret note. Usually fret 0 (open).
+    fret is the fret number relative to a zero offset string note is the text of the note
+    */
+    var fretInfo = { root : root,
+                     fret : fret,
+                     note : this.calcNote( root, fret - fretOffset ) };
+
+    var interval = this.calcInterval( fretInfo.note, this.key );
+    var OLinterval = this.calcInterval( fretInfo.note, this.OLkey );
+
+    var x = "Normal";
+    if( Chords.extChords.includes( this.spelling ) )
+      x = "Extended";
+    else if( this.spelling == 'Lydian' )
+      x = "Lydian";
+
+    fretInfo.interval = Chords.intervals[ x ][ interval ];
+    fretInfo.inSpelling = Chords.spellingMap[ this.spelling ].includes( Chords.intervals[ x ][ interval ] );
+    fretInfo.inOLSpelling = Chords.spellingMap[ this.OLspelling ].includes( Chords.intervals[ x ][ OLinterval ] );
+
+    // convert note for display
+    var curKeyList = this.showWithSharps( this.key, this.spelling ) ? Chords.keyListSharps : Chords.keyListFlats;
+    fretInfo.note = curKeyList[ Chords.dispKeyList.indexOf( fretInfo.note ) ];
+
+    return fretInfo;
+  }
+
+  generateFretboard( )
+  {
+    /* Returns an object with everything we care about
+       strings are keyed by string number (1 - N) and contain a list of dictionaries for each fret
+       There are also some other 'global' kinda things.. numStrings, instrument, etc.
+
+       This could be removed. There is no reason to generate the fretboard in advance,
+       just generate frets on the fly while displaying.
+       
+       {
+        1 : [ { fretInfo },{ }... ],
+        2 :
+        3 :
+        .
+        .
+       }
+        */
+    var strings = Chords.instrumentMap[ this.instrument ].t;
+
+    var fretBoard = { numStrings : strings.length,
+                      instrument : this.instrument,
+                      spelling   : this.spelling,
+                      fretOffset : Chords.instrumentMap[ this.instrument ].f };
+
+    for( var string = 1;string < strings.length + 1;string++ )
+    {
+      var stringList = [];
+      var rootNote = strings[ string - 1 ];
+      var offset = Chords.instrumentMap[ this.instrument ][ 'f' ][ string - 1 ];
+
+      for( var fret = offset;fret < this.num_frets + 1;fret++ )
+        stringList.push( this.fretInfoGen( rootNote, fret, offset ) );
+
+      fretBoard[ string ] = stringList
+    }
+
+    return fretBoard
+  }
+
+  //////////////////////////////////////
+  //////////////////////////////////////
+  displayFretboard()
+  {
+    let fretboard = this.generateFretboard();
+    let numStrings = fretboard.numStrings;
+
+    const LEFT_BORDER = 30;
+    const STR_SPC = 20;
+    const FRET_SPACING = 30;
+    const FRET_NUM_VERT_OFFSET = 20;
+
+    const FRET1_TOP = FRET_NUM_VERT_OFFSET + 20;
+    const FRETBOARD_H = ( numStrings - 1 ) * STR_SPC;
+    const FRET1_BOTTOM = FRET1_TOP + FRETBOARD_H;
+
+    const FRET2_TOP = FRET1_TOP + FRETBOARD_H + 40;
+    const FRET2_BOTTOM = FRET2_TOP + FRETBOARD_H;
+
+    const STRING_LEFT = LEFT_BORDER + 10;
+    const STRING_RIGHT = STRING_LEFT + ( this.num_frets + 1 ) * FRET_SPACING;
+
+    const HIDE_RAD = 8;
+    const PI = 3.14159;
+
+    this.ctx.clearRect( 0, 0, this.canvas.width, this.canvas.height );
+
+    // this.ctx.fillStyle = 'lightgrey';
+    // this.ctx.beginPath();
+    // this.ctx.rect( 0, 0, this.canvas.width, this.canvas.height );
+    // this.ctx.fill();
+
+    // Draw fret numbers and frets
+    for( var fret = 0;fret < this.num_frets + 1;fret++ )
+    {
+      let xPos = LEFT_BORDER + FRET_SPACING + fret * FRET_SPACING;
+
+      this.ctx.font = "12px Arial";
+      this.ctx.fillText( fret, xPos - STR_SPC / 2, FRET_NUM_VERT_OFFSET );
+
+      var w = fret ? 1 : 4;
+      if( fret == 12 )
+        w = 2;
+
+      this.ctx.strokeStyle = 'black';
+      this.ctx.beginPath();
+      this.ctx.rect( xPos, FRET1_TOP, w, FRETBOARD_H );
+      this.ctx.rect( xPos, FRET2_TOP, w, FRETBOARD_H );
+      this.ctx.stroke();
+    }
+
+    const fList = [ 3, 5, 7, 9, 12, 15, 17 ];
+    for( var fIndex = 0;fIndex < fList.length;fIndex++ )
+    {
+      var fretInd = fList[ fIndex ];
+      var xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInd * FRET_SPACING;
+      var yPos = 0;
+
+      this.ctx.fillStyle = 'black';
+      this.ctx.beginPath();
+      if( fretInd == 12 )
+      {
+        let yPos1 = ( FRET1_TOP + FRET1_BOTTOM ) / 3; // Put 1/3 from top / bottom
+        let yPos2 = ( FRET1_TOP + FRET1_BOTTOM ) * 2 / 3;
+        this.ctx.ellipse( xPos - 1, yPos1 - 1, 5, 5, 0, 0, 2 * PI );
+        this.ctx.ellipse( xPos - 1, yPos2 - 1, 5, 5, 0, 0, 2 * PI );
+      }
+      else
+      {
+        let yPos = ( FRET1_TOP + FRET1_BOTTOM ) / 2; // put in the middle
+        this.ctx.ellipse( xPos, yPos, 5, 5, 0, 0, 2 * PI );
+      }
+      this.ctx.fill();
+    }
+
+    for( let s = 0;s < numStrings;s++ ) // Draw strings
+    {
+      // String pitch
+      this.ctx.font = "12px Arial";
+      this.ctx.fillText( fretboard[ s + 1 ][ 0 ][ 'root'], STRING_LEFT - 20, FRET1_TOP + s * STR_SPC + 5 );
+      this.ctx.fillText( fretboard[ s + 1 ][ 0 ][ 'root'], STRING_LEFT - 20, FRET2_TOP + s * STR_SPC + 5 );
+
+      this.ctx.strokeStyle = 'grey';
+      this.ctx.beginPath();
+      this.ctx.moveTo( STRING_LEFT, FRET1_TOP + s * STR_SPC );
+      this.ctx.lineTo( STRING_RIGHT, FRET1_TOP + s * STR_SPC );
+      this.ctx.moveTo( STRING_LEFT, FRET2_TOP + s * STR_SPC );
+      this.ctx.lineTo( STRING_RIGHT, FRET2_TOP + s * STR_SPC );
+      this.ctx.stroke();
+    }
+
+    for( var stringNum = 0;stringNum < numStrings;stringNum++ ) // Populate individual frets
+    {
+      let string = fretboard[ stringNum + 1 ];
+
+      for( var ix = 0;ix < string.length;ix++ )
+      {
+        var fretInfo = string[ ix ];
+        if( Chords.extIntervals.includes( fretInfo.interval ) && ( stringNum > ( numStrings / 2 ) ) )
+          continue; // Don't display extended intervals on bass strings
+
+        xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInfo.fret * FRET_SPACING;
+        yPos = FRET1_TOP + stringNum * STR_SPC;
+
+        var fill = undefined;
+        if( this.overlay )
+        {
+          if( fretInfo.inSpelling && fretInfo.inOLSpelling )
+            fretInfo = "green"; // blue-green if in both
+          else
+          {
+            if( fretInfo.inSpelling )
+              fill = "red"; // red-ish
+            else if( fretInfo.inOLSpelling )
+              fill = "blue"; // blue-ish
+          }
+        }
+        else if( fretInfo[ 'inSpelling' ] )
+          fill = "red";
+
+        if( fill )
+        {
+          this.ctx.fillStyle = "red";
+          this.ctx.beginPath();
+          this.ctx.ellipse( xPos, yPos, HIDE_RAD, HIDE_RAD, 0, 0, 2 * PI );
+          this.ctx.fill();
+          this.ctx.fillStyle = "black";
+          this.ctx.fillText( fretInfo.note, xPos - 4, yPos + 4 );
+        }
+
+        // Bottom fretboard is just Chord 1's intervals.
+        if( fretInfo.inSpelling )
+        {
+          yPos = FRET2_TOP + stringNum * STR_SPC;
+          this.ctx.beginPath();
+
+          if( fretInfo[ 'interval' ] == 'R' )
+          {
+            this.ctx.fillStyle = "black"
+            this.ctx.beginPath();
+            this.ctx.ellipse( xPos, yPos, HIDE_RAD - 1, HIDE_RAD - 1, 0, 0, 2 * PI );
+            this.ctx.fill();
+          }
+          else
+          {
+            this.ctx.fillStyle = "white"
+            this.ctx.beginPath();
+            this.ctx.ellipse( xPos, yPos, HIDE_RAD, HIDE_RAD, 0, 0, 2 * PI );
+            this.ctx.arc( xPos, yPos, HIDE_RAD, 0, 2 * Math.PI) ;
+            this.ctx.fill();
+            this.ctx.stroke();
+
+            this.ctx.fillStyle = "black";
+            this.ctx.fillText( fretInfo[ 'interval' ], xPos - 4, yPos + 4 );
+          }
+        }
+      }
+    }
+  }
+}
+
+var chordsObj = undefined;
+function chordsInit() { chordsObj = new Chords(); }
+function togShow( list_id ) { document.getElementById( list_id ).classList.toggle( "show" ); }
+
+function settingChange( param, value )
+{
+  switch( param )
+  {
+    case 'Inst':  chordsObj.instrument = value; break;
+    case 'Key':   chordsObj.key = value;    break;
+    case 'Spel':  chordsObj.spelling = value;   break;
+  }
+
+  chordsObj.displayFretboard();
+}
+
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function( event )
+{
+  if( !event.target.matches( '.dropbtn' ) )
+  {
+    var dropdowns = document.getElementsByClassName( "dropdown-content" );
+    for( var i = 0;i < dropdowns.length;i++ )
+      if( dropdowns[ i ].classList.contains( 'show' ) )
+        dropdowns[ i ].classList.remove( 'show' );
+  }
+}
+
+</script>
+
+</body>
+</html>
