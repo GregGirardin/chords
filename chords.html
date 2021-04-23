@@ -4,9 +4,9 @@
 <style>
 .dropbtn
 {
-  background-color: green;
+  background-color: grey;
   color: white;
-  padding: 5px;
+  padding: 10px;
   font-size: 16px;
   cursor: pointer;
 }
@@ -20,14 +20,16 @@
 {
   position: relative;
   display: inline-block;
+  font-size: 20px;
+  padding: 0px;
+  text-align: center;
 }
 
 .dropdown-content
 {
   display: none;
   position: absolute;
-  background-color: white;
-  min-width: 140px;
+  background-color: rgb(229, 226, 226);
   overflow: auto;
   box-shadow: 0px 8px 16px 0px rgba( 0, 0, 0, 0.2 );
 }
@@ -35,14 +37,14 @@
 .dropdown-content a
 {
   color: black;
-  padding: 2px 2px;
+  padding: 5px 2px;
   text-decoration: none;
   display: block;
 }
 
 .dropdown a:hover
 {
-  background-color: #ddd;
+  background-color: #ccc;
 }
 
 .show
@@ -63,23 +65,20 @@
 
 <div class="dropdown"> <button id="spelling" onclick="togShow( 'spel_drop' )" class="dropbtn">Spelling</button>
   <div id="spel_drop" class="dropdown-content"> </div> </div>
-<div>
-Inst: C Major
-</div>
+<br>
+<br>
 
-<div>
-<canvas id="myCanvas"></canvas>
-</div>
+<div> <canvas id="myCanvas"></canvas> </div>
 
 <script>
 window.onload = chordsInit;
 
 const SCREEN_WIDTH  = 800;
-const SCREEN_HEIGHT = 350;
+const SCREEN_HEIGHT = 320;
 
 class Chords
 {
-  static instruments = [ 'Guitar', 'Bass', 'DroppedD', 'Uke', 'Mandolin', 'Banjo', 'Bass5', 'Stick', 'Stick-4ths' ];
+  static instruments = [ 'Guitar', 'Bass', 'Dropped_D', 'Uke', 'Mandolin', 'Banjo', 'Bass5', 'Stick', 'Stick4ths' ];
 
   static instrumentMap =
   {
@@ -87,7 +86,7 @@ class Chords
                   f : [ 0, 0, 0, 0 ] },
     Guitar :    { t : [ "E", "B", "G", "D", "A", "E" ],
                   f : [ 0, 0, 0, 0, 0, 0 ] },
-    DroppedD :  { t : [ "E", "B", "G", "D", "A", "D" ],
+    Dropped_D : { t : [ "E", "B", "G", "D", "A", "D" ],
                   f : [ 0, 0, 0, 0, 0, 0 ] },
     Bass :      { t : [ "G", "D", "A", "E" ],
                   f : [ 0, 0, 0, 0 ] },
@@ -196,8 +195,8 @@ class Chords
 
   relKey( key, off )
   {
-    index = ( dispKeyList.indexOf( key ) + off ) % 12;
-    key = dispKeyList[ index ];
+    let index = ( Chords.dispKeyList.indexOf( key ) + off ) % 12;
+    key = Chords.dispKeyList[ index ];
     return key
   }
 
@@ -208,14 +207,14 @@ class Chords
 
     switch( spelling )
     {
-      case "Dorian":      key = relKey( key, 10 ); break;
-      case "Phrygian":    key = relKey( key, 8 ); break;
-      case "Lydian":      key = relKey( key, 7 ); break;
-      case "Mixolydian":  key = relKey( key, 5 ); break;
-      case "Locrian":     key = relKey( key, 1 ); break;
+      case "Dorian":      key = this.relKey( key, 10 ); break;
+      case "Phrygian":    key = this.relKey( key, 8 ); break;
+      case "Lydian":      key = this.relKey( key, 7 ); break;
+      case "Mixolydian":  key = this.relKey( key, 5 ); break;
+      case "Locrian":     key = this.relKey( key, 1 ); break;
       default:
         if( Chords.minorSpellings.includes( spelling ) )
-          key = relKey( key, 3 );
+          key = this.relKey( key, 3 );
       break;
     }    
 
@@ -259,7 +258,6 @@ class Chords
 
     fretInfo.interval = Chords.intervals[ x ][ interval ];
     fretInfo.inSpelling = Chords.spellingMap[ this.spelling ].includes( Chords.intervals[ x ][ interval ] );
-    fretInfo.inOLSpelling = Chords.spellingMap[ this.OLspelling ].includes( Chords.intervals[ x ][ OLinterval ] );
 
     // convert note for display
     var curKeyList = this.showWithSharps( this.key, this.spelling ) ? Chords.keyListSharps : Chords.keyListFlats;
@@ -278,9 +276,8 @@ class Chords
        just generate frets on the fly while displaying.
        
        {
-        1 : [ { fretInfo },{ }... ],
+        1 : [ { fretInfo }, { }... ],
         2 :
-        3 :
         .
         .
        }
@@ -314,6 +311,8 @@ class Chords
     let fretboard = this.generateFretboard();
     let numStrings = fretboard.numStrings;
 
+
+
     const LEFT_BORDER = 30;
     const STR_SPC = 20;
     const FRET_SPACING = 30;
@@ -332,12 +331,18 @@ class Chords
     const HIDE_RAD = 8;
     const PI = 3.14159;
 
+    this.canvas.height = FRET2_TOP + numStrings * STR_SPC;
     this.ctx.clearRect( 0, 0, this.canvas.width, this.canvas.height );
+    this.ctx.beginPath();
+    this.ctx.rect( 0, 0, this.canvas.width, this.canvas.height );
+    this.ctx.stroke();
 
-    // this.ctx.fillStyle = 'lightgrey';
-    // this.ctx.beginPath();
-    // this.ctx.rect( 0, 0, this.canvas.width, this.canvas.height );
-    // this.ctx.fill();
+    var elem = document.getElementById( "inst" );
+    elem.innerHTML = this.instrument;
+    elem = document.getElementById( "key" );
+    elem.innerHTML = "&nbsp&nbsp" + this.key + "&nbsp&nbsp";
+    elem = document.getElementById( "spelling" );
+    elem.innerHTML = this.spelling;
 
     // Draw fret numbers and frets
     for( var fret = 0;fret < this.num_frets + 1;fret++ )
@@ -411,32 +416,25 @@ class Chords
         xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInfo.fret * FRET_SPACING;
         yPos = FRET1_TOP + stringNum * STR_SPC;
 
-        var fill = undefined;
-        if( this.overlay )
-        {
-          if( fretInfo.inSpelling && fretInfo.inOLSpelling )
-            fretInfo = "green"; // blue-green if in both
-          else
-          {
-            if( fretInfo.inSpelling )
-              fill = "red"; // red-ish
-            else if( fretInfo.inOLSpelling )
-              fill = "blue"; // blue-ish
-          }
-        }
-        else if( fretInfo[ 'inSpelling' ] )
-          fill = "red";
-
-        if( fill )
+        if( fretInfo[ 'inSpelling' ] )
         {
           this.ctx.fillStyle = "red";
           this.ctx.beginPath();
           this.ctx.ellipse( xPos, yPos, HIDE_RAD, HIDE_RAD, 0, 0, 2 * PI );
           this.ctx.fill();
           this.ctx.fillStyle = "black";
-          this.ctx.fillText( fretInfo.note, xPos - 4, yPos + 4 );
+          this.ctx.fillText( fretInfo.note, xPos - ( fretInfo.note.length == 1 ? 4 : 8 ), yPos + 4 );
         }
-
+        // {
+        //     this.ctx.fillStyle = "white"
+        //     this.ctx.beginPath();
+        //     this.ctx.ellipse( xPos, yPos, HIDE_RAD, HIDE_RAD, 0, 0, 2 * PI );
+        //     this.ctx.arc( xPos, yPos, HIDE_RAD, 0, 2 * Math.PI) ;
+        //     this.ctx.fill();
+        //     this.ctx.stroke();
+        //     this.ctx.fillStyle = "black";
+        //     this.ctx.fillText( fretInfo.note, xPos - ( fretInfo.note.length == 1 ? 4 : 8 ), yPos + 4 );
+        // }
         // Bottom fretboard is just Chord 1's intervals.
         if( fretInfo.inSpelling )
         {
@@ -460,11 +458,12 @@ class Chords
             this.ctx.stroke();
 
             this.ctx.fillStyle = "black";
-            this.ctx.fillText( fretInfo[ 'interval' ], xPos - 4, yPos + 4 );
+            this.ctx.fillText( fretInfo.interval, xPos - ( fretInfo.interval.length == 1 ? 4 : 8 ), yPos + 4 );
           }
         }
       }
     }
+
   }
 }
 
@@ -477,7 +476,7 @@ function settingChange( param, value )
   switch( param )
   {
     case 'Inst':  chordsObj.instrument = value; break;
-    case 'Key':   chordsObj.key = value;    break;
+    case 'Key':   chordsObj.key = value;        break;
     case 'Spel':  chordsObj.spelling = value;   break;
   }
 
