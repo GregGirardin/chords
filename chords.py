@@ -17,7 +17,7 @@ else:
   from tkinter import *
   import tkinter.font as tkFont
 
-instrumentMap =   {
+instrumentMap = {
   'Mandolin' :    { "t" : ( "E", "A", "D", "G" ),           "f" : ( 0, 0, 0, 0 ) },
   'Guitar' :      { "t" : ( "E", "B", "G", "D", "A", "E" ), "f" : ( 0, 0, 0, 0, 0, 0 ) },
   'Dropped D' :   { "t" : ( "E", "B", "G", "D", "A", "D" ), "f" : ( 0, 0, 0, 0, 0, 0 ) },
