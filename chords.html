@@ -52,16 +52,16 @@
   display: block;
 }
 </style>
-
 </head>
+
 <body>
 <h2>Chords</h2>
 
 <div class="dropdown"> <button id="inst" onclick="togShow( 'inst_drop' )" class="dropbtn">Instrument</button>
-  <div id="inst_drop" class="dropdown-content"> </div> </div>
+  <div id="inst_drop" class="dropdown-content"></div></div>
 
 <div class="dropdown"> <button id="key" onclick="togShow( 'key_drop' )" class="dropbtn">Key</button>
-  <div id="key_drop" class="dropdown-content"> </div> </div>
+  <div id="key_drop" class="dropdown-content"></div> </div>
 
 <div class="dropdown"> <button id="spelling" onclick="togShow( 'spel_drop' )" class="dropbtn">Spelling</button>
   <div id="spel_drop" class="dropdown-content"> </div> </div>
@@ -70,7 +70,7 @@
 
 <div> <canvas id="myCanvas"></canvas> </div>
 
-<script>
+<script type="text/javascript">
 window.onload = chordsInit;
 
 const SCREEN_WIDTH  = 800;
@@ -78,84 +78,7 @@ const SCREEN_HEIGHT = 320;
 
 class Chords
 {
-  static instruments = [ 'Guitar', 'Bass', 'Dropped_D', 'Uke', 'Mandolin', 'Banjo', 'Bass5', 'Stick', 'Stick4ths' ];
 
-  static instrumentMap =
-  {
-    Mandolin :  { t : [ "E", "A", "D", "G" ],
-                  f : [ 0, 0, 0, 0 ] },
-    Guitar :    { t : [ "E", "B", "G", "D", "A", "E" ],
-                  f : [ 0, 0, 0, 0, 0, 0 ] },
-    Dropped_D : { t : [ "E", "B", "G", "D", "A", "D" ],
-                  f : [ 0, 0, 0, 0, 0, 0 ] },
-    Bass :      { t : [ "G", "D", "A", "E" ],
-                  f : [ 0, 0, 0, 0 ] },
-    Bass5 :     { t : [ "G", "D", "A", "E", "B" ],
-                  f : [ 0, 0, 0, 0, 0 ] },
-    Uke :       { t : [ "A", "E", "C", "G" ],
-                  f : [ 0, 0, 0, 0 ] },
-    Stick :     { t : [ "D", "A", "E", "B", "F#", "C", "G", "D", "A", "E" ],
-                  f : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
-    Stick4ths : { t : [ "C", "G", "D", "A", "E", "B", "E", "A", "D", "G", "C", "F" ],
-                  f : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
-    Banjo :     { t : [ "D", "B", "G", "D", "G" ],
-                  f : [ 0, 0, 0, 0, 5 ] }
-  }
-
-  static intervals = { Normal   : [ 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5',  'b6',  '6', 'b7', '7' ],
-                       Extended : [ 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ],
-                       Lydian   : [ 'R', 'b2', '2', 'b3', '3',  '4', '#4', '5',  'b6',  '6', 'b7', '7' ] };
-
-  static dispKeyList    = [ 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B' ];
-  static keyListSharps  = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
-  static keyListFlats   = [ 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B' ];
-  static bKeys          = [ 'F', 'Bb', 'Eb','Ab', 'Db' ]; // Keys to be displayed as having flats
-
-  static spellings = [ 'major', 'minor', 'sus2', 'sus4', '7', 'm7', 'M7', '9', 'dim', 'm7b5',
-                       'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian',
-                       'Melodic', 'Harmonic', 'Altered', 'PentMin', 'PentMaj', 'mBlues', 'MBlues' ];
-
-  static spellingMap =
-  {
-    major :      [ 'R',  '3',  '5' ],
-    minor :      [ 'R', 'b3',  '5' ],
-    sus2 :       [ 'R',  '2',  '5' ],
-    sus4 :       [ 'R',  '4',  '5' ],
-    6 :          [ 'R',  '3',  '5',  '6' ],
-    m6 :         [ 'R', 'b3',  '5',  '6' ],
-    7 :          [ 'R',  '3',  '5', 'b7' ],
-    m7 :         [ 'R', 'b3',  '5', 'b7' ],
-    M7 :         [ 'R',  '3',  '5',  '7' ],
-    9 :          [ 'R',  '3',  '5', 'b7',  '9' ],
-    m9 :         [ 'R', 'b3',  '5', 'b7',  '9' ],
-    M9 :         [ 'R',  '3',  '5',  '7',  '9' ],
-    11 :         [ 'R',  '3',  '5', 'b7',  '9', '11' ],
-    m11 :        [ 'R', 'b3',  '5', 'b7',  '9', '11' ],
-    M11 :        [ 'R',  '3',  '5',  '7',  '9', '11' ],
-    13 :         [ 'R',  '3',  '5', 'b7',  '9', '11', '13' ],
-    m13 :        [ 'R', 'b3',  '5', 'b7',  '9', '11', '13' ],
-    M13 :        [ 'R',  '3',  '5',  '7',  '9', '11', '13' ],
-    dim :        [ 'R', 'b3', 'b5',  '6' ],
-    m7b5 :       [ 'R', 'b3', 'b5', 'b7' ],
-    Ionian :     [ 'R',  '2',  '3',  '4',  '5',  '6',  '7' ],
-    Dorian :     [ 'R',  '2', 'b3',  '4',  '5',  '6', 'b7' ],
-    Phrygian :   [ 'R', 'b2', 'b3',  '4',  '5', 'b6', 'b7' ],
-    Lydian :     [ 'R',  '2',  '3', '#4',  '5',  '6',  '7' ],
-    Mixolydian : [ 'R',  '2',  '3',  '4',  '5',  '6', 'b7' ],
-    Aeolian :    [ 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ],
-    Locrian :    [ 'R', 'b2', 'b3',  '4', 'b5', 'b6', 'b7' ],
-    Melodic :    [ 'R',  '2', 'b3',  '4',  '5',  '6',  '7' ],
-    Harmonic :   [ 'R',  '2', 'b3',  '4',  '5', 'b6',  '7' ],
-    Altered :    [ 'R', 'b2', 'b3',  '3', 'b5', 'b6', 'b7' ],
-    PentMin :    [ 'R', 'b3',  '4',  '5', 'b7' ],
-    PentMaj :    [ 'R',  '2',  '3',  '5',  '6' ],
-    mBlues :     [ 'R', 'b3',  '4', 'b5',  '5', 'b7' ],
-    MBlues :     [ 'R',  '2', 'b3',  '3',  '5',  '6' ],
-  };
-
-  static extChords = [ '9', 'm9', 'M9', '11', 'm11', 'M11', '13', 'm13', 'M13' ];
-  static extIntervals = [ '9', '11', '13' ];
-  static minorSpellings = [ 'm', 'm7', 'm9', 'm11', 'm13', 'm-Key', 'Aeolian' ];
 
   constructor()
   {
@@ -165,29 +88,108 @@ class Chords
     this.canvas.width = SCREEN_WIDTH;
     this.canvas.height = SCREEN_HEIGHT;
 
+    this.instruments = [ 'Guitar', 'Bass', 'Dropped_D', 'Uke', 'Mandolin', 'Banjo', 'Bass5', 'Stick', 'Stick4ths' ];
+
+    this.instrumentMap =
+    {
+      Mandolin :  { t : [ "E", "A", "D", "G" ],
+                    f : [ 0, 0, 0, 0 ] },
+      Guitar :    { t : [ "E", "B", "G", "D", "A", "E" ],
+                    f : [ 0, 0, 0, 0, 0, 0 ] },
+      Dropped_D : { t : [ "E", "B", "G", "D", "A", "D" ],
+                    f : [ 0, 0, 0, 0, 0, 0 ] },
+      Bass :      { t : [ "G", "D", "A", "E" ],
+                    f : [ 0, 0, 0, 0 ] },
+      Bass5 :     { t : [ "G", "D", "A", "E", "B" ],
+                    f : [ 0, 0, 0, 0, 0 ] },
+      Uke :       { t : [ "A", "E", "C", "G" ],
+                    f : [ 0, 0, 0, 0 ] },
+      Stick :     { t : [ "D", "A", "E", "B", "F#", "C", "G", "D", "A", "E" ],
+                    f : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
+      Stick4ths : { t : [ "C", "G", "D", "A", "E", "B", "E", "A", "D", "G", "C", "F" ],
+                    f : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
+      Banjo :     { t : [ "D", "B", "G", "D", "G" ],
+                    f : [ 0, 0, 0, 0, 5 ] }
+    };
+
+    this.intervals = { Normal   : [ 'R', 'b2', '2', 'b3', '3',  '4', 'b5', '5',  'b6',  '6', 'b7', '7' ],
+                        Extended : [ 'R', 'b9', '9', 'b3', '3', '11', 'b5', '5', 'b13', '13', 'b7', '7' ],
+                        Lydian   : [ 'R', 'b2', '2', 'b3', '3',  '4', '#4', '5',  'b6',  '6', 'b7', '7' ] };
+
+    this.dispKeyList    = [ 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B' ];
+    this.keyListSharps  = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
+    this.keyListFlats   = [ 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B' ];
+    this.bKeys          = [ 'F', 'Bb', 'Eb','Ab', 'Db' ]; // Keys to be displayed as having flats
+
+    this.spellings = [ 'major', 'minor', 'sus2', 'sus4', '7', 'm7', 'M7', '9', 'dim', 'm7b5',
+                        'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian',
+                        'Melodic', 'Harmonic', 'Altered', 'PentMin', 'PentMaj', 'mBlues', 'MBlues' ];
+
+    this.spellingMap =
+    {
+      major :      [ 'R',  '3',  '5' ],
+      minor :      [ 'R', 'b3',  '5' ],
+      sus2 :       [ 'R',  '2',  '5' ],
+      sus4 :       [ 'R',  '4',  '5' ],
+      6 :          [ 'R',  '3',  '5',  '6' ],
+      m6 :         [ 'R', 'b3',  '5',  '6' ],
+      7 :          [ 'R',  '3',  '5', 'b7' ],
+      m7 :         [ 'R', 'b3',  '5', 'b7' ],
+      M7 :         [ 'R',  '3',  '5',  '7' ],
+      9 :          [ 'R',  '3',  '5', 'b7',  '9' ],
+      m9 :         [ 'R', 'b3',  '5', 'b7',  '9' ],
+      M9 :         [ 'R',  '3',  '5',  '7',  '9' ],
+      11 :         [ 'R',  '3',  '5', 'b7',  '9', '11' ],
+      m11 :        [ 'R', 'b3',  '5', 'b7',  '9', '11' ],
+      M11 :        [ 'R',  '3',  '5',  '7',  '9', '11' ],
+      13 :         [ 'R',  '3',  '5', 'b7',  '9', '11', '13' ],
+      m13 :        [ 'R', 'b3',  '5', 'b7',  '9', '11', '13' ],
+      M13 :        [ 'R',  '3',  '5',  '7',  '9', '11', '13' ],
+      dim :        [ 'R', 'b3', 'b5',  '6' ],
+      m7b5 :       [ 'R', 'b3', 'b5', 'b7' ],
+      Ionian :     [ 'R',  '2',  '3',  '4',  '5',  '6',  '7' ],
+      Dorian :     [ 'R',  '2', 'b3',  '4',  '5',  '6', 'b7' ],
+      Phrygian :   [ 'R', 'b2', 'b3',  '4',  '5', 'b6', 'b7' ],
+      Lydian :     [ 'R',  '2',  '3', '#4',  '5',  '6',  '7' ],
+      Mixolydian : [ 'R',  '2',  '3',  '4',  '5',  '6', 'b7' ],
+      Aeolian :    [ 'R',  '2', 'b3',  '4',  '5', 'b6', 'b7' ],
+      Locrian :    [ 'R', 'b2', 'b3',  '4', 'b5', 'b6', 'b7' ],
+      Melodic :    [ 'R',  '2', 'b3',  '4',  '5',  '6',  '7' ],
+      Harmonic :   [ 'R',  '2', 'b3',  '4',  '5', 'b6',  '7' ],
+      Altered :    [ 'R', 'b2', 'b3',  '3', 'b5', 'b6', 'b7' ],
+      PentMin :    [ 'R', 'b3',  '4',  '5', 'b7' ],
+      PentMaj :    [ 'R',  '2',  '3',  '5',  '6' ],
+      mBlues :     [ 'R', 'b3',  '4', 'b5',  '5', 'b7' ],
+      MBlues :     [ 'R',  '2', 'b3',  '3',  '5',  '6' ],
+    };
+
+    this.extChords = [ '9', 'm9', 'M9', '11', 'm11', 'M11', '13', 'm13', 'M13' ];
+    this.extIntervals = [ '9', '11', '13' ];
+    this.minorSpellings = [ 'm', 'm7', 'm9', 'm11', 'm13', 'm-Key', 'Aeolian' ];
+
     this.key = 'C';
-    this.instrument = Chords.instruments[ 0 ];
-    this.spelling = Chords.spellings[ 0 ];
-    this.OLspelling = Chords.spellings[ 0 ];
+    this.instrument = this.instruments[ 0 ];
+    this.spelling = this.spellings[ 0 ];
+    this.OLspelling = this.spellings[ 0 ];
     this.overlay = false;
 
     var i;
     var str = "";
     var elem = document.getElementById( "inst_drop" );
-    for( i = 0;i < Chords.instruments.length;i++ )
-      str += "<a onclick=\"settingChange( 'Inst', '" + Chords.instruments[ i ] + "' )\">" + Chords.instruments[ i ] + "</a>\n";
+    for( i = 0;i < this.instruments.length;i++ )
+      str += "<a onclick=\"settingChange( 'Inst', '" + this.instruments[ i ] + "' )\">" + this.instruments[ i ] + "</a>\n";
     elem.innerHTML = str;
 
     var str = "";
     var elem = document.getElementById( "key_drop" );
-    for( i = 0;i < Chords.dispKeyList.length;i++ )
-      str += "<a onclick=\"settingChange( 'Key', '" + Chords.dispKeyList[ i ] + "' )\">" + Chords.dispKeyList[ i ] + "</a>\n";
+    for( i = 0;i < this.dispKeyList.length;i++ )
+      str += "<a onclick=\"settingChange( 'Key', '" + this.dispKeyList[ i ] + "' )\">" + this.dispKeyList[ i ] + "</a>\n";
     elem.innerHTML = str;
 
     var str = "";
     var elem = document.getElementById( "spel_drop" );
-    for( i = 0;i < Chords.spellings.length;i++ )
-      str += "<a onclick=\"settingChange( 'Spel', '" + Chords.spellings[ i ] + "' )\">" + Chords.spellings[ i ] + "</a>\n";
+    for( i = 0;i < this.spellings.length;i++ )
+      str += "<a onclick=\"settingChange( 'Spel', '" + this.spellings[ i ] + "' )\">" + this.spellings[ i ] + "</a>\n";
     elem.innerHTML = str;
 
     this.displayFretboard();
@@ -195,8 +197,8 @@ class Chords
 
   relKey( key, off )
   {
-    let index = ( Chords.dispKeyList.indexOf( key ) + off ) % 12;
-    key = Chords.dispKeyList[ index ];
+    let index = ( this.dispKeyList.indexOf( key ) + off ) % 12;
+    key = this.dispKeyList[ index ];
     return key
   }
 
@@ -213,24 +215,24 @@ class Chords
       case "Mixolydian":  key = this.relKey( key, 5 ); break;
       case "Locrian":     key = this.relKey( key, 1 ); break;
       default:
-        if( Chords.minorSpellings.includes( spelling ) )
+        if( this.minorSpellings.includes( spelling ) )
           key = this.relKey( key, 3 );
       break;
     }    
 
-    return Chords.bKeys.includes( key ) ? false : true;
+    return this.bKeys.includes( key ) ? false : true;
   }
 
   calcNote( root, fret )
   {
-    var rootNum = ( Chords.dispKeyList.indexOf( root ) + fret ) % 12;
-    return Chords.dispKeyList[ rootNum ];
+    var rootNum = ( this.dispKeyList.indexOf( root ) + fret ) % 12;
+    return this.dispKeyList[ rootNum ];
   }
 
   calcInterval( note, key )
   {
-    var noteNum = Chords.dispKeyList.indexOf( note ) + 12;  // C = 12, C# = 13, etc
-    var keyNum = Chords.dispKeyList.indexOf( key );  // C = 0, C# = 1
+    var noteNum = this.dispKeyList.indexOf( note ) + 12;  // C = 12, C# = 13, etc
+    var keyNum = this.dispKeyList.indexOf( key );  // C = 0, C# = 1
     var intNum = ( noteNum - keyNum ) % 12;  // (if C) C = 0, C# = 1
 
     return intNum;
@@ -251,17 +253,17 @@ class Chords
     var OLinterval = this.calcInterval( fretInfo.note, this.OLkey );
 
     var x = "Normal";
-    if( Chords.extChords.includes( this.spelling ) )
+    if( this.extChords.includes( this.spelling ) )
       x = "Extended";
     else if( this.spelling == 'Lydian' )
       x = "Lydian";
 
-    fretInfo.interval = Chords.intervals[ x ][ interval ];
-    fretInfo.inSpelling = Chords.spellingMap[ this.spelling ].includes( Chords.intervals[ x ][ interval ] );
+    fretInfo.interval = this.intervals[ x ][ interval ];
+    fretInfo.inSpelling = this.spellingMap[ this.spelling ].includes( this.intervals[ x ][ interval ] );
 
     // convert note for display
-    var curKeyList = this.showWithSharps( this.key, this.spelling ) ? Chords.keyListSharps : Chords.keyListFlats;
-    fretInfo.note = curKeyList[ Chords.dispKeyList.indexOf( fretInfo.note ) ];
+    var curKeyList = this.showWithSharps( this.key, this.spelling ) ? this.keyListSharps : this.keyListFlats;
+    fretInfo.note = curKeyList[ this.dispKeyList.indexOf( fretInfo.note ) ];
 
     return fretInfo;
   }
@@ -282,18 +284,18 @@ class Chords
         .
        }
         */
-    var strings = Chords.instrumentMap[ this.instrument ].t;
+    var strings = this.instrumentMap[ this.instrument ].t;
 
     var fretBoard = { numStrings : strings.length,
                       instrument : this.instrument,
                       spelling   : this.spelling,
-                      fretOffset : Chords.instrumentMap[ this.instrument ].f };
+                      fretOffset : this.instrumentMap[ this.instrument ].f };
 
     for( var string = 1;string < strings.length + 1;string++ )
     {
       var stringList = [];
       var rootNote = strings[ string - 1 ];
-      var offset = Chords.instrumentMap[ this.instrument ][ 'f' ][ string - 1 ];
+      var offset = this.instrumentMap[ this.instrument ][ 'f' ][ string - 1 ];
 
       for( var fret = offset;fret < this.num_frets + 1;fret++ )
         stringList.push( this.fretInfoGen( rootNote, fret, offset ) );
@@ -310,8 +312,6 @@ class Chords
   {
     let fretboard = this.generateFretboard();
     let numStrings = fretboard.numStrings;
-
-
 
     const LEFT_BORDER = 30;
     const STR_SPC = 20;
@@ -410,7 +410,7 @@ class Chords
       for( var ix = 0;ix < string.length;ix++ )
       {
         var fretInfo = string[ ix ];
-        if( Chords.extIntervals.includes( fretInfo.interval ) && ( stringNum > ( numStrings / 2 ) ) )
+        if( this.extIntervals.includes( fretInfo.interval ) && ( stringNum > ( numStrings / 2 ) ) )
           continue; // Don't display extended intervals on bass strings
 
         xPos = LEFT_BORDER + FRET_SPACING / 2 + fretInfo.fret * FRET_SPACING;
@@ -463,12 +463,15 @@ class Chords
         }
       }
     }
-
   }
 }
 
 var chordsObj = undefined;
-function chordsInit() { chordsObj = new Chords(); }
+function chordsInit()
+{
+  console.log( "Chords!" );
+  chordsObj = new Chords();
+}
 function togShow( list_id ) { document.getElementById( list_id ).classList.toggle( "show" ); }
 
 function settingChange( param, value )
