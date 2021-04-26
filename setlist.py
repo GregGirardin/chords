@@ -540,52 +540,59 @@ def exportSet():
 
   fname = setListName + ".html"
   f = open( fname, "w" )
-  f.write( "<!DOCTYPE html>\n"
-           "<html>\n"
-           "<head>\n"
-           "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
-           "<style>\n"
-           ".accordion\n"
-           "{\n"
-           "  background-color: #eee;\n"
-           "  color: #444;\n"
-           "  cursor: pointer;\n"
-           "  padding: 5px;\n"
-           "  width: 100%;\n"
-           "  border: none;\n"
-           "  text-align: left;\n"
-           "  outline: none;\n"
-           "  font-size: 15px;\n"
-           "  transition: 0.4s;\n"
-           "}\n"
-           ".active, .accordion:hover\n"
-           "{\n"
-           "  background-color: #ccc;\n"
-           "}\n"
-           "\n"
-           ".panel\n"
-           "{\n"
-           "  padding: 0 18px;\n"
-           "  display: none;\n"
-           "  background-color: white;\n"
-           "  overflow: hidden;\n"
-           "}\n"
-           ".selectNext\n"
-           "{\n"
-           "  background-color: #fee;\n"
-           "  color: #444;\n"
-           "  cursor: pointer;\n"
-           "  padding: 10px;\n"
-           "  width: 90%;\n"
-           "  text-align: left;\n"
-           "  outline: none;\n"
-           "  font-size: 15px;\n"
-           "  transition: 0.4s;\n"
-           "}\n"
-           "\n"
-           "</style>\n"
-           "</head>\n"
-           "<body>\n" )
+  f.write( """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+.accordion
+{
+  background-color: #eee;
+  color: #444;
+  cursor: pointer;
+  padding: 5px;
+  min-width: 20%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+  transition: 0.4s;
+}
+
+.active, .accordion:hover
+{
+  background-color: #ccc;
+}
+
+.panel
+{
+  padding: 0 18px;
+  display: none;
+  background-color: white;
+  overflow: hidden;
+  font-size: 20px;
+}
+
+.selectNext
+{
+  background-color: #fee;
+  color: #444;
+  cursor: pointer;
+  padding: 10px;
+  width: 90%;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+  transition: 0.4s;
+}
+
+</style>
+</head>
+
+<body>
+""" )
   f.write( "<h1>%s</h1>\n" % ( setListName ) )
   if annotation:
     f.write( annotation + "\n" )
@@ -611,7 +618,7 @@ def exportSet():
         ffManual = False
 
         for line in fLines:
-          if line[ 0: 2 ] == "f!": # Explicity toggle fixed font. Stay fixed until end of song.
+          if line[ 0 : 2 ] == "f!": # Explicity toggle fixed font. Stay fixed until end of song.
             ffManual = True if ffManual == False else False
             continue # Don't output that line.
 
@@ -620,34 +627,42 @@ def exportSet():
 
           if ffAuto or ffManual: # We want to use a fixed font?
             if not ffState:
-              f.write( "<font style=\"font-family:courier;\" size=\"2\">\n" )
+              f.write( "<font style='font-family:courier;' size='2'>\n" )
               ffState = True
-          elif ffState: # Don't want fixed font. All fixed is harder to read for lyrics.
+          elif ffState: # Don't want fixed font. Fixed is harder to read for lyrics.
             f.write( "</font>\n" )
             ffState = False
 
           if fileLine == 0: # Assume first line is song title
-            f.write( "<button class=\"accordion\">" )
-            songText = line.rstrip()
+            f.write( "<button class='accordion'>" )
+            songName = line.rstrip()
+            songText = songName
+            MAX_SONG_LEN = 15
+            if( len( songText ) > MAX_SONG_LEN ):
+              songText = songText[ : MAX_SONG_LEN ] + "..."
+
             if s.medley:
-              songText += "&#8595;" # Down arrow
+              songText += " &#8594;" # Right arrow.
 
             if s.highLight == HIGHLIGHT_ON:
-              f.write( "%s) <font color=\"red\">%s</font></button>\n" % ( songNumber, songText ) )
+              f.write( "%s) <font color='red'>%s</font></button>\n" % ( songNumber, songText ) )
             else:
               f.write( "%s) %s</button>\n" % ( songNumber, songText ) )
-            f.write( "<div class=\"panel\">\n" )
+            f.write( "<div class='panel'>\n" )
 
             # Add song meta data if present (artist / key / tempo / year)
             # You can also just put in html in the txt since it's pasted directly.
-            songInfo = ""
+            songInfo = songName
+            extraInfo = False
             for param in( SP_ARTIST, SP_KEY, SP_TEMPO, SP_YEAR, SP_GENRE, SP_LENGTH ):
               if s.elements[ songParams[ param ] ]:
+                if not extraInfo:
+                  extraInfo = True
+                  songInfo += ", "
                 songInfo += s.elements[ songParams[ param ] ] + " "
                 if param == SP_TEMPO:
                   songInfo += "bpm"
-            if songInfo != "":
-              f.write( "<i><font style=\"font-family:courier;\" size=\"1\">&nbsp" + songInfo + "</font></i><br><br>\n" )
+            f.write( "<i><font style='font-family:courier;' size='1'>&nbsp" + songInfo + "</font></i><br><br>\n" )
           # Bold lines starting with !
           elif line[ 0 : 1 ] == "!":
             f.write( "<b>- %s -</b><br>\n" % ( line[ 1 : ].rstrip() ) )
@@ -678,56 +693,36 @@ def exportSet():
       songNumber += 1
     setNumber += 1
 
-  f.write( "<script>\n"\
-           "var acc = document.getElementsByClassName(\"accordion\");\n"
-           "var i;\n"
-           "\n"
-           "function toggleSong( elem )\n"
-           "{\n"
-           "  elem.classList.toggle(\"active\");\n"
-           "  var panel = elem.nextElementSibling;\n"
-           "  if( panel.style.display === \"block\" )\n"
-           "  {\n"
-           "    panel.style.display = \"none\";\n"
-           "  }\n"
-           "  else\n"
-           "  {\n"
-           "    panel.style.display = \"block\";\n"
-           "  }\n"
-           "}\n"
-           "\n"
-           "function openSong( elem )\n"
-           "{\n"
-           "  elem.classList.add(\"active\");\n"
-           "  var panel = elem.nextElementSibling;\n"
-           "  panel.style.display = \"block\";\n"
-           "}\n"
-           "\n"
-           "for( i = 0;i < acc.length;i++ )\n"
-           "{\n"
-           "  acc[ i ].addEventListener(\"click\", function()\n"
-           "  {\n"
-           "    toggleSong( this );\n"
-           "  } );\n"
-           "\n"
-           "if( i < acc.length - 1 )\n"
-           "{\n"
-           "  var b = document.createElement( \"button\" );\n"
-           "  b.classList.add( 'selectNext' );"
-           "  b.innerHTML = \"Next\";\n"
-           "  b.song = acc[ i ];\n"
-           "  b.nextSong = acc[ i + 1 ];\n"
-           "  panel = acc[ i ].nextElementSibling;\n"
-           "  panel.appendChild( b, panel.firstChild );\n"
-           "  b.addEventListener(\"click\", function() {\n"
-           "      toggleSong( this.song );\n"
-           "      openSong( this.nextSong );\n"
-           "      this.nextSong.scrollIntoView();\n"
-           "    } );\n"
-           "  }\n"
-           "}\n"
-           "</script>\n"
-           "</body></html>\n" )
+  f.write( """
+<script>
+var acc = document.getElementsByClassName( "accordion" );
+
+function viewSong( elem )
+{
+  var wasActive = elem.classList.contains( "active" );
+
+  // Close all accordions.
+  for( var i = 0;i < acc.length;i++ )
+  {
+    acc[ i ].nextElementSibling.style.display = "none"; 
+    acc[ i ].classList.remove( "active" );
+  }
+
+  // Open this one if it was closed before.
+  if( !wasActive )
+  {
+    elem.classList.add( "active" );
+    var panel = elem.nextElementSibling;
+    panel.style.display = "block";
+    elem.scrollIntoView();
+  }
+}
+
+for( var i = 0;i < acc.length;i++ )
+  acc[ i ].addEventListener( "click", function() { viewSong( this ); } );
+</script>
+</body>
+</html>""" )
   f.close()
   statusString = "Export complete."
 
