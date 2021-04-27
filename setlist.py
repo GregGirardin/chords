@@ -545,25 +545,27 @@ def exportSet():
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
+""" )
+  f.write( "<title>%s</title>" % ( setListName ) )
+  f.write( """
 <style>
 .accordion
 {
-  background-color: #eee;
+  background-color: #eef;
   color: #444;
   cursor: pointer;
-  padding: 5px;
-  min-width: 20%;
-  border: none;
+  padding: 6px;
+  border: 12x solid white;
   text-align: left;
   outline: none;
-  font-size: 15px;
+  font-size: 16px;
   transition: 0.4s;
+  min-width: 100%;
 }
 
 .active, .accordion:hover
 {
-  background-color: #ccc;
+  background-color: #fcc;
 }
 
 .panel
@@ -588,12 +590,21 @@ def exportSet():
   transition: 0.4s;
 }
 
+.topButtons
+{
+  background-color: #fdd;
+  padding: 15px;
+  font-size: 20px;
+}
+
 </style>
 </head>
 
 <body>
-""" )
-  f.write( "<h1>%s</h1>\n" % ( setListName ) )
+<button class="topButtons" id="fontButton">Font</button>
+<button class="topButtons" id="verticalButton">Display</button>
+ """ )
+
   if annotation:
     f.write( annotation + "\n" )
 
@@ -602,7 +613,7 @@ def exportSet():
   # Songs
   setNumber = 1
   for l in setLists[ 0 : len( setLists ) ]:
-    f.write( "<hr><h2>%s</h2>\n" % ( l.name if l.name else setNumber ) )
+    f.write( "<hr>%s<br>\n" % ( l.name if l.name else setNumber ) )
     songNumber = 1
     for s in l.songList:
       try:
@@ -627,7 +638,7 @@ def exportSet():
 
           if ffAuto or ffManual: # We want to use a fixed font?
             if not ffState:
-              f.write( "<font style='font-family:courier;' size='2'>\n" )
+              f.write( "<font style='font-family:courier;'>\n" )
               ffState = True
           elif ffState: # Don't want fixed font. Fixed is harder to read for lyrics.
             f.write( "</font>\n" )
@@ -636,18 +647,11 @@ def exportSet():
           if fileLine == 0: # Assume first line is song title
             f.write( "<button class='accordion'>" )
             songName = line.rstrip()
-            songText = songName
-            MAX_SONG_LEN = 15
-            if( len( songText ) > MAX_SONG_LEN ):
-              songText = songText[ : MAX_SONG_LEN ] + "..."
-
-            if s.medley:
-              songText += " &#8594;" # Right arrow.
 
             if s.highLight == HIGHLIGHT_ON:
-              f.write( "%s) <font color='red'>%s</font></button>\n" % ( songNumber, songText ) )
+              f.write( "%s. <font color='red'>%s</font></button>\n" % ( songNumber, songName ) )
             else:
-              f.write( "%s) %s</button>\n" % ( songNumber, songText ) )
+              f.write( "%s. %s</button>\n" % ( songNumber, songName + ( " &#8594;" if s.medley else "" ) ) )
             f.write( "<div class='panel'>\n" )
 
             # Add song meta data if present (artist / key / tempo / year)
@@ -662,14 +666,14 @@ def exportSet():
                 songInfo += s.elements[ songParams[ param ] ] + " "
                 if param == SP_TEMPO:
                   songInfo += "bpm"
-            f.write( "<i><font style='font-family:courier;' size='1'>&nbsp" + songInfo + "</font></i><br><br>\n" )
+            f.write( "<i><font color='grey'>" + songInfo + "</font></i><br>\n" )
           # Bold lines starting with !
           elif line[ 0 : 1 ] == "!":
             f.write( "<b>- %s -</b><br>\n" % ( line[ 1 : ].rstrip() ) )
           # Ignore 2nd line if empty. It's unnecessary space in the html
           elif fileLine > 1 or line != "\n": # add spaces
             nLine = ""
-            numSpaces = 0;
+            numSpaces = 0
             for c in line:
               if c == " ":
                 numSpaces += 1
@@ -688,14 +692,73 @@ def exportSet():
         print( "Exception:", sys.exc_info() )
         exit()
       if s.medley:
-        f.write( "<font size = 5>&#8595;</font>" ) # Big down arrow
+        f.write( "<font size='2'> &#8595;</font>" ) # Big down arrow
       f.write( "</div>\n" )
       songNumber += 1
     setNumber += 1
 
   f.write( """
 <script>
-var acc = document.getElementsByClassName( "accordion" );
+
+var fontSize = 16;
+var curSongElem = undefined;
+
+function togFontSize()
+{
+  fontSize += 2;
+  if( fontSize > 22 )
+    fontSize = 14;
+
+  setFontProperty();
+}
+
+function setFontProperty()
+{
+  var fontSizeStr = fontSize.toString() + "px";
+  if( curSongElem )
+    curSongElem.style.fontSize = fontSizeStr;
+  var elem = document.getElementById( "fontButton" );
+  elem.style.fontSize = fontSizeStr;
+  elem.innerHTML = fontSizeStr;
+  elem = document.getElementById( "verticalButton" );
+  elem.style.fontSize = fontSizeStr;
+}
+
+var displayFormat = 2;
+
+function verticalButton()
+{
+  displayFormat++;
+  if( displayFormat == 3 )
+    displayFormat = 0;
+  
+  var minWProp = undefined;
+  var subStr = 100;
+
+  switch( displayFormat )
+  {
+    case 0: minWProp =   "0%";break;
+    case 1: minWProp =  "24%";break;
+    case 2: minWProp = "100%";break;
+  }
+
+  for( var i = 0;i < acc.length;i++ )
+  {
+    acc[ i ].style.minWidth = minWProp;
+    if( displayFormat == 0 )
+      acc[ i ].innerHTML = songNames[ i ].substr( 0, 2 );
+    else if( displayFormat == 1 )
+      acc[ i ].innerHTML = songNames[ i ].substr( 0, 16 );
+    else
+      acc[ i ].innerHTML = songNames[ i ];
+  }
+}
+
+var elem = document.getElementById( "fontButton" );
+elem.addEventListener( "click", function() { togFontSize(); } );
+elem = document.getElementById( "verticalButton" );
+elem.addEventListener( "click", function() { verticalButton(); } );
+acc = document.getElementsByClassName( "accordion" );
 
 function viewSong( elem )
 {
@@ -708,18 +771,27 @@ function viewSong( elem )
     acc[ i ].classList.remove( "active" );
   }
 
+  curSongElem = undefined;
+
   // Open this one if it was closed before.
   if( !wasActive )
   {
     elem.classList.add( "active" );
     var panel = elem.nextElementSibling;
+    curSongElem = panel;
+    setFontProperty(); // w/o this the font change only applies to the open song. Possibly desirable.
     panel.style.display = "block";
     elem.scrollIntoView();
   }
 }
 
+songNames = [];
+
 for( var i = 0;i < acc.length;i++ )
+{
+  songNames[ i ] = acc[ i ].innerHTML;
   acc[ i ].addEventListener( "click", function() { viewSong( this ); } );
+}
 </script>
 </body>
 </html>""" )
