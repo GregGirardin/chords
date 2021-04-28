@@ -613,7 +613,7 @@ def exportSet():
   # Songs
   setNumber = 1
   for l in setLists[ 0 : len( setLists ) ]:
-    f.write( "<hr>%s<br>\n" % ( l.name if l.name else setNumber ) )
+    f.write( "<hr><div class='setname'>%s</div>\n" % ( l.name if l.name else setNumber ) )
     songNumber = 1
     for s in l.songList:
       try:
@@ -693,7 +693,7 @@ def exportSet():
         exit()
       if s.medley:
         f.write( "<font size='2'> &#8595;</font>" ) # Big down arrow
-      f.write( "</div>\n" )
+      f.write( "</div>\n\n" )
       songNumber += 1
     setNumber += 1
 
@@ -703,15 +703,17 @@ def exportSet():
 var fontSize = 16;
 var curSongElem = undefined;
 
+//////////////////////////
 function togFontSize()
 {
   fontSize += 2;
   if( fontSize > 22 )
     fontSize = 14;
 
-  setFontProperty();
+  setFontProperty( fontSize );
 }
 
+//////////////////////////
 function setFontProperty()
 {
   var fontSizeStr = fontSize.toString() + "px";
@@ -720,27 +722,43 @@ function setFontProperty()
   var elem = document.getElementById( "fontButton" );
   elem.style.fontSize = fontSizeStr;
   elem.innerHTML = fontSizeStr;
+
   elem = document.getElementById( "verticalButton" );
   elem.style.fontSize = fontSizeStr;
 }
 
-var displayFormat = 2;
+var displayFormat = 3;
 
+//////////////////////////
 function verticalButton()
 {
   displayFormat++;
-  if( displayFormat == 3 )
+  if( displayFormat == 4 )
     displayFormat = 0;
   
   var minWProp = undefined;
   var subStr = 100;
+  var fSize = "16px"; // Size of accordion's font.
+  var slFontSize = "100%";
+
+  var sets = document.getElementsByClassName( "setname" );
 
   switch( displayFormat )
   {
-    case 0: minWProp =   "0%";break;
-    case 1: minWProp =  "24%";break;
-    case 2: minWProp = "100%";break;
+    case 0: minWProp =   "0%"; slFontSize = undefined; break;
+    case 1: minWProp =   "9%"; slFontSize = undefined; fSize = "9px"; break;
+    case 2: minWProp =  "24%"; break;
+    case 3: minWProp = "100%"; slFontSize = "150%"; break;
   }
+
+  for( var i = 0;i < sets.length;i++ )
+    if( slFontSize )
+    {
+      sets[ i ].style.fontSize = slFontSize;
+      sets[ i ].style.display = "block";
+    }
+    else
+      sets[ i ].style.display = "none";
 
   for( var i = 0;i < acc.length;i++ )
   {
@@ -748,18 +766,25 @@ function verticalButton()
     if( displayFormat == 0 )
       acc[ i ].innerHTML = songNames[ i ].substr( 0, 2 );
     else if( displayFormat == 1 )
+      acc[ i ].innerHTML = songNames[ i ].substr( 0, 9 );
+    else if( displayFormat == 2 )
       acc[ i ].innerHTML = songNames[ i ].substr( 0, 16 );
     else
       acc[ i ].innerHTML = songNames[ i ];
+
+    acc[ i ].style.fontSize = fSize;
   }
 }
 
 var elem = document.getElementById( "fontButton" );
 elem.addEventListener( "click", function() { togFontSize(); } );
+
 elem = document.getElementById( "verticalButton" );
 elem.addEventListener( "click", function() { verticalButton(); } );
-acc = document.getElementsByClassName( "accordion" );
 
+var acc = document.getElementsByClassName( "accordion" );
+
+//////////////////////////
 function viewSong( elem )
 {
   var wasActive = elem.classList.contains( "active" );
