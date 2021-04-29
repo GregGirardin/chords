@@ -896,8 +896,8 @@ function accordionClick( elem )
 
       // make the song name visible in the compressed modes. Need to clear this when minimizing in displaySet() above
       acc[ elem.accIndex ].innerHTML = songNames[ elem.accIndex ];
-      if( displayFormat != 3 )
-        acc[ elem.accIndex ].style.minWidth = "0%";
+      acc[ elem.accIndex ].style.minWidth = "100%";
+      acc[ elem.accIndex ].style.fontSize = "16px";
 
       var panel = elem.nextElementSibling;
       setFontProperty(); // w/o this the font change only applies to the open song. Possibly desirable.
