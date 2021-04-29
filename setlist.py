@@ -551,11 +551,11 @@ def exportSet():
 <style>
 .accordion
 {
-  background-color: #eef;
+  border: 1px solid white;
+  background-color: #def;
   color: #444;
   cursor: pointer;
   padding: 6px;
-  border: 12x solid white;
   text-align: left;
   outline: none;
   font-size: 16px;
@@ -572,9 +572,39 @@ def exportSet():
 {
   padding: 0 18px;
   display: none;
-  background-color: white;
   overflow: hidden;
   font-size: 20px;
+  /* border: 1px solid black; */
+  background-color: #fee;
+}
+
+.medleyStart
+{
+  position:relative;
+  overflow:hidden;
+  background: #ddf;
+  clip-path:  polygon( 0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100% );
+}
+
+.medleyCont
+{
+  position:relative;
+  overflow:hidden;
+  background: #ddf;
+  clip-path: polygon( 0 20%, 100% 20%, 100% 80%, 0% 80% );
+}
+
+.medleyEnd
+{
+  position:relative;
+  overflow:hidden;
+  background: #ddf;
+  clip-path: polygon( 0% 0%, 100% 0%, 90% 50%, 100% 100%, 0% 100% );
+}
+
+.highlight
+{
+  color: #d33;
 }
 
 .selectNext
@@ -593,16 +623,19 @@ def exportSet():
 .topButtons
 {
   background-color: #fdd;
-  padding: 15px;
-  font-size: 20px;
+  padding: 10px;
+  font-size: 16px;
 }
 
 </style>
 </head>
 
 <body>
-<button class="topButtons" id="fontButton">Font</button>
-<button class="topButtons" id="verticalButton">Display</button>
+<button class="topButtons" id="fontButton+">Font +</button>
+<button class="topButtons" id="fontButton-">Font -</button>
+<button id="fontSizeButton">Size</button>
+<button class="topButtons" id="verticalButton+">Expand</button>
+<button class="topButtons" id="verticalButton-">Shrink</button>
  """ )
 
   if annotation:
@@ -615,6 +648,7 @@ def exportSet():
   for l in setLists[ 0 : len( setLists ) ]:
     f.write( "<hr><div class='setname'>%s</div>\n" % ( l.name if l.name else setNumber ) )
     songNumber = 1
+    inMedley = False
     for s in l.songList:
       try:
         sName = s.fileName
@@ -645,13 +679,25 @@ def exportSet():
             ffState = False
 
           if fileLine == 0: # Assume first line is song title
-            f.write( "<button class='accordion'>" )
+            classString = "accordion"
+            if s.highLight == HIGHLIGHT_ON:
+              classString += " highlight"
+
+            if s.medley:
+              if not inMedley:
+                classString += " medleyStart"
+                inMedley = True
+              else:
+                classString += " medleyCont"
+            else:
+              if( inMedley ):
+                classString += " medleyEnd"
+              inMedley = False
+
+            f.write( "<button class='%s'>" % ( classString ) )
             songName = line.rstrip()
 
-            if s.highLight == HIGHLIGHT_ON:
-              f.write( "%s. <font color='red'>%s</font></button>\n" % ( songNumber, songName ) )
-            else:
-              f.write( "%s. %s</button>\n" % ( songNumber, songName + ( " &#8594;" if s.medley else "" ) ) )
+            f.write( "%s. %s</button>\n" % ( songNumber, songName ) )
             f.write( "<div class='panel'>\n" )
 
             # Add song meta data if present (artist / key / tempo / year)
@@ -666,7 +712,7 @@ def exportSet():
                 songInfo += s.elements[ songParams[ param ] ] + " "
                 if param == SP_TEMPO:
                   songInfo += "bpm"
-            f.write( "<i><font color='grey'>" + songInfo + "</font></i><br>\n" )
+            f.write( "<div class=\"songInfo\">" + songInfo + "</div><br>\n" )
           # Bold lines starting with !
           elif line[ 0 : 1 ] == "!":
             f.write( "<b>- %s -</b><br>\n" % ( line[ 1 : ].rstrip() ) )
@@ -692,7 +738,7 @@ def exportSet():
         print( "Exception:", sys.exc_info() )
         exit()
       if s.medley:
-        f.write( "<font size='2'> &#8595;</font>" ) # Big down arrow
+        f.write( "<font size='4'> &#8595;</font>" ) # Big down arrow
       f.write( "</div>\n\n" )
       songNumber += 1
     setNumber += 1
@@ -701,53 +747,72 @@ def exportSet():
 <script>
 
 var fontSize = 16;
-var curSongElem = undefined;
 
-//////////////////////////
-function togFontSize()
+////////////////////////// ////////////////////////// //////////////////////////
+function fontPlus()
 {
   fontSize += 2;
   if( fontSize > 22 )
+    fontSize = 22;
+
+  setFontProperty( fontSize );
+}
+
+function fontMinus()
+{
+  fontSize -= 2;
+  if( fontSize < 14 )
     fontSize = 14;
 
   setFontProperty( fontSize );
 }
 
-//////////////////////////
+////////////////////////// ////////////////////////// //////////////////////////
 function setFontProperty()
 {
   var fontSizeStr = fontSize.toString() + "px";
-  if( curSongElem )
-    curSongElem.style.fontSize = fontSizeStr;
-  var elem = document.getElementById( "fontButton" );
+  var elem = document.getElementById( "fontSizeButton" );
   elem.style.fontSize = fontSizeStr;
   elem.innerHTML = fontSizeStr;
 
-  elem = document.getElementById( "verticalButton" );
-  elem.style.fontSize = fontSizeStr;
+  for( var i = 0;i < acc.length;i++ )
+    acc[ i ].nextElementSibling.style.fontSize = fontSizeStr;
 }
 
 var displayFormat = 3;
 
-//////////////////////////
-function verticalButton()
+function displayPlus()
 {
   displayFormat++;
-  if( displayFormat == 4 )
+  if( displayFormat > 3 )
+    displayFormat = 3;
+  displaySet();
+}
+
+function displayMinus()
+{
+  displayFormat--;
+  if( displayFormat < 0 )
     displayFormat = 0;
-  
+  displaySet();
+}
+
+////////////////////////// ////////////////////////// //////////////////////////
+function displaySet()
+{
   var minWProp = undefined;
   var subStr = 100;
-  var fSize = "16px"; // Size of accordion's font.
-  var slFontSize = "100%";
+  var fSize = "16px"; // Font size of song names in accordions
+  var slFontSize; // set list font size
 
   var sets = document.getElementsByClassName( "setname" );
 
   switch( displayFormat )
   {
-    case 0: minWProp =   "0%"; slFontSize = undefined; break;
-    case 1: minWProp =   "9%"; slFontSize = undefined; fSize = "9px"; break;
-    case 2: minWProp =  "24%"; break;
+    case 0: minWProp =   "0%"; fSize = "20px";break;
+    //case 1: minWProp =   "9%"; fSize = "1vw"; break;
+    case 1: minWProp =   "9%"; fSize = "10px"; break;
+    case 2: minWProp =  "24%"; slFontSize = "100%"; break;
     case 3: minWProp = "100%"; slFontSize = "150%"; break;
   }
 
@@ -763,60 +828,107 @@ function verticalButton()
   for( var i = 0;i < acc.length;i++ )
   {
     acc[ i ].style.minWidth = minWProp;
-    if( displayFormat == 0 )
-      acc[ i ].innerHTML = songNames[ i ].substr( 0, 2 );
-    else if( displayFormat == 1 )
-      acc[ i ].innerHTML = songNames[ i ].substr( 0, 9 );
-    else if( displayFormat == 2 )
-      acc[ i ].innerHTML = songNames[ i ].substr( 0, 16 );
-    else
-      acc[ i ].innerHTML = songNames[ i ];
 
+    var strName;
+    if( displayFormat == 0 )
+    {
+      if( songNames[ i ][ 1 ] == '.' ) // chop off the song number
+        strName = songNames[ i ].substr( 0, 1 );
+      else
+        strName = songNames[ i ].substr( 0, 2 );
+    }
+    else if( displayFormat == 1 )
+    {
+      if( songNames[ i ][ 1 ] == '.' ) // chop off the song number
+        strName = songNames[ i ].substr( 2, 10 );
+      else
+        strName = songNames[ i ].substr( 3, 11 );
+    }
+    else if( displayFormat == 2 )
+      strName = songNames[ i ].substr( 0, 16 );
+    else
+      strName = songNames[ i ];
+
+    acc[ i ].innerHTML = strName;
     acc[ i ].style.fontSize = fSize;
   }
 }
 
-var elem = document.getElementById( "fontButton" );
-elem.addEventListener( "click", function() { togFontSize(); } );
-
-elem = document.getElementById( "verticalButton" );
-elem.addEventListener( "click", function() { verticalButton(); } );
-
-var acc = document.getElementsByClassName( "accordion" );
-
-//////////////////////////
-function viewSong( elem )
+/* ////////////////////////// ////////////////////////// //////////////////////////
+  Open or close the accordion element
+  if the song is in a medley, open the whole thing and scroll to the current element.
+  only close a medley if it's the first song in a medley, otherwise scroll to that song.
+*/
+function accordionClick( elem )
 {
-  var wasActive = elem.classList.contains( "active" );
+  var wasOpen = elem.classList.contains( "active" );
 
-  // Close all accordions.
+  if( wasOpen && ( elem.classList.contains( "medleyCont" ) || elem.classList.contains( "medleyEnd" ) ) )
+  {
+    elem.scrollIntoView();
+    return;
+  }
+
+  // Close all accordions
   for( var i = 0;i < acc.length;i++ )
   {
     acc[ i ].nextElementSibling.style.display = "none"; 
     acc[ i ].classList.remove( "active" );
   }
 
-  curSongElem = undefined;
+  var scrollToElem = elem;
+  while( elem.classList.contains( "medleyCont" ) || elem.classList.contains( "medleyEnd" ) )
+    elem = acc[ elem.accIndex - 1 ]; // jump to head of medley.
 
   // Open this one if it was closed before.
-  if( !wasActive )
-  {
-    elem.classList.add( "active" );
-    var panel = elem.nextElementSibling;
-    curSongElem = panel;
-    setFontProperty(); // w/o this the font change only applies to the open song. Possibly desirable.
-    panel.style.display = "block";
-    elem.scrollIntoView();
-  }
+  inMedley = elem.classList.contains( "medleyStart" );
+
+  if( !wasOpen )
+    while( elem )
+    {
+      elem.classList.add( "active" );
+      var panel = elem.nextElementSibling;
+      setFontProperty(); // w/o this the font change only applies to the open song. Possibly desirable.
+      panel.style.display = "block";
+      if( inMedley )
+      {
+        elem = acc[ elem.accIndex + 1 ];
+        if( elem.classList.contains( "medleyEnd" ) )
+          inMedley = false;
+      }
+      else
+        elem = undefined;
+    }
+
+  scrollToElem.scrollIntoView();
 }
+
+var elem = document.getElementById( "fontButton+" );
+elem.addEventListener( "click", function() { fontPlus(); } );
+
+elem = document.getElementById( "fontButton-" );
+elem.addEventListener( "click", function() { fontMinus(); } );
+
+elem = document.getElementById( "verticalButton+" );
+elem.addEventListener( "click", function() { displayPlus(); } );
+
+elem = document.getElementById( "verticalButton-" );
+elem.addEventListener( "click", function() { displayMinus(); } );
+
+var acc = document.getElementsByClassName( "accordion" );
 
 songNames = [];
 
 for( var i = 0;i < acc.length;i++ )
 {
   songNames[ i ] = acc[ i ].innerHTML;
-  acc[ i ].addEventListener( "click", function() { viewSong( this ); } );
+  acc[ i ].addEventListener( "click", function() { accordionClick( this ); } );
+  acc[ i ].nextElementSibling.addEventListener( "click", function() { this.previousElementSibling.scrollIntoView(); } );
+  acc[ i ].accIndex = i; // add a next property for opening medleys.
 }
+
+displaySet();
+
 </script>
 </body>
 </html>""" )
