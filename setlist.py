@@ -563,7 +563,7 @@ def exportSet():
   min-width: 100%;
 }
 
-.active, .accordion:hover
+.accordion:hover
 {
   background-color: #fcc;
 }
@@ -574,8 +574,8 @@ def exportSet():
   display: none;
   overflow: hidden;
   font-size: 20px;
-  /* border: 1px solid black; */
   background-color: #fee;
+  text-align: left;
 }
 
 .medleyStart
@@ -583,7 +583,7 @@ def exportSet():
   position:relative;
   overflow:hidden;
   background: #ddf;
-  clip-path:  polygon( 0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100% );
+  clip-path: polygon( 0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100% );
 }
 
 .medleyCont
@@ -630,12 +630,12 @@ def exportSet():
 </style>
 </head>
 
-<body>
-<button class="topButtons" id="fontButton+">Font +</button>
-<button class="topButtons" id="fontButton-">Font -</button>
+<body align="center">
+<button class="topButtons" id="fontButton+" onclick="fontPlus();">Font +</button>
+<button class="topButtons" id="fontButton-" onclick="fontMinus();">Font -</button>
 <button id="fontSizeButton">Size</button>
-<button class="topButtons" id="verticalButton+">Expand</button>
-<button class="topButtons" id="verticalButton-">Shrink</button>
+<button class="topButtons" id="verticalButton+" onclick="displayPlus();">Expand</button>
+<button class="topButtons" id="verticalButton-" onclick="displayMinus();">Shrink</button>
  """ )
 
   if annotation:
@@ -698,21 +698,19 @@ def exportSet():
             songName = line.rstrip()
 
             f.write( "%s. %s</button>\n" % ( songNumber, songName ) )
+
             f.write( "<div class='panel'>\n" )
 
             # Add song meta data if present (artist / key / tempo / year)
             # You can also just put in html in the txt since it's pasted directly.
-            songInfo = songName
-            extraInfo = False
-            for param in( SP_ARTIST, SP_KEY, SP_TEMPO, SP_YEAR, SP_GENRE, SP_LENGTH ):
-              if s.elements[ songParams[ param ] ]:
-                if not extraInfo:
-                  extraInfo = True
-                  songInfo += ", "
-                songInfo += s.elements[ songParams[ param ] ] + " "
-                if param == SP_TEMPO:
-                  songInfo += "bpm"
-            f.write( "<div class=\"songInfo\">" + songInfo + "</div><br>\n" )
+            # songInfo = ""
+            # for param in( SP_ARTIST, SP_KEY, SP_TEMPO, SP_YEAR, SP_GENRE, SP_LENGTH ):
+            #   if s.elements[ songParams[ param ] ]:
+            #     songInfo += s.elements[ songParams[ param ] ] + " "
+            #     if param == SP_TEMPO:
+            #       songInfo += "bpm"
+            # if len( songInfo ):
+            #   f.write( "<div class=\"songInfo\">" + songInfo + "</div><br>\n" )
           # Bold lines starting with !
           elif line[ 0 : 1 ] == "!":
             f.write( "<b>- %s -</b><br>\n" % ( line[ 1 : ].rstrip() ) )
@@ -797,6 +795,16 @@ function displayMinus()
   displaySet();
 }
 
+function closeAll()
+{
+  // Close all accordions
+  for( var i = 0;i < acc.length;i++ )
+  {
+    acc[ i ].nextElementSibling.style.display = "none"; 
+    acc[ i ].classList.remove( "active" );
+  }
+}
+
 ////////////////////////// ////////////////////////// //////////////////////////
 function displaySet()
 {
@@ -805,17 +813,17 @@ function displaySet()
   var fSize = "16px"; // Font size of song names in accordions
   var slFontSize; // set list font size
 
-  var sets = document.getElementsByClassName( "setname" );
+  closeAll();
 
   switch( displayFormat )
   {
-    case 0: minWProp =   "0%"; fSize = "20px";break;
-    //case 1: minWProp =   "9%"; fSize = "1vw"; break;
-    case 1: minWProp =   "9%"; fSize = "10px"; break;
-    case 2: minWProp =  "24%"; slFontSize = "100%"; break;
-    case 3: minWProp = "100%"; slFontSize = "150%"; break;
+    case 0: minWProp =  "0%"; fSize = "20px";break;
+    case 1: minWProp =  "9%"; fSize = "10px"; break;
+    case 2: minWProp = "24%"; slFontSize = "100%"; break;
+    case 3: minWProp = "50%"; slFontSize = "150%"; break;
   }
 
+  var sets = document.getElementsByClassName( "setname" );
   for( var i = 0;i < sets.length;i++ )
     if( slFontSize )
     {
@@ -839,13 +847,13 @@ function displaySet()
     }
     else if( displayFormat == 1 )
     {
-      if( songNames[ i ][ 1 ] == '.' ) // chop off the song number
+      if( songNames[ i ][ 1 ] == '.' )
         strName = songNames[ i ].substr( 2, 10 );
       else
         strName = songNames[ i ].substr( 3, 11 );
     }
     else if( displayFormat == 2 )
-      strName = songNames[ i ].substr( 0, 16 );
+      strName = songNames[ i ].substr( 0, 20 );
     else
       strName = songNames[ i ];
 
@@ -854,7 +862,7 @@ function displaySet()
   }
 }
 
-/* ////////////////////////// ////////////////////////// //////////////////////////
+/*
   Open or close the accordion element
   if the song is in a medley, open the whole thing and scroll to the current element.
   only close a medley if it's the first song in a medley, otherwise scroll to that song.
@@ -869,16 +877,14 @@ function accordionClick( elem )
     return;
   }
 
-  // Close all accordions
-  for( var i = 0;i < acc.length;i++ )
-  {
-    acc[ i ].nextElementSibling.style.display = "none"; 
-    acc[ i ].classList.remove( "active" );
-  }
+  closeAll();
+  displaySet(); 
 
   var scrollToElem = elem;
+
+  // Go to head of medley and open the whole thing.
   while( elem.classList.contains( "medleyCont" ) || elem.classList.contains( "medleyEnd" ) )
-    elem = acc[ elem.accIndex - 1 ]; // jump to head of medley.
+    elem = acc[ elem.accIndex - 1 ];
 
   // Open this one if it was closed before.
   inMedley = elem.classList.contains( "medleyStart" );
@@ -887,6 +893,12 @@ function accordionClick( elem )
     while( elem )
     {
       elem.classList.add( "active" );
+
+      // make the song name visible in the compressed modes. Need to clear this when minimizing in displaySet() above
+      acc[ elem.accIndex ].innerHTML = songNames[ elem.accIndex ];
+      if( displayFormat != 3 )
+        acc[ elem.accIndex ].style.minWidth = "0%";
+
       var panel = elem.nextElementSibling;
       setFontProperty(); // w/o this the font change only applies to the open song. Possibly desirable.
       panel.style.display = "block";
@@ -902,18 +914,6 @@ function accordionClick( elem )
 
   scrollToElem.scrollIntoView();
 }
-
-var elem = document.getElementById( "fontButton+" );
-elem.addEventListener( "click", function() { fontPlus(); } );
-
-elem = document.getElementById( "fontButton-" );
-elem.addEventListener( "click", function() { fontMinus(); } );
-
-elem = document.getElementById( "verticalButton+" );
-elem.addEventListener( "click", function() { displayPlus(); } );
-
-elem = document.getElementById( "verticalButton-" );
-elem.addEventListener( "click", function() { displayMinus(); } );
 
 var acc = document.getElementsByClassName( "accordion" );
 
