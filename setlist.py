@@ -551,7 +551,7 @@ def exportSet():
 <style>
 .accordion
 {
-  border: 1px solid white;
+  border: 2px solid white;
   background-color: #def;
   color: #444;
   cursor: pointer;
@@ -559,8 +559,7 @@ def exportSet():
   text-align: left;
   outline: none;
   font-size: 16px;
-  transition: 0.4s;
-  min-width: 100%;
+  transition: 0.2s;
 }
 
 .accordion:hover
@@ -583,7 +582,7 @@ def exportSet():
   position:relative;
   overflow:hidden;
   background: #ddf;
-  clip-path: polygon( 0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100% );
+  clip-path: polygon( 0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100%, 5% 50% );
 }
 
 .medleyCont
@@ -591,7 +590,7 @@ def exportSet():
   position:relative;
   overflow:hidden;
   background: #ddf;
-  clip-path: polygon( 0 20%, 100% 20%, 100% 80%, 0% 80% );
+  clip-path: polygon( 0 15%, 95% 15%, 95% 85%, 0% 85% );
 }
 
 .medleyEnd
@@ -599,25 +598,12 @@ def exportSet():
   position:relative;
   overflow:hidden;
   background: #ddf;
-  clip-path: polygon( 0% 0%, 100% 0%, 90% 50%, 100% 100%, 0% 100% );
+  clip-path: polygon( 0% 0%, 95% 0%, 85% 50%, 95% 100%, 0% 100% );
 }
 
 .highlight
 {
   color: #d33;
-}
-
-.selectNext
-{
-  background-color: #fee;
-  color: #444;
-  cursor: pointer;
-  padding: 10px;
-  width: 90%;
-  text-align: left;
-  outline: none;
-  font-size: 15px;
-  transition: 0.4s;
 }
 
 .topButtons
@@ -695,22 +681,9 @@ def exportSet():
               inMedley = False
 
             f.write( "<button class='%s'>" % ( classString ) )
-            songName = line.rstrip()
-
-            f.write( "%s. %s</button>\n" % ( songNumber, songName ) )
-
+            f.write( "%s. %s</button>\n" % ( songNumber, line.rstrip() ) )
             f.write( "<div class='panel'>\n" )
 
-            # Add song meta data if present (artist / key / tempo / year)
-            # You can also just put in html in the txt since it's pasted directly.
-            # songInfo = ""
-            # for param in( SP_ARTIST, SP_KEY, SP_TEMPO, SP_YEAR, SP_GENRE, SP_LENGTH ):
-            #   if s.elements[ songParams[ param ] ]:
-            #     songInfo += s.elements[ songParams[ param ] ] + " "
-            #     if param == SP_TEMPO:
-            #       songInfo += "bpm"
-            # if len( songInfo ):
-            #   f.write( "<div class=\"songInfo\">" + songInfo + "</div><br>\n" )
           # Bold lines starting with !
           elif line[ 0 : 1 ] == "!":
             f.write( "<b>- %s -</b><br>\n" % ( line[ 1 : ].rstrip() ) )
@@ -736,22 +709,23 @@ def exportSet():
         print( "Exception:", sys.exc_info() )
         exit()
       if s.medley:
-        f.write( "<font size='4'> &#8595;</font>" ) # Big down arrow
+        f.write( "<font size='5'> &#8595;</font>" ) # Big down arrow
       f.write( "</div>\n\n" )
       songNumber += 1
     setNumber += 1
 
   f.write( """
 <script>
-
+const minFont = 14
+const maxFont = 24;
 var fontSize = 16;
 
-////////////////////////// ////////////////////////// //////////////////////////
+/* ///////////////////////// ////////////////////////// ////////////////////////// */
 function fontPlus()
 {
   fontSize += 2;
-  if( fontSize > 22 )
-    fontSize = 22;
+  if( fontSize > maxFont )
+    fontSize = maxFont;
 
   setFontProperty( fontSize );
 }
@@ -759,8 +733,8 @@ function fontPlus()
 function fontMinus()
 {
   fontSize -= 2;
-  if( fontSize < 14 )
-    fontSize = 14;
+  if( fontSize < minFont )
+    fontSize = minFont;
 
   setFontProperty( fontSize );
 }
@@ -777,21 +751,26 @@ function setFontProperty()
     acc[ i ].nextElementSibling.style.fontSize = fontSizeStr;
 }
 
-var displayFormat = 3;
+const DISPLAY_MIN = 0;
+const DISPLAY_MED1 = 1;
+const DISPLAY_MED2 = 2;
+const DISPLAY_LARGE = 3;
+
+var displayFormat = DISPLAY_LARGE;
 
 function displayPlus()
 {
   displayFormat++;
-  if( displayFormat > 3 )
-    displayFormat = 3;
+  if( displayFormat > DISPLAY_LARGE )
+    displayFormat = DISPLAY_LARGE;
   displaySet();
 }
 
 function displayMinus()
 {
   displayFormat--;
-  if( displayFormat < 0 )
-    displayFormat = 0;
+  if( displayFormat < DISPLAY_MIN )
+    displayFormat = DISPLAY_MIN;
   displaySet();
 }
 
@@ -809,18 +788,35 @@ function closeAll()
 function displaySet()
 {
   var minWProp = undefined;
-  var subStr = 100;
   var fSize = "16px"; // Font size of song names in accordions
   var slFontSize; // set list font size
 
   closeAll();
 
+  var clipPath;
+
   switch( displayFormat )
   {
-    case 0: minWProp =  "0%"; fSize = "20px";break;
-    case 1: minWProp =  "9%"; fSize = "10px"; break;
-    case 2: minWProp = "24%"; slFontSize = "100%"; break;
-    case 3: minWProp = "50%"; slFontSize = "150%"; break;
+    case DISPLAY_MIN:
+      minWProp = "0%";
+      fSize = "20px";
+      clipPath = "polygon( 0% 0%, 60% 0, 100% 50%, 60% 100%, 0% 100% )";
+      break;
+    case DISPLAY_MED1:
+      minWProp = "9%";
+      fSize = "10px";
+      clipPath = "polygon( 0% 0%, 70% 0, 100% 50%, 70% 100%, 0% 100% )";
+      break;
+    case DISPLAY_MED2:
+      minWProp = "24%";
+      slFontSize = "100%";
+      clipPath = "polygon( 0% 0%, 85% 0, 95% 50%, 85% 100%, 0% 100% )";
+      break;
+    case DISPLAY_LARGE:
+      minWProp = "50%";
+      slFontSize = "150%";
+      clipPath = "polygon( 0% 0%, 85% 0, 95% 50%, 85% 100%, 0% 100% )";
+      break;
   }
 
   var sets = document.getElementsByClassName( "setname" );
@@ -837,28 +833,21 @@ function displaySet()
   {
     acc[ i ].style.minWidth = minWProp;
 
-    var strName;
-    if( displayFormat == 0 )
-    {
-      if( songNames[ i ][ 1 ] == '.' ) // chop off the song number
-        strName = songNames[ i ].substr( 0, 1 );
-      else
-        strName = songNames[ i ].substr( 0, 2 );
-    }
-    else if( displayFormat == 1 )
-    {
-      if( songNames[ i ][ 1 ] == '.' )
-        strName = songNames[ i ].substr( 2, 10 );
-      else
-        strName = songNames[ i ].substr( 3, 11 );
-    }
-    else if( displayFormat == 2 )
+    var strName; // "1. Name" "11. Name"
+    var chop = songNames[ i ][ 1 ] == '.' ? 0 : 1;
+    if( displayFormat == DISPLAY_MIN )
+      strName = songNames[ i ].substr( 0, 1 + chop );
+    else if( displayFormat == DISPLAY_MED1 )
+      strName = songNames[ i ].substr( 2 + chop, 10 + chop );
+    else if( displayFormat == DISPLAY_MED2 )
       strName = songNames[ i ].substr( 0, 20 );
     else
       strName = songNames[ i ];
 
     acc[ i ].innerHTML = strName;
     acc[ i ].style.fontSize = fSize;
+    if( acc[ i ].classList.contains( "medleyStart" ) )
+      acc[ i ].style.clipPath = clipPath;
   }
 }
 
@@ -867,6 +856,8 @@ function displaySet()
   if the song is in a medley, open the whole thing and scroll to the current element.
   only close a medley if it's the first song in a medley, otherwise scroll to that song.
 */
+var scrollToElem;
+
 function accordionClick( elem )
 {
   var wasOpen = elem.classList.contains( "active" );
@@ -880,7 +871,7 @@ function accordionClick( elem )
   closeAll();
   displaySet(); 
 
-  var scrollToElem = elem;
+  scrollToElem = elem;
 
   // Go to head of medley and open the whole thing.
   while( elem.classList.contains( "medleyCont" ) || elem.classList.contains( "medleyEnd" ) )
@@ -896,11 +887,19 @@ function accordionClick( elem )
 
       // make the song name visible in the compressed modes. Need to clear this when minimizing in displaySet() above
       acc[ elem.accIndex ].innerHTML = songNames[ elem.accIndex ];
-      acc[ elem.accIndex ].style.minWidth = "100%";
+      acc[ elem.accIndex ].style.minWidth = "95%";
       acc[ elem.accIndex ].style.fontSize = "16px";
 
+      if( elem.accIndex < acc.length - 1 )
+      {
+        acc[ elem.accIndex + 1 ].style.minWidth = "95%";
+        acc[ elem.accIndex + 1 ].style.fontSize = "16px";
+        acc[ elem.accIndex + 1 ].innerHTML = songNames[ elem.accIndex + 1 ];
+      }
+
       var panel = elem.nextElementSibling;
-      setFontProperty(); // w/o this the font change only applies to the open song. Possibly desirable.
+
+      setFontProperty(); // w/o this changing the font only applies to the open song. Possibly desirable.
       panel.style.display = "block";
       if( inMedley )
       {
@@ -913,6 +912,14 @@ function accordionClick( elem )
     }
 
   scrollToElem.scrollIntoView();
+  setTimeout( scrollTo, 500 ); // hack for occasional misses while resizing
+}
+
+// Sometimes the scrollTo is 'off' maybe because elements are being resized.
+// Do it after a delay to fix.
+function scrollTo( elem )
+{
+  scrollToElem.scrollIntoView();
 }
 
 var acc = document.getElementsByClassName( "accordion" );
@@ -923,7 +930,8 @@ for( var i = 0;i < acc.length;i++ )
 {
   songNames[ i ] = acc[ i ].innerHTML;
   acc[ i ].addEventListener( "click", function() { accordionClick( this ); } );
-  acc[ i ].nextElementSibling.addEventListener( "click", function() { this.previousElementSibling.scrollIntoView(); } );
+  acc[ i ].nextElementSibling.addEventListener( "click",
+                                                function() { this.previousElementSibling.scrollIntoView(); } );
   acc[ i ].accIndex = i; // add a next property for opening medleys.
 }
 
